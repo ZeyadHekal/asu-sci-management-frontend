@@ -14,16 +14,16 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have the 'asu-sci-management-frontend' title`, () => {
+  it(`should have the 'ASU Science Management' title`, () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('asu-sci-management-frontend');
+    expect(app.title).toEqual('ASU Science Management');
   });
 
   it('should render title', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, asu-sci-management-frontend');
+    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, ASU Science Management');
   });
 });
