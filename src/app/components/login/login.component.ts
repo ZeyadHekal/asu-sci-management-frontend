@@ -12,8 +12,7 @@ import { FormGroup , FormControl ,ReactiveFormsModule , Validators} from '@angul
 export class LoginComponent {
   loginForm=new FormGroup({
     email:new FormControl('',[
-      Validators.required,
-      Validators.pattern('^[0-9]{14}@sci\.asu\.edu\.eg$')
+      Validators.required
     ]),
     password:new FormControl('',[
       Validators.required
