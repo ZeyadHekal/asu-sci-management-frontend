@@ -1,0 +1,53 @@
+@keyframes fade-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes fade-out-left {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-15px);
+  }
+}
+
+@keyframes grow-left {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.agent-1 {
+  opacity: 0;
+  animation: fade-in-right ease 0.4s forwards;
+}
+.agent-4{
+  opacity: 100%;
+  animation: fade-out-left ease 0.4s forwards;
+}
+.agent-2 {
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: grow-left cubic-bezier(0.785, 0.135, 0.15, 0.86) 0.5s forwards;
+  animation-delay: 0.4s;
+}
+
+.agent-3 {
+  opacity: 0;
+  animation: fade-in-right ease 0.4s forwards;
+  animation-delay: 0.8s;
+}
+svg{
+  color: var(--color-primary);
+}

@@ -1,0 +1,40 @@
+<nav class="navbar navbar-dark ">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#"><img src="logo.png"></a>
+    <button class="navbar-toggler me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasDarkNavbar" aria-controls="offcanvasDarkNavbar" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="offcanvas offcanvas-end text-bg-dark" tabindex="-1" id="offcanvasDarkNavbar" aria-labelledby="offcanvasDarkNavbarLabel">
+      
+      <header class="ps-5" >
+        <div class="header-links">
+          <img src="logo.png" alt="logo" />
+          <!--tree-start-->
+          <ul class="tree">
+            <li *ngFor="let key of getTrueKeys(res[0])" class="tree-branch">
+              <div class="tree-branch-action">
+                <a href="#" class="tree-branch-link">{{ key }}</a>
+              </div>
+      
+              <ng-container *ngIf="key === 'lab' && res[1].labs">
+                <ul class="tree tree--sub">
+                  <li
+                    *ngFor="let lab of res[1].labs"
+                    class="tree-branch tree-branch--sub"
+                  >
+                    <div class="tree-branch-action">
+                      <a href="#" class="tree-branch-link tree-branch-link--sub">{{
+                        lab
+                      }}</a>
+                    </div>
+                  </li>
+                </ul>
+              </ng-container>
+            </li>
+          </ul>
+          <!--tree-end -->
+        </div>
+      </header>
+    </div>
+  </div>
+</nav>
