@@ -1,0 +1,36 @@
+<app-nav></app-nav>
+<h2 class="m-5">User Role Manipulation (Adding / Edit)</h2>
+
+<main class="container-fluid">
+  <ul class="nav nav-pills justify-content-center mb-5">
+    <li class="nav-item mb-3">
+      <a 
+        class="nav-link text-center"
+        [ngClass]="{ 'active': activeTab === 'create','border':activeTab!=='create' }" 
+        href="javascript:void(0)" 
+        (click)="setActiveTab('create')"
+      >
+        Add Role
+      </a>
+    </li>
+    <li class="nav-item">
+      <a 
+        class="nav-link text-center border" 
+        [ngClass]="{ 'active': activeTab === 'edit' ,'border':activeTab!=='active'}" 
+        href="javascript:void(0)" 
+        (click)="setActiveTab('edit')"
+      >
+        Edit Role
+      </a>
+    </li>
+  </ul>
+
+  <!-- Fade animation applied here -->
+  <section *ngIf="activeTab === 'create'" >
+    <app-createrole></app-createrole>
+  </section>
+
+  <section *ngIf="activeTab === 'edit'" >
+    <app-editrole></app-editrole>
+  </section>
+</main>

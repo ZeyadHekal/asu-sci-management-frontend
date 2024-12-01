@@ -1,0 +1,57 @@
+<div class="container mt-5">
+  <h2 class="text-center mb-4">Create Role</h2>
+  <form [formGroup]="roleForm" (ngSubmit)="onSubmit()">
+    <div class="mb-3">
+      <label for="roleName" class="form-label">Role Name</label>
+      <input
+        type="text"
+        id="roleName"
+        class="form-control"
+        formControlName="roleName"
+        placeholder="Enter role name"
+      />
+      <div
+        *ngIf="
+          roleForm.get('roleName')?.invalid && roleForm.get('roleName')?.touched
+        "
+        class="text-danger"
+      >
+        Role name is required
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Select Privileges</label>
+      <div class="d-flex flex-wrap">
+        <button
+          type="button"
+          *ngFor="let privilege of privileges"
+          class="btn me-2 mb-2"
+          [ngClass]="{
+            'btn-success': isSelected(privilege),
+            'btn-outline-secondary': !isSelected(privilege)
+          }"
+          (click)="togglePrivilege(privilege)"
+        >
+          {{ privilege.name }}
+        </button>
+      </div>
+      <div
+        *ngIf="selectedPrivileges.length === 0 && formSubmitted"
+        class="text-danger"
+      >
+        Please select at least one privilege
+      </div>
+    </div>
+
+    <div class="text-center">
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="roleForm.invalid"
+      >
+        Submit
+      </button>
+    </div>
+  </form>
+</div>

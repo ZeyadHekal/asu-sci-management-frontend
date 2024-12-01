@@ -3,7 +3,7 @@ import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-nav',
-  imports: [NgFor,NgIf],
+  imports: [NgFor],
   templateUrl: './nav.component.html',
   styleUrl: './nav.component.css'
 })

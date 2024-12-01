@@ -5,7 +5,7 @@ import { NavComponent } from '../nav/nav.component';
 
 @Component({
   selector: 'app-adduser',
-  imports: [ReactiveFormsModule, NgIf, NgFor,NgClass, FormsModule, NavComponent,NgStyle],
+  imports: [ReactiveFormsModule, NgIf, NgFor,NgClass, FormsModule, NavComponent],
   templateUrl: './adduser.component.html',
   styleUrls: ['./adduser.component.css'],
 })

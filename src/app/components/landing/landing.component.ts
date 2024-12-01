@@ -4,7 +4,7 @@ import { NavComponent } from "../nav/nav.component";
 
 @Component({
   selector: 'app-landing',
-  imports: [NgIf, NgFor, NavComponent],
+  imports: [NavComponent],
   templateUrl: './landing.component.html',
   styleUrl: './landing.component.css'
 })

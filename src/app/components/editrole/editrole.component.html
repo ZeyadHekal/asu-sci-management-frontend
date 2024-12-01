@@ -1,0 +1,40 @@
+<div class="container mt-5 ">
+  <h3 class="mb-4">Select a Role For Edit</h3>
+  <div class="d-flex flex-wrap gap-2">
+    <button
+      *ngFor="let role of roles"
+      class="btn"
+      [ngClass]="{
+        'btn-primary': selectedRole?.id === role.id,
+        'btn-outline-primary': selectedRole?.id !== role.id
+      }"
+      (click)="selectRole(role)"
+    >
+      {{ role.name }}
+    </button>
+  </div>
+
+  <div *ngIf="selectedRole" class="mt-4">
+    <h4 class="mt-5">Manage Privileges for "{{ selectedRole.name }}"</h4>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <button
+        *ngFor="let privilege of allPrivileges"
+        class="badge"
+        [ngClass]="{
+          'bg-success': selectedPrivileges.has(privilege.id),
+          'bg-secondary': !selectedPrivileges.has(privilege.id)
+        }"
+        (click)="togglePrivilege(privilege.id)"
+      >
+        {{ privilege.name }}
+      </button>
+    </div>
+
+    <button
+      class="btn btn-success my-5 d-block mx-auto"
+      (click)="submitPrivileges()"
+    >
+      Submit Changes
+    </button>
+  </div>
+</div>

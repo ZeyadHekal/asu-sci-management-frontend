@@ -1,0 +1,18 @@
+.container {
+  text-align: center;
+}
+
+.badge {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.badge:hover {
+  opacity: 0.8;
+}
+
+.btn {
+  padding: 0.7rem 1.5rem;
+  font-size: 1rem;
+}
