@@ -1,0 +1,20 @@
+<div *ngIf="students.length >0 ;else noStudents">
+  <table class="table table-striped">
+    <thead class="table-dark">
+      <tr>
+        <th *ngFor="let header of tableHeaders">{{ header }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let student of students">
+        <td>{{ student.id }}</td>
+        <td>{{ student.name }}</td>
+        <td>{{ student.level }}</td>
+        <td>{{ student.email }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<ng-template #noStudents>
+  <p class="text-center text-muted">No students in this course yet.</p>
+</ng-template>

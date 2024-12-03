@@ -1,0 +1,26 @@
+<button class="btn btn-primary d-lg-none mt-4 d-sm-block" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample">
+  <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+    <path d="M32 96v64h448V96H32zm0 128v64h448v-64H32zm0 128v64h448v-64H32z"></path>
+  </svg>
+</button>
+
+<div class="offcanvas offcanvas-start d-lg-block" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="offcanvasExampleLabel">Courses</h5>
+    <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <ul class="course-list list-group">
+      <li
+        *ngFor="let course of courses"
+        [ngClass]="{ 'selected': selectedCourseId === course.id }"
+        class="course-item list-group-item"
+        (click)="selectCourse(course.id)"
+        data-bs-dismiss="offcanvas"
+        aria-label="Close"
+      >
+        {{ course.name }}
+      </li>
+    </ul>
+  </div>
+</div>

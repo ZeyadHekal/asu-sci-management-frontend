@@ -1,0 +1,42 @@
+/* Make the offcanvas visible on large screens */
+@media (min-width: 992px) {
+  .offcanvas {
+    visibility: visible !important;
+    position: relative !important;
+    transform: none !important;
+    width: 250px; /* Adjust the width as needed */
+    height: 100vh; /* Full height */
+    border-right: 1px solid #ddd; /* Optional: Add a border for clarity */
+    box-shadow: none !important; /* Remove shadow */
+  }
+
+  .offcanvas-header .btn-close {
+    display: none; /* Hide close button on large screens */
+  }
+
+  .offcanvas-backdrop {
+    display: none !important;
+  }
+}
+
+.course-list {
+  padding: 0;
+}
+
+.course-item {
+  cursor: pointer;
+  border: none;
+  background-color: #f8f9fa;
+  color: #333;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.course-item:hover {
+  background-color: #e0f7fa; /* Light teal on hover */
+  color: #00796b; /* Dark teal text */
+}
+
+.course-item.selected {
+  background-color: #00796b; /* Dark teal background for selected */
+  color: white; /* White text for selected */
+}
