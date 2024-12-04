@@ -86,3 +86,9 @@ form img {
 form div p{
   max-width: 100%;
 }
+.form-control:not(:placeholder-shown) + .form-label{
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: all 0.3s ease-in-out;
+}

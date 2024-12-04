@@ -1,6 +1,8 @@
 import { NgIf } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormGroup , FormControl ,ReactiveFormsModule , Validators} from '@angular/forms';
+import { Router} from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -10,19 +12,42 @@ import { FormGroup , FormControl ,ReactiveFormsModule , Validators} from '@angul
   styleUrl: './login.component.css'
 })
 export class LoginComponent {
-  loginForm=new FormGroup({
-    email:new FormControl('',[
-      Validators.required
-    ]),
-    password:new FormControl('',[
-      Validators.required
-    ])
+  loginForm = new FormGroup({
+    email: new FormControl('', [Validators.required]),
+    password: new FormControl('', [Validators.required])
   });
 
-  isloading:boolean=true;
+  isloading = false;
+
+  constructor(private auth: AuthService, private router: Router) {}
+
   ngOnInit(): void {
     setTimeout(() => {
       this.isloading = false;
     }, 3000);
   }
+
+  login(userName:string,password:string) {
+    const credentials = { email: userName, password: password };
+    this.auth.login(credentials).subscribe(
+      (response) => {
+        if (response) {
+          console.log('Login successful:', response);
+          this.router.navigate(['/landing']);
+        } else {
+          console.error('Login failed');
+        }
+      },
+      (error) => {
+        console.error('Login error:', error);
+      }
+    );
+  }
+
+  onSubmit() {
+    if (this.loginForm.valid) {
+      this.login('johndoe@example.com','password123');
+    }
+  }
+  
 }

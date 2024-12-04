@@ -5,7 +5,7 @@
 }
 <section class="vh-100 container-fluid d-flex flex-nowrap">
   <div class="w-auto m-auto align-items-center justify-content-center align-content-center">
-    <form [formGroup]="loginForm" class="py-5 rounded px-3">
+    <form [formGroup]="loginForm" class="py-5 rounded px-3" (ngSubmit)="onSubmit()">
       <!-- Email input -->
       <img src="logo.png" class="d-block m-auto mb-5" alt="logo">
       <div data-mdb-input-init class="form-outline mb-4">

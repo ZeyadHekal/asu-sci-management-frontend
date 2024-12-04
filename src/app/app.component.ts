@@ -1,14 +1,10 @@
 import { Component } from '@angular/core';
-import { LoginComponent } from "./components/login/login.component";
-import { AdduserComponent } from './components/adduser/adduser.component';
-import { LandingComponent } from "./components/landing/landing.component";
-import { ManagementComponent } from './components/management/management.component';
-import { DoctorComponent } from "./components/doctor/doctor.component";
+import {  RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [LoginComponent, AdduserComponent, LandingComponent, ManagementComponent, DoctorComponent],
+  imports: [RouterOutlet],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
