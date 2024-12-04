@@ -9,16 +9,11 @@
       <!-- Email input -->
       <img src="logo.png" class="d-block m-auto mb-5" alt="logo">
       <div data-mdb-input-init class="form-outline mb-4">
-        <input type="email" class="form-control" placeholder="" formControlName="email" />
-        <label for="email" class="form-label ms-3">Email address</label>
-        <p *ngIf="loginForm.controls.email.touched&& loginForm.controls.email.dirty && loginForm.controls.email.errors?.['required']"
+        <input type="username" class="form-control" placeholder="" formControlName="username">
+        <label for="username" class="form-label ms-3">Email address</label>
+        <p *ngIf="loginForm.controls.username.touched&& loginForm.controls.username.dirty && loginForm.controls.username.errors?.['required']"
           class="text-danger">
           * This field is required
-        </p>
-        <p *ngIf="loginForm.controls.email.touched&& loginForm.controls.email.dirty && loginForm.controls.email.errors?.['pattern']"
-          class="text-danger">
-          * Email format followes this roles <br>
-          + your National-Id<br>
         </p>
       </div>
 

@@ -1,11 +1,11 @@
 import { NgFor, NgIf } from '@angular/common';
 import { Component } from '@angular/core';
 import { AuthService } from '../../core/services/auth.service';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-nav',
-  imports: [NgFor],
+  imports: [NgFor,RouterModule],
   templateUrl: './nav.component.html',
   styleUrl: './nav.component.css'
 })
@@ -13,9 +13,9 @@ export class NavComponent {
   constructor(private authService: AuthService, private router: Router) {}
   res = [
     {
-      accounts: true,
-      lab: true,
-      students: true
+      addStudent: true,
+      doctor: true,
+      admin: true
     }
   ];
   toggle=true;
