@@ -1,5 +1,4 @@
 .gitignore
-.openapi-generator-ignore
 README.md
 api.module.ts
 api/api.ts
@@ -11,6 +10,7 @@ configuration.ts
 encoder.ts
 git_push.sh
 index.ts
+model/assignPrivilegeDto.ts
 model/authJwtDto.ts
 model/createUserDto.ts
 model/createUserTypeDto.ts
@@ -18,6 +18,8 @@ model/deleteDto.ts
 model/loginRequestDto.ts
 model/loginSuccessDto.ts
 model/models.ts
+model/privilegRefreshDto.ts
+model/privilegeCode.ts
 model/refreshRequsetDto.ts
 model/updateUserDto.ts
 model/updateUserTypeDto.ts

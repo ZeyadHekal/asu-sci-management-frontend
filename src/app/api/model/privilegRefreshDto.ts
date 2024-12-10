@@ -9,9 +9,7 @@
  */
 
 
-export interface LoginSuccessDto { 
-    refreshToken: string;
-    accessToken: string;
+export interface PrivilegRefreshDto { 
     privileges: Array<string>;
 }
 

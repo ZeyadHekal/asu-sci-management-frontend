@@ -1,50 +1,77 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { AuthService as Auth } from '../../api'
+import { catchError, firstValueFrom, lastValueFrom, Observable, of, tap } from 'rxjs';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
-  private token: string | null = null; 
-  private staticLoginResponse = {
-    accessToken: 'static-access-token-12345',
-    refreshToken: 'static-refresh-token-12345',
-    user: {
-      id: 1,
-      name: 'John Doe',
-      email: 'johndoe@example.com'
+  constructor(private authService: Auth) { }
+  private accessToken: string | null = null;
+  private refreshToken: string | null = null;
+  private privileges: string[] = [];
+
+  private setTokens(access: string, refresh: string): void {
+    this.accessToken = access;
+    this.refreshToken = refresh;
+    localStorage.setItem('accessToken', access);
+    localStorage.setItem('refreshToken', refresh);
+  }
+
+  getAccessToken(): string | null {
+    return this.accessToken || localStorage.getItem('accessToken');
+  }
+
+  getRefreshToken(): string | null {
+    return this.refreshToken || localStorage.getItem('refreshToken');
+  }
+
+  private setPrivileges(privileges: string[]): void {
+    this.privileges = privileges;
+    localStorage.setItem('privileges', JSON.stringify(privileges));
+  }
+
+  getPrivileges(): string[] {
+    return this.privileges.length
+      ? this.privileges
+      : JSON.parse(localStorage.getItem('privileges') || '[]');
+  }
+
+  async login(username: string, password: string): Promise<{ status: boolean, error?: any }> {
+    try {
+      const response = await firstValueFrom(this.authService.authControllerLogin({ username, password }));
+      this.setTokens(response.accessToken, response.refreshToken);
+      this.setPrivileges(response.privileges);
+      return { status: true };
+    } catch (error: any) {
+      return { status: false, error: error.error };
     }
-  };
-
-  constructor() {}
-
-  login(credentials: { email: string; password: string }): Observable<any> {
-    if (credentials.email === 'johndoe@example.com' && credentials.password === 'password123') {
-      return of(this.staticLoginResponse).pipe(
-        tap((response: any) => {
-          this.token = response.accessToken;
-        })
-      );
-    } else {
-      return of(null);
-    }
   }
 
-  
-  isLoggedIn(): boolean {
-    return this.token !== null;
-    // return false
+  async refreshTokens() {
+    const response = await lastValueFrom(this.authService.authControllerRefreshToken({ refreshToken: this.getRefreshToken()! }));
+    this.setTokens(response.accessToken, response.refreshToken);
   }
 
-  getUserRole(): string {
-    return "doctor";
+  refreshPrivileges(): Observable<string[]> {
+    return this.authService.authControllerRefreshPrivilege().pipe(
+      tap((response: any) => {
+        this.setPrivileges(response.privileges); // Update privileges in the service
+      }),
+      catchError((err) => {
+        this.logout();
+        throw new Error();
+      })
+    );
   }
+
 
   logout(): void {
-    this.token = null;
-  }
-  getToken(): string | null {
-    return this.token;
+    this.accessToken = null;
+    this.refreshToken = null;
+    this.privileges = [];
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('privileges');
   }
 }

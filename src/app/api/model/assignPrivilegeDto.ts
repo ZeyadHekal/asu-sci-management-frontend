@@ -7,11 +7,14 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { PrivilegeCode } from './privilegeCode';
 
 
-export interface LoginSuccessDto { 
-    refreshToken: string;
-    accessToken: string;
-    privileges: Array<string>;
+export interface AssignPrivilegeDto { 
+    userId: string;
+    privilegeCode: PrivilegeCode;
+    resourceIds?: Array<string>;
 }
+
+
 
