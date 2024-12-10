@@ -1,28 +1,21 @@
-import { NgClass, NgFor, NgIf } from '@angular/common';
-import { Component, EventEmitter, Output } from '@angular/core';
+import { NgClass, NgFor } from '@angular/common';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
   selector: 'app-sidebar',
-  imports: [NgFor,NgClass],
+  standalone: true,
+  imports: [NgFor, NgClass],
   templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.css'
+  styleUrls: ['./sidebar.component.css']
 })
 export class SidebarComponent {
-  @Output () courseSelected=new EventEmitter<number>();
-  selectedCourseId: number | null = null;
-  courses = [
-    { id: 1, name: 'Comp104' },
-    { id: 2, name: 'Comp102' },
-    { id: 3, name: 'Comp301' },
-    { id: 4, name: 'Comp302' }
-  ];
+  @Output() Selected = new EventEmitter<number>();
+  @Input ({required:true}) data!:any;
+  selectedCourseId: number = 1;
 
-  selectCourse(id:number){
-    
+  selectCourse(id: number): void {
     this.selectedCourseId = id;
     console.log(`Course Selected id= ${id}`);
-    this.courseSelected.emit(id);
+    this.Selected.emit(id);
   }
-  
-
 }

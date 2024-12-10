@@ -1,19 +1,20 @@
-import { Component} from '@angular/core';
+import { Component } from '@angular/core';
 import { NavComponent } from "../nav/nav.component";
+import { SidebarComponent } from "../sidebar/sidebar.component";
 import { TableComponent } from "../table/table.component";
-import { SidebarComponent } from '../sidebar/sidebar.component';
 
 @Component({
-  selector: 'app-doctor',
-  imports: [NavComponent, TableComponent , SidebarComponent],
-  templateUrl: './doctor.component.html',
-  styleUrl: './doctor.component.css'
+  selector: 'app-assistant',
+  imports: [NavComponent, SidebarComponent, TableComponent],
+  templateUrl: './assistant.component.html',
+  styleUrl: './assistant.component.css'
 })
-export class DoctorComponent {  
-  // selectedCourseId!: number;
-  selectedCourseId!: number;
-  data!:any[];
+export class AssistantComponent {
+  
   tableHeader :string[]=['ID', 'Name', 'Level', 'Email',"Device","Active"];
+
+  data!: any[];
+  selectedCourseId!: number;
   sidebarCon = [
     { id: 1, name: 'Comp104' },
     { id: 2, name: 'Comp102' },
@@ -46,5 +47,5 @@ export class DoctorComponent {
     this.data = this.allData.filter(student => student.courseId === courseId);
     console.log(`Filtered Data for Course ${courseId}:`, this.data);
   }
-  
+
 }

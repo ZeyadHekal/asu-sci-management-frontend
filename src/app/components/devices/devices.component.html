@@ -1,0 +1,58 @@
+<app-nav></app-nav>
+<div class="container-fluid d-flex flex-column flex-lg-row">
+    <app-sidebar (Selected)="onSelect($event)" class="col-12 col-lg-3" [data]="sidebarCon"></app-sidebar>
+
+    <!-- Table Content -->
+    <div *ngIf="data.length > 0; else noStudents">
+        <table class="table table-striped mt-5" style="width: 100%; border-collapse: collapse;">
+            <!-- Static Header with Columns -->
+            <thead class="table-dark">
+                <tr>
+                    <th class="text-center align-middle p-3">Device ID</th>
+                    <th class="text-center align-middle p-3">Device Name</th>
+                    <th class="text-center align-middle p-3">Device Specification</th>
+                    <th class="text-center align-middle p-3">Working Status</th>
+                    <th class="text-center align-middle p-3">Lab</th>
+                    <th class="text-center align-middle p-3">Programms</th> <!-- For the SVG -->
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Dynamic Rows -->
+                <tr *ngFor="let row of data">
+                    <!-- Device ID Column -->
+                    <td class="text-center align-middle">
+                      <svg [ngClass]="{
+                        'active-icon': row.working,
+                        'inactive-icon': !row.working
+                    }" stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16" height="3em" width="3em" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M8 9.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" clip-rule="evenodd"></path>
+                    </svg>
+                      {{ row.deviceId }}
+                    </td>
+
+                    <!-- Device Name Column -->
+                    <td class="text-center align-middle">{{ row.name }}</td>
+
+                    <!-- Device Specification Column -->
+                    <td class="text-center align-middle">{{ row.spe }}</td>
+
+                    <!-- Working Status Column -->
+                    <td class="text-center align-middle">{{ row.working ? 'Working' : 'Not Working' }}</td>
+
+                    <!-- Lab Column -->
+                    <td class="text-center align-middle">{{ row.lab }}</td>
+
+                    <!-- Actions Column (for SVG icon) -->
+                    <td class="text-center align-middle">
+                        {{row.prog}}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- No Data Message -->
+    <ng-template #noStudents>
+        <p class="text-center text-muted mt-5">Please select the lab</p>
+    </ng-template>
+</div>

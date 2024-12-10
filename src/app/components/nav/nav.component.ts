@@ -16,7 +16,10 @@ export class NavComponent {
       addStudent: true,
       doctor: true,
       admin: true,
-      addUser: true
+      assistant:true,
+      labs:true,
+      student:true,
+
     }
   ];
   toggle=true;
