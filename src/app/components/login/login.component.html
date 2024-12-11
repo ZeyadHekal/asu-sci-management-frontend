@@ -10,7 +10,7 @@
       <img src="logo.png" class="d-block m-auto mb-5" alt="logo">
       <div data-mdb-input-init class="form-outline mb-4">
         <input type="username" class="form-control" placeholder="" formControlName="username">
-        <label for="username" class="form-label ms-3">Email address</label>
+        <label for="username" class="form-label ms-3">Username</label>
         <p *ngIf="loginForm.controls.username.touched&& loginForm.controls.username.dirty && loginForm.controls.username.errors?.['required']"
           class="text-danger">
           * This field is required

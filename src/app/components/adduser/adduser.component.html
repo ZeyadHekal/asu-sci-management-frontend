@@ -35,10 +35,10 @@
                 placeholder="Enter email"
               />
               <p *ngIf="addUserForm.get('email')?.touched && addUserForm.get('email')?.hasError('required')" class="text-danger">
-                * Email is required
+                * username is required
               </p>
               <p *ngIf="addUserForm.get('email')?.touched && addUserForm.get('email')?.hasError('email')" class="text-danger">
-                * Invalid email address
+                * Invalid username
               </p>
             </div>
             <div class="form-group">

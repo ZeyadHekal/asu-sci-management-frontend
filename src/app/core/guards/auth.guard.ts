@@ -16,7 +16,7 @@ export class PrivilegeGuard implements CanActivate {
       return true;
     }
 
-    // this.router.navigate(['/landing']);
-    return true;
+    this.router.navigate(['/landing']);
+    return false;
   }
 }
