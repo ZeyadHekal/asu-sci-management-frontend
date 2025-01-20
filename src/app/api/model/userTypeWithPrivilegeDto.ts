@@ -7,11 +7,12 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { GenericAssignPrivilegeDto } from './genericAssignPrivilegeDto';
+import { PrivilegeAssignmentDto } from './privilegeAssignmentDto';
 
 
-export interface CreateUserTypeDto { 
+export interface UserTypeWithPrivilegeDto { 
     name: string;
-    privilege_assignments: Array<GenericAssignPrivilegeDto>;
+    id: string;
+    privileges: Array<PrivilegeAssignmentDto>;
 }
 

@@ -11,6 +11,7 @@ import { ManagementComponent } from './components/management/management.componen
 import { StudentComponent } from './components/student/student.component';
 import { NAV_ITEMS, NavItem } from './components/nav/nav.config';
 import { PrivilegeGuard } from './core/guards/auth.guard';
+import { UserTypeManagementComponent } from './components/user-type-management/user-type-management.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -31,7 +32,7 @@ function resolveComponent(path: string) {
     case 'addStudent': return AddStudentComponent;
     case 'landing': return LandingComponent;
     case 'doctor': return DoctorComponent;
-    case 'admin': return ManagementComponent;
+    case 'admin': return UserTypeManagementComponent;
     case 'addUser': return AdduserComponent;
     case 'student': return StudentComponent;
     case 'assistant': return AssistantComponent;

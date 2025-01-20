@@ -8,6 +8,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { NgFor, NgIf } from '@angular/common';
+import { UserService } from '../../api';
 
 @Component({
   selector: 'app-add-student',
@@ -20,7 +21,7 @@ export class AddStudentComponent {
   courses: string[] = ['Comp104', 'Comp103', 'Comp101', 'Comp133', 'Comp312'];
   selectedCourses: string[] = [];
 
-  constructor() {
+  constructor(private userService: UserService) {
     this.addStudentForm = new FormGroup(
       {
         username: new FormControl('', [Validators.required]),
@@ -46,6 +47,11 @@ export class AddStudentComponent {
         password: this.addStudentForm.value.password,
         courses: this.selectedCourses,
       };
+      this.userService.userControllerCreateStudent({
+        name: this.addStudentForm.get('username')!.value,
+        username: this.addStudentForm.get('username')!.value,
+        password: this.addStudentForm.get('password')!.value
+      }).subscribe()
       console.log('New Student:', formData);
     }
   }

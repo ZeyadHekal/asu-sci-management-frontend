@@ -1,0 +1,13 @@
+<div class="popup-container">
+    <h3>Select Privileges</h3>
+    <ul>
+        <li *ngFor="let privilege of extendedPrivileges">
+            <input type="checkbox" [(ngModel)]="privilege.selected" />
+            {{ privilege.friendlyName }}
+        </li>
+    </ul>
+    <div class="popup-actions">
+        <button (click)="closePopup()">Cancel</button>
+        <button (click)="saveSelection()">Save</button>
+    </div>
+</div>

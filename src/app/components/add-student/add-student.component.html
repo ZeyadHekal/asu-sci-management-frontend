@@ -88,14 +88,10 @@
           <label [for]="course">{{ course }}</label>
         </div>
       </div>
+      <button type="submit" style="width: 10rem;margin-left: 0 !important" class="btn btn-primary m-auto mt-3"
+        [disabled]="addStudentForm.invalid">
+        Create Student
+      </button>
     </div>
-
-    <button
-      type="submit"
-      class="btn btn-primary m-auto mt-3"
-      [disabled]="addStudentForm.invalid"
-    >
-      Create Student
-    </button>
   </form>
 </div>

@@ -1,7 +1,8 @@
-import { NgClass, NgFor, NgIf, NgStyle } from '@angular/common';
-import { Component, HostListener } from '@angular/core';
+import { NgClass, NgFor, NgIf } from '@angular/common';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NavComponent } from '../nav/nav.component';
+import { PrivilegeDto, UserService, UserTypeDto, UserTypeService } from '../../api';
 
 @Component({
   selector: 'app-adduser',
@@ -9,13 +10,8 @@ import { NavComponent } from '../nav/nav.component';
   templateUrl: './adduser.component.html',
   styleUrls: ['./adduser.component.css'],
 })
-export class AdduserComponent {
-  roles = [
-    { id: '1', name: 'Admin' },
-    { id: '2', name: 'Doctor' },
-    { id: '3', name: 'Assistant' },
-    { id: '4', name: 'Student' },
-  ];
+export class AdduserComponent implements OnInit {
+  roles: UserTypeDto[] = [];
   levels = [
     {
       level: 1,
@@ -35,20 +31,33 @@ export class AdduserComponent {
   selectedRole!: string;
   selectedCourses: string[] = [];
   addUserForm: FormGroup;
+  allPrivileges = [] as PrivilegeDto[];
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private userTypeService: UserTypeService, private userService: UserService) {
     this.addUserForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
+      username: ['', [Validators.required]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', Validators.required],
       role: ['', Validators.required], 
     });
   }
 
+  ngOnInit() {
+    this.fetchUserTypes();
+  }
+
+  fetchUserTypes() {
+    this.userTypeService.userTypeControllerFindAll().subscribe((data) => {
+      console.log(data);
+      this.roles = data;
+    });
+  }
+  @ViewChild('roleSelect') roleSelect!: ElementRef<HTMLSelectElement>;
   onRoleChange() {
-    this.selectedRole = this.addUserForm.get('role')!.value; 
+    // this.selectedRole = this.addUserForm.get('role')!.value; 
+    this.selectedRole = this.roleSelect.nativeElement.options[this.roleSelect.nativeElement.selectedIndex].text;; 
     console.log(this.selectedRole);
-    if (this.selectedRole === '4') {
+    if (this.selectedRole == 'Student') {
       console.log('Student role selected, show courses');
     }
   }
@@ -58,6 +67,12 @@ export class AdduserComponent {
       alert('Please fill out the form correctly');
       return;
     }
+    this.userService.userControllerCreate({
+      name: this.addUserForm.get('username')!.value,
+      username: this.addUserForm.get('username')!.value,
+      password: this.addUserForm.get('password')!.value,
+      userTypeId: this.addUserForm.get('role')!.value
+    }).subscribe()
     alert('User created successfully');
   }
 
