@@ -8,11 +8,11 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-    { label: 'Add Student', path: 'addStudent', privilege: PrivilegeCode.SecretaryPrivilege, isEnabled: true },
-    { label: 'Doctor', path: 'doctor', privilege: PrivilegeCode.DoctorPrivilege, isEnabled: true },
-    { label: 'Admin', path: 'admin', privilege: PrivilegeCode.AdminPrivilege, isEnabled: true },
-    { label: 'Add User', path: 'addUser', privilege: PrivilegeCode.AdminPrivilege, isEnabled: true },
-    { label: 'Student', path: 'student', privilege: PrivilegeCode.StudentPrivilege, isEnabled: true },
-    { label: 'Assistant', path: 'assistant', privilege: PrivilegeCode.AssistantPrivilege, isEnabled: true },
-    { label: 'Labs', path: 'labs', privilege: PrivilegeCode.LabMaintenancePrivilege, isEnabled: true },
+    { label: 'Add Student', path: 'addStudent', privilege: PrivilegeCode.CreateStudent, isEnabled: true },
+    { label: 'Doctor', path: 'doctor', privilege: PrivilegeCode.TeachCourse, isEnabled: true },
+    { label: 'User Types', path: 'admin', privilege: PrivilegeCode.ManageUserTypes, isEnabled: true },
+    { label: 'Add User', path: 'addUser', privilege: PrivilegeCode.ManageUsers, isEnabled: true },
+    { label: 'Student', path: 'student', privilege: PrivilegeCode.StudyCourse, isEnabled: true },
+    { label: 'Assistant', path: 'assistant', privilege: PrivilegeCode.AssistInCourse, isEnabled: true },
+    { label: 'Labs', path: 'labs', privilege: PrivilegeCode.LabMaintenance, isEnabled: true },
 ];

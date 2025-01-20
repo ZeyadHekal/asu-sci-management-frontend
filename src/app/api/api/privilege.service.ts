@@ -17,7 +17,13 @@ import { CustomHttpParameterCodec }                          from '../encoder';
 import { Observable }                                        from 'rxjs';
 
 // @ts-ignore
-import { AssignPrivilegeDto } from '../model/assignPrivilegeDto';
+import { DeleteDto } from '../model/deleteDto';
+// @ts-ignore
+import { PrivilegeDto } from '../model/privilegeDto';
+// @ts-ignore
+import { UserAssignPrivilegeDto } from '../model/userAssignPrivilegeDto';
+// @ts-ignore
+import { UserTypeAssignPrivilegeDto } from '../model/userTypeAssignPrivilegeDto';
 
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
@@ -91,16 +97,16 @@ export class PrivilegeService {
     }
 
     /**
-     * @param assignPrivilegeDto 
+     * @param userAssignPrivilegeDto 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public privilegeControllerAssignPrivilegeToUser(assignPrivilegeDto: AssignPrivilegeDto, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<any>;
-    public privilegeControllerAssignPrivilegeToUser(assignPrivilegeDto: AssignPrivilegeDto, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<HttpResponse<any>>;
-    public privilegeControllerAssignPrivilegeToUser(assignPrivilegeDto: AssignPrivilegeDto, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<HttpEvent<any>>;
-    public privilegeControllerAssignPrivilegeToUser(assignPrivilegeDto: AssignPrivilegeDto, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<any> {
-        if (assignPrivilegeDto === null || assignPrivilegeDto === undefined) {
-            throw new Error('Required parameter assignPrivilegeDto was null or undefined when calling privilegeControllerAssignPrivilegeToUser.');
+    public privilegeControllerAssignPrivilegeToUser(userAssignPrivilegeDto: UserAssignPrivilegeDto, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<any>;
+    public privilegeControllerAssignPrivilegeToUser(userAssignPrivilegeDto: UserAssignPrivilegeDto, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<HttpResponse<any>>;
+    public privilegeControllerAssignPrivilegeToUser(userAssignPrivilegeDto: UserAssignPrivilegeDto, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<HttpEvent<any>>;
+    public privilegeControllerAssignPrivilegeToUser(userAssignPrivilegeDto: UserAssignPrivilegeDto, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<any> {
+        if (userAssignPrivilegeDto === null || userAssignPrivilegeDto === undefined) {
+            throw new Error('Required parameter userAssignPrivilegeDto was null or undefined when calling privilegeControllerAssignPrivilegeToUser.');
         }
 
         let localVarHeaders = this.defaultHeaders;
@@ -149,11 +155,11 @@ export class PrivilegeService {
             }
         }
 
-        let localVarPath = `/privileges/admin/assign/user`;
+        let localVarPath = `/privileges/assign/user`;
         return this.httpClient.request<any>('post', `${this.configuration.basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
-                body: assignPrivilegeDto,
+                body: userAssignPrivilegeDto,
                 responseType: <any>responseType_,
                 withCredentials: this.configuration.withCredentials,
                 headers: localVarHeaders,
@@ -164,13 +170,17 @@ export class PrivilegeService {
     }
 
     /**
+     * @param userTypeAssignPrivilegeDto 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public privilegeControllerAssignPrivilegeToUserType(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<any>;
-    public privilegeControllerAssignPrivilegeToUserType(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<HttpResponse<any>>;
-    public privilegeControllerAssignPrivilegeToUserType(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<HttpEvent<any>>;
-    public privilegeControllerAssignPrivilegeToUserType(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<any> {
+    public privilegeControllerAssignPrivilegeToUserType(userTypeAssignPrivilegeDto: UserTypeAssignPrivilegeDto, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<any>;
+    public privilegeControllerAssignPrivilegeToUserType(userTypeAssignPrivilegeDto: UserTypeAssignPrivilegeDto, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<HttpResponse<any>>;
+    public privilegeControllerAssignPrivilegeToUserType(userTypeAssignPrivilegeDto: UserTypeAssignPrivilegeDto, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<HttpEvent<any>>;
+    public privilegeControllerAssignPrivilegeToUserType(userTypeAssignPrivilegeDto: UserTypeAssignPrivilegeDto, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: undefined, context?: HttpContext}): Observable<any> {
+        if (userTypeAssignPrivilegeDto === null || userTypeAssignPrivilegeDto === undefined) {
+            throw new Error('Required parameter userTypeAssignPrivilegeDto was null or undefined when calling privilegeControllerAssignPrivilegeToUserType.');
+        }
 
         let localVarHeaders = this.defaultHeaders;
 
@@ -198,6 +208,15 @@ export class PrivilegeService {
         }
 
 
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
         let responseType_: 'text' | 'json' | 'blob' = 'json';
         if (localVarHttpHeaderAcceptSelected) {
             if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
@@ -209,10 +228,145 @@ export class PrivilegeService {
             }
         }
 
-        let localVarPath = `/privileges/admin/assign/usertype`;
+        let localVarPath = `/privileges/assign/usertype`;
         return this.httpClient.request<any>('post', `${this.configuration.basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
+                body: userTypeAssignPrivilegeDto,
+                responseType: <any>responseType_,
+                withCredentials: this.configuration.withCredentials,
+                headers: localVarHeaders,
+                observe: observe,
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     */
+    public privilegeControllerGetAllPrivileges(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<Array<PrivilegeDto>>;
+    public privilegeControllerGetAllPrivileges(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<Array<PrivilegeDto>>>;
+    public privilegeControllerGetAllPrivileges(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<Array<PrivilegeDto>>>;
+    public privilegeControllerGetAllPrivileges(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+
+        let localVarHeaders = this.defaultHeaders;
+
+        let localVarCredential: string | undefined;
+        // authentication (bearer) required
+        localVarCredential = this.configuration.lookupCredential('bearer');
+        if (localVarCredential) {
+            localVarHeaders = localVarHeaders.set('Authorization', 'Bearer ' + localVarCredential);
+        }
+
+        let localVarHttpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (localVarHttpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            localVarHttpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        let localVarHttpContext: HttpContext | undefined = options && options.context;
+        if (localVarHttpContext === undefined) {
+            localVarHttpContext = new HttpContext();
+        }
+
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/privileges`;
+        return this.httpClient.request<Array<PrivilegeDto>>('get', `${this.configuration.basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                responseType: <any>responseType_,
+                withCredentials: this.configuration.withCredentials,
+                headers: localVarHeaders,
+                observe: observe,
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
+     * @param userTypeAssignPrivilegeDto 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     */
+    public privilegeControllerUnassignPrivilegeToUserType(userTypeAssignPrivilegeDto: UserTypeAssignPrivilegeDto, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<DeleteDto>;
+    public privilegeControllerUnassignPrivilegeToUserType(userTypeAssignPrivilegeDto: UserTypeAssignPrivilegeDto, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpResponse<DeleteDto>>;
+    public privilegeControllerUnassignPrivilegeToUserType(userTypeAssignPrivilegeDto: UserTypeAssignPrivilegeDto, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<HttpEvent<DeleteDto>>;
+    public privilegeControllerUnassignPrivilegeToUserType(userTypeAssignPrivilegeDto: UserTypeAssignPrivilegeDto, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/json', context?: HttpContext}): Observable<any> {
+        if (userTypeAssignPrivilegeDto === null || userTypeAssignPrivilegeDto === undefined) {
+            throw new Error('Required parameter userTypeAssignPrivilegeDto was null or undefined when calling privilegeControllerUnassignPrivilegeToUserType.');
+        }
+
+        let localVarHeaders = this.defaultHeaders;
+
+        let localVarCredential: string | undefined;
+        // authentication (bearer) required
+        localVarCredential = this.configuration.lookupCredential('bearer');
+        if (localVarCredential) {
+            localVarHeaders = localVarHeaders.set('Authorization', 'Bearer ' + localVarCredential);
+        }
+
+        let localVarHttpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (localVarHttpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'application/json'
+            ];
+            localVarHttpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        let localVarHttpContext: HttpContext | undefined = options && options.context;
+        if (localVarHttpContext === undefined) {
+            localVarHttpContext = new HttpContext();
+        }
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/privileges/unassign/usertype`;
+        return this.httpClient.request<DeleteDto>('post', `${this.configuration.basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: userTypeAssignPrivilegeDto,
                 responseType: <any>responseType_,
                 withCredentials: this.configuration.withCredentials,
                 headers: localVarHeaders,

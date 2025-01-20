@@ -1,0 +1,34 @@
+<app-nav></app-nav>
+<div class="user-type-management">
+    <div class="header">
+        <input type="text" placeholder="Search..." [(ngModel)]="searchTerm" (input)="filterUserTypes()" />
+        <button (click)="openAddUserTypePopup()">+ Add User Type</button>
+    </div>
+
+    <div *ngFor="let userType of filteredUserTypes" class="user-type-card">
+        <div class="user-type-header">
+            <div *ngIf="!isEditing(userType.id); else editTemplate">
+                {{ userType.name }}
+                <button (click)="startEditing(userType.id, userType.name)">✏️</button>
+            </div>
+            <ng-template #editTemplate>
+                <input [(ngModel)]="editingStates[userType.id].editName" />
+                <button (click)="saveUserType(userType.id)">💾 Save</button>
+                <button (click)="cancelEditing(userType.id)">❌ Cancel</button>
+            </ng-template>
+        </div>
+
+        <div class="privileges">
+            <span *ngFor="let privilege of userType.privileges" class="privilege-item">
+                <a (click)="managePrivilegeResources(privilege)" class="privilege-body">
+                    {{ privilege.friendlyName }}
+                </a>
+                <button (click)="unassignPrivilege(userType.id, privilege.code)">X</button>
+            </span>
+            <button (click)="addPrivilegeToUserType(userType)" class="add-privilege">+</button>
+        </div>
+
+    </div>
+    <app-privilege-selector-popup *ngIf="showPopup" [availablePrivileges]="filteredPrivileges" (close)="closePopup()"
+        (privilegesSelected)="assignPrivileges($event, selectedUserType)"></app-privilege-selector-popup>
+</div>

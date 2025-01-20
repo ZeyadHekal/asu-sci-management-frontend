@@ -7,11 +7,14 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { GenericAssignPrivilegeDto } from './genericAssignPrivilegeDto';
 
 
-export interface CreateUserTypeDto { 
+export interface CreateStudentDto { 
     name: string;
-    privilege_assignments: Array<GenericAssignPrivilegeDto>;
+    /**
+     * Username has to be 4 letters or more
+     */
+    username: string;
+    password: string;
 }
 

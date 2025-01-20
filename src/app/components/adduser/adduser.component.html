@@ -9,7 +9,7 @@
           <label for="roleSelect">Select User Role:</label>
           <select
             class="form-select"
-            id="roleSelect"
+            #roleSelect
             formControlName="role"
             (change)="onRoleChange()"
           >
@@ -23,22 +23,24 @@
           <div *ngIf="selectedRole" class="agent-1">
             <h2 class="mt-4">User Details</h2>
             <div class="form-group">
-              <label for="email" class="mt-3">
+              <label for="username" class="mt-3">
                 <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M928 160H96c-17.7 0-32 14.3-32 32v640c0 17.7 14.3 32 32 32h832c17.7 0 32-14.3 32-32V192c0-17.7-14.3-32-32-32zm-40 110.8V792H136V270.8l-27.6-21.5 39.3-50.5 42.8 33.3h643.1l42.8-33.3 39.3 50.5-27.7 21.5zM833.6 232L512 482 190.4 232l-42.8-33.3-39.3 50.5 27.6 21.5 341.6 265.6a55.99 55.99 0 0 0 68.7 0L888 270.8l27.6-21.5-39.3-50.5-42.7 33.2z"></path></svg>
-                <h5 class="d-inline ms-2">Email</h5>
+                <h5 class="d-inline ms-2">Username</h5>
               </label>
               <input
-                id="email"
-                type="email"
+                id="username"
+                type="username"
                 class="form-control"
-                formControlName="email"
-                placeholder="Enter email"
+                formControlName="username"
+                placeholder="Enter username"
               />
-              <p *ngIf="addUserForm.get('email')?.touched && addUserForm.get('email')?.hasError('required')" class="text-danger">
-                * Email is required
+              <p *ngIf="addUserForm.get('username')?.touched && addUserForm.get('username')?.hasError('required')"
+                class="text-danger">
+                * Username is required
               </p>
-              <p *ngIf="addUserForm.get('email')?.touched && addUserForm.get('email')?.hasError('email')" class="text-danger">
-                * Invalid email address
+              <p *ngIf="addUserForm.get('username')?.touched && addUserForm.get('username')?.hasError('username')"
+                class="text-danger">
+                * Invalid username address
               </p>
             </div>
             <div class="form-group">
@@ -86,9 +88,9 @@
       <!-- Student Courses Selection -->
       <div
         class="col-lg-6 col-md-12 col-sm-12"
-        *ngIf="selectedRole === '4'"
+        *ngIf="selectedRole === 'Student'"
       >
-        <div class="container agent-1" [ngClass]="{ 'agent-4': selectedRole !== '4' }">
+        <div class="container agent-1" [ngClass]="{ 'agent-4': selectedRole !== 'Student' }">
           <label for="exampleSelect">Select student courses:</label>
           <div *ngFor="let level of levels">
             <h5>Level {{ level.level }}</h5>
@@ -111,6 +113,7 @@
     <button
       type="submit"
       class="btn btn-primary mt-3 d-block m-auto"
+      style="background-color: #434553;"
       [disabled]="addUserForm.invalid"
     >
       Create User

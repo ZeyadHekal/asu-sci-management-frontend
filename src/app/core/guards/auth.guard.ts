@@ -11,12 +11,11 @@ export class PrivilegeGuard implements CanActivate {
   canActivate(route: ActivatedRouteSnapshot): boolean {
     const requiredPrivileges = route.data['privileges'] as string[];
     const userPrivileges = this.authService.getPrivileges();
-
     if (requiredPrivileges.every((priv) => userPrivileges.includes(priv))) {
       return true;
     }
 
-    // this.router.navigate(['/landing']);
-    return true;
+    this.router.navigate(['/landing']);
+    return false;
   }
 }

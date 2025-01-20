@@ -8,8 +8,18 @@
  * Do not edit the class manually.
  */
 
+import { PrivilegeCode } from "./privilegeCode";
 
-export enum PrivilegeCode {
+
+export interface PrivilegeDto {
+    code: PrivilegeCode;
+    friendlyName: string;
+    group: string;
+    requiresResource: boolean;
+    paramKey: string;
+    entityName: string;
+}
+export enum PrivilegeDtoCodeEnum {
     ManageUserTypes = 'MANAGE_USER_TYPES',
     ManageUsers = 'MANAGE_USERS',
     CreateStudent = 'CREATE_STUDENT',
@@ -17,5 +27,7 @@ export enum PrivilegeCode {
     TeachCourse = 'TEACH_COURSE',
     AssistInCourse = 'ASSIST_IN_COURSE',
     LabMaintenance = 'LAB_MAINTENANCE'
-}
+};
+
+
 
