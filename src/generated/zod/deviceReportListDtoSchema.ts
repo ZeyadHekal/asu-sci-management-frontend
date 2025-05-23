@@ -13,7 +13,7 @@ export const deviceReportListDtoSchema = z.object({
   appId: z.string().describe('Software/App ID').optional(),
   reporterId: z.string().describe('Reporter ID').optional(),
   id: z.string().describe('Report ID'),
-  status: z.enum(['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED']).default('PENDING_REVIEW').describe('Report status'),
+  status: z.enum(['PENDING_REVIEW', 'IN_PROGRESS', 'RESOLVED', 'REJECTED']).default('PENDING_REVIEW').describe('Report status'),
   created_at: z.string().datetime({ offset: true }).describe('Created at'),
   updated_at: z.string().datetime({ offset: true }).describe('Updated at'),
   deviceName: z.string().describe('Device name').optional(),

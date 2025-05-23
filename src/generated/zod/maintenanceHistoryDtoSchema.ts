@@ -15,7 +15,7 @@ export const maintenanceHistoryDtoSchema = z.object({
   description: z.string().describe('Maintenance description'),
   resolutionNotes: z.string().describe('Resolution notes').optional(),
   completedAt: z.string().datetime({ offset: true }).describe('Completion date').optional(),
-  involvedPersonnel: z.array(z.string()).describe('Involved personnel names').optional(),
+  involvedPersonnel: z.string().describe('Involved personnel names').optional(),
   softwareId: z.string().describe('Software ID for software-related maintenance').optional(),
   softwareHasIssue: z.boolean().describe('Software status after maintenance (true = has issue, false = no issue)').optional(),
   deviceHasIssue: z.boolean().describe('Device status after maintenance (true = has issue, false = no issue)').optional(),

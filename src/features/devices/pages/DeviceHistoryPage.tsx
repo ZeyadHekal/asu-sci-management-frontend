@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, Link, useNavigate, useSearchParams } from "react-router";
 import { DataTable } from "mantine-datatable";
-import { LuArrowLeft, LuSearch, LuDownload } from "react-icons/lu";
+import { LuArrowLeft, LuSearch, LuDownload, LuCode } from "react-icons/lu";
 import { FaRegEdit, FaTools } from "react-icons/fa";
 import { RiDeleteBinLine } from "react-icons/ri";
 import { FiAlertTriangle } from "react-icons/fi";
 import { IoMdTime } from "react-icons/io";
 import { MdBlock } from "react-icons/md";
-import { UpdateModal, RejectReportModal, UpdateHistoryModal } from "../components";
+import { UpdateModal, RejectReportModal, UpdateHistoryModal, DeviceSoftwareModal } from "../components";
 import DeleteConfirmationModal from "../../../ui/modal/DeleteConfirmationModal";
 import { toast } from "react-hot-toast";
 import { useDeviceControllerGetById } from "../../../generated/hooks/devicesHooks/useDeviceControllerGetById";
@@ -36,7 +36,7 @@ const DeviceHistoryPage = () => {
         status: string;
         addedSince: string;
         specs: string[];
-        software: string[];
+        software: Array<{id: string; name: string; hasIssue: boolean}>;
         IPAddress?: string;
     } | null>(null);
 
@@ -72,6 +72,9 @@ const DeviceHistoryPage = () => {
     // State for update history modal
     const [isUpdateHistoryModalOpen, setIsUpdateHistoryModalOpen] = useState(false);
     const [selectedReportForHistory, setSelectedReportForHistory] = useState<DeviceReportDto | null>(null);
+    
+    // State for software modal
+    const [isSoftwareModalOpen, setIsSoftwareModalOpen] = useState(false);
 
     // Fetch device reports
     const { data: reportsData, isLoading: reportsLoading, refetch: refetchReports } = useDeviceControllerGetDeviceReports(deviceId || "");
@@ -134,8 +137,8 @@ const DeviceHistoryPage = () => {
                     ? deviceDetails.specifications.map((spec: any) => `${spec.category}: ${spec.value}`)
                     : deviceBasic?.specDetails?.map((spec: any) => `${spec.category}: ${spec.value}`) || ["No specifications available"],
                 software: deviceDetails?.installedSoftware?.length 
-                    ? deviceDetails.installedSoftware.map((sw: any) => sw.name)
-                    : ["No software installed"],
+                    ? deviceDetails.installedSoftware
+                    : [],
                 IPAddress: deviceDetails?.IPAddress || (deviceBasic as any)?.IPAddress
             });
         }
@@ -159,7 +162,7 @@ const DeviceHistoryPage = () => {
             record.status.toLowerCase().includes(maintenanceSearch.toLowerCase()) ||
             record.description?.toLowerCase().includes(maintenanceSearch.toLowerCase()) ||
             record.resolutionNotes?.toLowerCase().includes(maintenanceSearch.toLowerCase()) ||
-            record.involvedPersonnel?.some(person => person.toLowerCase().includes(maintenanceSearch.toLowerCase()))
+            record.involvedPersonnel?.toLowerCase().includes(maintenanceSearch.toLowerCase())
         );
     }, [maintenanceSearch, maintenanceRecords]);
 
@@ -409,8 +412,8 @@ const DeviceHistoryPage = () => {
             sortable: true,
             render: (row: MaintenanceHistoryDto) => (
                 <div className="max-w-xs">
-                    <p className="truncate" title={row.involvedPersonnel?.join(", ") || "No personnel listed"}>
-                        {row.involvedPersonnel?.join(", ") || "No personnel listed"}
+                    <p className="truncate" title={row.involvedPersonnel || "No personnel listed"}>
+                        {row.involvedPersonnel || "No personnel listed"}
                     </p>
                 </div>
             )
@@ -721,15 +724,37 @@ const DeviceHistoryPage = () => {
                         </ul>
                     </div>
                     <div>
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4">Installed Software</h2>
-                        <ul className="space-y-2">
-                            {device?.software.map((sw, index) => (
-                                <li key={index} className="flex items-center gap-2">
-                                    <span className="w-2 h-2 bg-secondary rounded-full"></span>
-                                    <span className="text-gray-700 text-sm">{sw}</span>
-                                </li>
-                            ))}
-                        </ul>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-semibold text-gray-800">Installed Software</h2>
+                            <button
+                                onClick={() => setIsSoftwareModalOpen(true)}
+                                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-secondary hover:bg-secondary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
+                            >
+                                <LuCode className="mr-1 h-3 w-3" />
+                                Manage Software
+                            </button>
+                        </div>
+                        {device?.software.length === 0 ? (
+                            <p className="text-gray-500 text-sm">No software installed</p>
+                        ) : (
+                            <ul className="space-y-2">
+                                {device?.software.map((sw) => (
+                                    <li key={sw.id} className="flex items-center justify-between gap-2 p-2 bg-gray-50 rounded-md">
+                                        <div className="flex items-center gap-2">
+                                            <span className={`w-2 h-2 rounded-full ${sw.hasIssue ? 'bg-red-500' : 'bg-green-500'}`}></span>
+                                            <span className="text-gray-700 text-sm">{sw.name}</span>
+                                        </div>
+                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                            sw.hasIssue 
+                                                ? 'bg-red-100 text-red-800' 
+                                                : 'bg-green-100 text-green-800'
+                                        }`}>
+                                            {sw.hasIssue ? 'Has Issues' : 'Working'}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
                 </div>
 
@@ -919,7 +944,8 @@ const DeviceHistoryPage = () => {
                     description: selectedReport.description,
                     status: selectedReport.status,
                     urgency: "Medium",
-                    reportedBy: selectedReport.reporterName || "Unknown"
+                    reportedBy: selectedReport.reporterName || "Unknown",
+                    softwareName: selectedReport.softwareName
                 } : null}
                 reportRecords={reportRecords.filter((report: DeviceReportDto) => isReportUnresolved(report.status)).map((report: DeviceReportDto) => ({
                     id: report.id,
@@ -928,7 +954,8 @@ const DeviceHistoryPage = () => {
                     description: report.description,
                     status: report.status,
                     urgency: "Medium",
-                    reportedBy: report.reporterName || "Unknown"
+                    reportedBy: report.reporterName || "Unknown",
+                    softwareName: report.softwareName
                 }))}
             />
 
@@ -956,10 +983,21 @@ const DeviceHistoryPage = () => {
                     type: update.maintenanceType.replace('_', ' '),
                     issue: update.description,
                     resolution: update.resolutionNotes || undefined,
-                    involvedPersonnel: update.involvedPersonnel || []
+                    involvedPersonnel: update.involvedPersonnel ? [update.involvedPersonnel] : []
                 })) || []}
                 reportDescription={selectedReportForHistory?.description || ""}
                 reportDate={selectedReportForHistory?.created_at ? new Date(selectedReportForHistory.created_at.toString()).toLocaleDateString() : ""}
+            />
+
+            <DeviceSoftwareModal
+                isOpen={isSoftwareModalOpen}
+                onClose={() => setIsSoftwareModalOpen(false)}
+                deviceId={deviceId}
+                deviceName={device?.deviceName}
+                onDeviceUpdated={() => {
+                    // Refresh device details when software is updated
+                    window.location.reload();
+                }}
             />
         </div>
     );

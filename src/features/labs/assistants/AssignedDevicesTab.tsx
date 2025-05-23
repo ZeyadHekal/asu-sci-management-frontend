@@ -1,10 +1,15 @@
 import { useState, useEffect } from "react";
 import { DataTable } from "mantine-datatable";
-import { LuSearch, LuHistory, LuInfo } from "react-icons/lu";
+import { LuSearch, LuHistory, LuInfo, LuCode } from "react-icons/lu";
+import { FaRegEdit } from "react-icons/fa";
 import { useNavigate } from "react-router";
 import Select from "react-select";
 import Modal from "../../../ui/modal/Modal";
+import DeviceDetailsModal from "../../devices/components/DeviceDetailsModal";
+import DeviceSoftwareModal from "../../devices/components/DeviceSoftwareModal";
 import { useDeviceControllerGetMyAssignedDevices } from "../../../generated/hooks/devicesHooks/useDeviceControllerGetMyAssignedDevices";
+import { deviceControllerGetMyAssignedDevicesQueryKey } from "../../../generated/hooks/devicesHooks/useDeviceControllerGetMyAssignedDevices";
+import { useQueryClient } from "@tanstack/react-query";
 import type { DeviceListDto } from "../../../generated/types/DeviceListDto";
 
 // Status filter options
@@ -16,6 +21,7 @@ const statusOptions = [
 
 const AssignedDevicesTab = () => {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(0); // API uses 0-based pagination
     const PAGE_SIZES = [5, 10, 20, 30];
@@ -24,6 +30,15 @@ const AssignedDevicesTab = () => {
     const [selectedDeviceSpecs, setSelectedDeviceSpecs] = useState<string>("");
     const [isSpecsModalOpen, setIsSpecsModalOpen] = useState(false);
     const [selectedDeviceName, setSelectedDeviceName] = useState<string>("");
+    
+    // New state for device edit and software modals
+    const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
+    const [isSoftwareModalOpen, setIsSoftwareModalOpen] = useState(false);
+    const [editDeviceId, setEditDeviceId] = useState<string | null>(null);
+    const [selectedDevice, setSelectedDevice] = useState<{
+        id: string;
+        name: string;
+    } | null>(null);
 
     // Fetch assigned devices
     const { data: devicesData, isLoading: isLoadingDevices } = useDeviceControllerGetMyAssignedDevices({
@@ -61,6 +76,25 @@ const AssignedDevicesTab = () => {
         setSelectedDeviceName(deviceName);
         setSelectedDeviceSpecs(specs);
         setIsSpecsModalOpen(true);
+    };
+
+    const handleEditDevice = (id: string) => {
+        setEditDeviceId(id);
+        setIsDeviceModalOpen(true);
+    };
+
+    const handleOpenSoftwareModal = (id: string, deviceName: string) => {
+        setSelectedDevice({ id, name: deviceName });
+        setIsSoftwareModalOpen(true);
+    };
+
+    const handleCloseDeviceModal = () => {
+        setIsDeviceModalOpen(false);
+        setEditDeviceId(null);
+        // Refresh the assigned devices table
+        queryClient.invalidateQueries({
+            queryKey: deviceControllerGetMyAssignedDevicesQueryKey(),
+        });
     };
 
     return (
@@ -176,6 +210,20 @@ const AssignedDevicesTab = () => {
                                     >
                                         <LuHistory size={20} className="text-[#0E1726]" />
                                     </button>
+                                    <button
+                                        onClick={() => handleEditDevice(row.id)}
+                                        className="text-gray-500 hover:text-secondary"
+                                        title="Edit device"
+                                    >
+                                        <FaRegEdit size={16} />
+                                    </button>
+                                    <button
+                                        onClick={() => handleOpenSoftwareModal(row.id, row.name)}
+                                        className="text-gray-500 hover:text-secondary"
+                                        title="Manage software"
+                                    >
+                                        <LuCode size={16} />
+                                    </button>
                                 </div>
                             ),
                         },
@@ -205,6 +253,21 @@ const AssignedDevicesTab = () => {
                     </ul>
                 </div>
             </Modal>
+
+            {/* Device Details Modal */}
+            <DeviceDetailsModal
+                isOpen={isDeviceModalOpen}
+                onClose={handleCloseDeviceModal}
+                deviceId={editDeviceId}
+            />
+
+            {/* Device Software Modal */}
+            <DeviceSoftwareModal
+                isOpen={isSoftwareModalOpen}
+                onClose={() => setIsSoftwareModalOpen(false)}
+                deviceId={selectedDevice?.id}
+                deviceName={selectedDevice?.name}
+            />
         </div>
     );
 };

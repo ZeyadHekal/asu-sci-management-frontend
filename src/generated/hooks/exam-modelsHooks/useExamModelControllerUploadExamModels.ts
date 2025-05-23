@@ -30,16 +30,8 @@ export async function examModelControllerUploadExamModels(
   if (data) {
     Object.keys(data).forEach((key) => {
       const value = data[key as keyof typeof data]
-      if (typeof key === 'string') {
-        if (typeof value === 'string') {
-          formData.append(key, value)
-        } else if (value instanceof Blob) {
-          formData.append(key, value)
-        } else if (Array.isArray(value) && value.every(item => item instanceof Blob)) {
-          value.forEach((file, index) => {
-            formData.append(`${key}[${index}]`, file)
-          })
-        }
+      if (typeof key === 'string' && (typeof value === 'string' || (value as Blob) instanceof Blob)) {
+        formData.append(key, value as unknown as string)
       }
     })
   }

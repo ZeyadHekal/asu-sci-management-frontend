@@ -11,7 +11,7 @@ export const updateDeviceReportDtoSchema = z.object({
   deviceId: z.string().describe('Device ID').optional(),
   appId: z.string().describe('Software/App ID').optional(),
   reporterId: z.string().describe('Reporter ID').optional(),
-  status: z.enum(['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED']).default('PENDING_REVIEW').describe('Report status'),
+  status: z.enum(['PENDING_REVIEW', 'IN_PROGRESS', 'RESOLVED', 'REJECTED']).default('PENDING_REVIEW').describe('Report status'),
 })
 
 export type UpdateDeviceReportDtoSchema = z.infer<typeof updateDeviceReportDtoSchema>

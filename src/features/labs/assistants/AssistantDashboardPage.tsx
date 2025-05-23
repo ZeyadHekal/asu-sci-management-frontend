@@ -428,7 +428,8 @@ const AssistantDashboardPage = () => {
                     description: selectedReport.description,
                     status: selectedReport.status,
                     urgency: "Medium",
-                    reportedBy: selectedReport.reporterName || "Unknown"
+                    reportedBy: selectedReport.reporterName || "Unknown",
+                    softwareName: selectedReport.softwareName
                 } : null}
                 reportRecords={selectedReport ? [{
                     id: selectedReport.id,
@@ -437,7 +438,8 @@ const AssistantDashboardPage = () => {
                     description: selectedReport.description,
                     status: selectedReport.status,
                     urgency: "Medium",
-                    reportedBy: selectedReport.reporterName || "Unknown"
+                    reportedBy: selectedReport.reporterName || "Unknown",
+                    softwareName: selectedReport.softwareName
                 }] : []}
             />
 

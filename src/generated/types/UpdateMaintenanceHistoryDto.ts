@@ -66,9 +66,9 @@ export type UpdateMaintenanceHistoryDto = {
   completedAt?: Date | undefined
   /**
    * @description Involved personnel names
-   * @type array | undefined
+   * @type string | undefined
    */
-  involvedPersonnel?: string[] | undefined
+  involvedPersonnel?: string | undefined
   /**
    * @description Software ID for software-related maintenance
    * @type string | undefined

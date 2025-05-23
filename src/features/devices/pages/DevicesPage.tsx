@@ -1,6 +1,6 @@
 import { DataTable } from "mantine-datatable";
 import { useEffect, useState } from "react";
-import { LuHistory, LuSearch, LuFilter, LuInfo, LuUser, LuCode } from "react-icons/lu";
+import { LuHistory, LuSearch, LuInfo, LuUser, LuCode } from "react-icons/lu";
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBinLine } from "react-icons/ri";
 import { FiAlertTriangle } from "react-icons/fi";
@@ -26,8 +26,8 @@ import { useAuthStore } from "../../../store/authStore";
 
 // Available statuses for filtering
 const availableStatuses = [
-  { value: "Available", label: "Available" },
-  { value: "Needs Maintenance", label: "Needs Maintenance" }
+  { value: "Working", label: "Working" },
+  { value: "Has Issues", label: "Has Issues" }
 ];
 
 const DevicesPage = () => {
@@ -51,7 +51,6 @@ const DevicesPage = () => {
   const [deleteDeviceId, setDeleteDeviceId] = useState<string | null>(null);
 
   // Filter states
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [softwareFilter, setSoftwareFilter] = useState<{ value: string; label: string } | null>(null);
   const [labFilter, setLabFilter] = useState<{ value: string; label: string } | null>(null);
   const [statusFilter, setStatusFilter] = useState<{ value: string; label: string } | null>(null);
@@ -329,13 +328,7 @@ const DevicesPage = () => {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <button
-              className={`self-start h-10 px-3 rounded-md flex items-center gap-1 ${isFilterOpen ? "bg-secondary text-white" : "bg-gray-100 text-secondary"}`}
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
-            >
-              <LuFilter size={16} />
-              <span>Filters</span>
-            </button>
+
             {hasPrivilege("MANAGE_LABS") && (
               <button
                 className="self-start h-10 px-3 rounded-lg bg-secondary flex items-center text-white"
@@ -348,18 +341,19 @@ const DevicesPage = () => {
         </div>
       </div>
 
-      {/* Filter panel */}
-      {isFilterOpen && (
-        <div className="mb-6 p-4 bg-gray-50 border rounded-md relative z-10">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-sm font-medium text-gray-700">Filter Devices</h3>
+      {/* Filter panel - Always visible */}
+      <div className="mb-6 p-4 bg-gray-50 border rounded-md relative z-10">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-sm font-medium text-gray-700">Filter Devices</h3>
+          {(search || softwareFilter || labFilter || statusFilter || assistantFilter || specFilter) && (
             <button
               onClick={clearAllFilters}
               className="text-sm text-secondary hover:text-secondary-dark"
             >
               Clear all filters
             </button>
-          </div>
+          )}
+        </div>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm text-gray-600 mb-1">Software</label>
@@ -420,7 +414,6 @@ const DevicesPage = () => {
             </div>
           </div>
         </div>
-      )}
 
       <div className="datatables relative z-0">
         <DataTable
@@ -510,10 +503,10 @@ const DevicesPage = () => {
                   className={cn(
                     "w-32 h-[22px] flex justify-center items-center rounded text-xs font-semibold",
                     {
-                      "border border-success text-success":
-                        row.status === "Available",
-                      "border border-danger text-danger":
-                        row.status === "Needs Maintenance",
+                      "bg-green-100 border border-green-300 text-green-700":
+                        row.status === "Working",
+                      "bg-red-100 border border-red-300 text-red-700":
+                        row.status === "Has Issues",
                     }
                   )}
                 >

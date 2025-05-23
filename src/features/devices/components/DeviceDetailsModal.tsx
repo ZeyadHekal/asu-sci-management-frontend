@@ -6,7 +6,7 @@ import "flatpickr/dist/flatpickr.css";
 import { IoIosAddCircleOutline } from "react-icons/io";
 import { LuPencil } from "react-icons/lu";
 import { toast } from "react-hot-toast";
-import { useDeviceControllerGetById } from "../../../generated/hooks/devicesHooks/useDeviceControllerGetById";
+import { useDeviceControllerGetDeviceDetails } from "../../../generated/hooks/devicesHooks/useDeviceControllerGetDeviceDetails";
 import { useDeviceControllerCreate } from "../../../generated/hooks/devicesHooks/useDeviceControllerCreate";
 import { useDeviceControllerUpdate } from "../../../generated/hooks/devicesHooks/useDeviceControllerUpdate";
 import { useLabControllerGetAll } from "../../../generated/hooks/labsHooks/useLabControllerGetAll";
@@ -34,17 +34,18 @@ const DeviceDetailsModal = ({ isOpen, onClose, deviceId, onAssignAssistant }: De
   const [addedSince, setAddedSince] = useState<Date | null>(null);
   const [lab, setLab] = useState<{ value: string; label: string } | null>(null);
   const [specs, setSpecs] = useState<SpecItem[]>([]);
-  const [status, setStatus] = useState<"Available" | "Needs Maintenance">("Available");
+
   const [assistant, setAssistant] = useState<{ value: string; label: string } | null>(null);
 
   // New state for spec form
   const [newSpecCategory, setNewSpecCategory] = useState<string>("Memory");
   const [newSpecValue, setNewSpecValue] = useState<string>("");
+  const [editingSpecIndex, setEditingSpecIndex] = useState<number | null>(null);
 
   const queryClient = useQueryClient();
 
   // Fetch device details when editing
-  const { data: deviceData, isLoading: isLoadingDevice } = useDeviceControllerGetById(
+  const { data: deviceData, isLoading: isLoadingDevice } = useDeviceControllerGetDeviceDetails(
     deviceId || "", 
     {
       query: {
@@ -124,10 +125,10 @@ const DeviceDetailsModal = ({ isOpen, onClose, deviceId, onAssignAssistant }: De
     setLab(null);
     setSpecs([]);
     setAddedSince(new Date());
-    setStatus("Available");
     setAssistant(null);
     setNewSpecCategory("Memory");
     setNewSpecValue("");
+    setEditingSpecIndex(null);
   };
 
   // Handle modal close
@@ -149,14 +150,16 @@ const DeviceDetailsModal = ({ isOpen, onClose, deviceId, onAssignAssistant }: De
       const selectedLab = labOptions.find(option => option.value === device.labId);
       setLab(selectedLab || null);
       
-      // Set specs
-      setSpecs(device.specDetails?.map(spec => ({ 
+      // Set specs - handle both DeviceDetailsDto (specifications) and DeviceDto (specDetails)
+      const deviceSpecs = (device as any).specifications || (device as any).specDetails || [];
+      setSpecs(deviceSpecs.map((spec: any) => ({ 
         category: spec.category || "Other", 
         value: spec.value 
-      })) || []);
+      })));
       
-      setAddedSince(device.addedSince ? new Date(device.addedSince) : new Date());
-      setStatus(device.status === "Available" ? "Available" : "Needs Maintenance");
+      // DeviceDetailsDto uses created_at, DeviceDto uses addedSince
+      const deviceDate = (device as any).created_at || (device as any).addedSince;
+      setAddedSince(deviceDate ? new Date(deviceDate) : new Date());
       
       // Find assistant option
       const selectedAssistant = assistantOptions.find(option => option.value === device.assisstantId);
@@ -169,16 +172,48 @@ const DeviceDetailsModal = ({ isOpen, onClose, deviceId, onAssignAssistant }: De
 
   const handleAddSpec = () => {
     if (newSpecValue.trim()) {
-      setSpecs(prev => [...prev, {
-        category: newSpecCategory,
-        value: newSpecValue.trim()
-      }]);
+      if (editingSpecIndex !== null) {
+        // Update existing spec
+        setSpecs(prev => prev.map((spec, index) => 
+          index === editingSpecIndex 
+            ? { category: newSpecCategory, value: newSpecValue.trim() }
+            : spec
+        ));
+        setEditingSpecIndex(null);
+      } else {
+        // Add new spec
+        setSpecs(prev => [...prev, {
+          category: newSpecCategory,
+          value: newSpecValue.trim()
+        }]);
+      }
       setNewSpecValue("");
+      setNewSpecCategory("Memory");
     }
+  };
+
+  const handleEditSpec = (index: number) => {
+    const spec = specs[index];
+    setNewSpecCategory(spec.category);
+    setNewSpecValue(spec.value);
+    setEditingSpecIndex(index);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingSpecIndex(null);
+    setNewSpecCategory("Memory");
+    setNewSpecValue("");
   };
 
   const handleRemoveSpec = (index: number) => {
     setSpecs(prev => prev.filter((_, i) => i !== index));
+    // If we're editing the spec being removed, cancel the edit
+    if (editingSpecIndex === index) {
+      handleCancelEdit();
+    } else if (editingSpecIndex !== null && editingSpecIndex > index) {
+      // Adjust editing index if a spec before the editing one was removed
+      setEditingSpecIndex(editingSpecIndex - 1);
+    }
   };
 
   const handleSubmit = () => {
@@ -392,17 +427,27 @@ const DeviceDetailsModal = ({ isOpen, onClose, deviceId, onAssignAssistant }: De
                           return (
                             <div
                               key={`${category}-${index}`}
-                              className={`px-3 py-1 rounded-full flex items-center gap-1 ${getCategoryColor(spec.category)}`}
+                              className={`px-3 py-1 rounded-full flex items-center gap-1 ${getCategoryColor(spec.category)} ${editingSpecIndex === specIndex ? 'ring-2 ring-secondary ring-opacity-50' : ''}`}
                             >
                               <span>{spec.value}</span>
-                              <button
-                                onClick={() => handleRemoveSpec(specIndex)}
-                                className="text-gray-500 hover:text-red-500 ml-1"
-                                title="Remove"
-                                disabled={isProcessing}
-                              >
-                                &times;
-                              </button>
+                              <div className="flex items-center gap-1 ml-1">
+                                <button
+                                  onClick={() => handleEditSpec(specIndex)}
+                                  className="text-gray-500 hover:text-blue-500"
+                                  title="Edit"
+                                  disabled={isProcessing}
+                                >
+                                  <LuPencil size={12} />
+                                </button>
+                                <button
+                                  onClick={() => handleRemoveSpec(specIndex)}
+                                  className="text-gray-500 hover:text-red-500"
+                                  title="Remove"
+                                  disabled={isProcessing}
+                                >
+                                  &times;
+                                </button>
+                              </div>
                             </div>
                           );
                         })}
@@ -414,9 +459,22 @@ const DeviceDetailsModal = ({ isOpen, onClose, deviceId, onAssignAssistant }: De
             )}
           </div>
 
-          {/* Add spec form */}
+          {/* Add/Edit spec form */}
           <div className="border border-[#E0E6ED] rounded-md p-4 bg-gray-50">
-            <h4 className="text-sm font-semibold text-gray-700 mb-2">Add New Specification</h4>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-semibold text-gray-700">
+                {editingSpecIndex !== null ? "Edit Specification" : "Add New Specification"}
+              </h4>
+              {editingSpecIndex !== null && (
+                <button
+                  onClick={handleCancelEdit}
+                  className="text-xs text-gray-500 hover:text-gray-700"
+                  disabled={isProcessing}
+                >
+                  Cancel Edit
+                </button>
+              )}
+            </div>
             <div className="flex flex-col gap-3">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
@@ -438,7 +496,7 @@ const DeviceDetailsModal = ({ isOpen, onClose, deviceId, onAssignAssistant }: De
                       className="form-input flex-1 text-sm"
                       value={newSpecValue}
                       onChange={(e) => setNewSpecValue(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleAddSpec()}
+                      onKeyDown={(e) => e.key === "Enter" && newSpecValue.trim() && handleAddSpec()}
                       disabled={isProcessing}
                     />
                     <button
@@ -449,8 +507,17 @@ const DeviceDetailsModal = ({ isOpen, onClose, deviceId, onAssignAssistant }: De
                           : "bg-gray-100 text-gray-400 cursor-not-allowed"
                         }`}
                     >
-                      <IoIosAddCircleOutline size={16} />
-                      <span className="text-xs font-medium">Add</span>
+                      {editingSpecIndex !== null ? (
+                        <>
+                          <LuPencil size={16} />
+                          <span className="text-xs font-medium">Update</span>
+                        </>
+                      ) : (
+                        <>
+                          <IoIosAddCircleOutline size={16} />
+                          <span className="text-xs font-medium">Add</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -458,46 +525,17 @@ const DeviceDetailsModal = ({ isOpen, onClose, deviceId, onAssignAssistant }: De
               <div className="text-xs text-gray-500 mt-1">
                 <p>{getExampleText(newSpecCategory)}</p>
                 <p className="mt-1">
-                  <strong>Tip:</strong> For devices with multiple storage options, add each as a separate storage specification.
+                  <strong>Tip:</strong> {editingSpecIndex !== null 
+                    ? "Click the pencil icon next to any specification to edit it." 
+                    : "For devices with multiple storage options, add each as a separate storage specification. Click the pencil icon to edit existing specifications."
+                  }
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Status */}
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="status"
-            className="font-semibold text-[#0E1726] text-sm"
-          >
-            Status
-          </label>
-          <div className="flex items-center gap-4">
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="radio"
-                name="status"
-                checked={status === "Available"}
-                onChange={() => setStatus("Available")}
-                className="form-radio"
-                disabled={isProcessing}
-              />
-              <span className="text-sm ml-2">Available</span>
-            </label>
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="radio"
-                name="status"
-                checked={status === "Needs Maintenance"}
-                onChange={() => setStatus("Needs Maintenance")}
-                className="form-radio"
-                disabled={isProcessing}
-              />
-              <span className="text-sm ml-2">Needs Maintenance</span>
-            </label>
-          </div>
-        </div>
+
       </div>
 
       <div className="flex justify-end gap-4 mt-6">

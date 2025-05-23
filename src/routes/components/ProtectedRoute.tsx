@@ -18,11 +18,6 @@ const ProtectedRoute = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Allow admin users (with MANAGE_USER_TYPES or MANAGE_SYSTEM privilege) to access any page
-  if (hasPrivilege("MANAGE_USER_TYPES") || hasPrivilege("MANAGE_SYSTEM")) {
-    return <>{children}</>;
-  }
-
   if (
     allowedPrivileges &&
     !allowedPrivileges.some((priv) => hasPrivilege(priv))

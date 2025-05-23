@@ -3,6 +3,7 @@ import Modal from "../../../ui/modal/Modal";
 import Select from "react-select";
 import { useDeviceControllerGetSoftwares } from "../../../generated/hooks/devicesHooks/useDeviceControllerGetSoftwares";
 import { useDeviceControllerUpdateSoftwareList } from "../../../generated/hooks/devicesHooks/useDeviceControllerUpdateSoftwareList";
+import { useDeviceControllerUpdateSoftware } from "../../../generated/hooks/devicesHooks/useDeviceControllerUpdateSoftware";
 import { useSoftwareControllerGetAll } from "../../../generated/hooks/softwaresHooks/useSoftwareControllerGetAll";
 import { DeviceSoftwareListDto } from "../../../generated/types/DeviceSoftwareListDto";
 import { SoftwareListDto } from "../../../generated/types/SoftwareListDto";
@@ -81,6 +82,20 @@ const DeviceSoftwareModal = ({
         }
     });
 
+    // Update individual software status mutation
+    const { mutate: updateSoftwareStatus, isPending: isUpdatingSoftwareStatus } = useDeviceControllerUpdateSoftware({
+        mutation: {
+            onSuccess: () => {
+                toast.success("Software status updated successfully");
+                refetchDeviceSoftware();
+                onDeviceUpdated?.();
+            },
+            onError: (error: any) => {
+                toast.error(`Failed to update software status: ${error?.response?.data?.message || "An error occurred"}`);
+            }
+        }
+    });
+
     // Process device software data
     useEffect(() => {
         if (deviceSoftwareData?.data) {
@@ -152,13 +167,50 @@ const DeviceSoftwareModal = ({
                 .filter((software: SoftwareListDto) => 
                     selected.some(option => option.value === software.id)
                 )
-                .map((software: SoftwareListDto) => ({
-                    id: software.id,
-                    name: software.name,
-                    hasIssue: false // Default to no issues for new selections
-                }));
+                .map((software: SoftwareListDto) => {
+                    // Preserve existing hasIssue status if software was already installed
+                    const existingSoftware = deviceSoftwareDetails.find(existing => existing.id === software.id);
+                    return {
+                        id: software.id,
+                        name: software.name,
+                        hasIssue: existingSoftware?.hasIssue || false // Preserve existing status or default to false
+                    };
+                });
             setDeviceSoftwareDetails(selectedSoftwareDetails);
         }
+    };
+
+    const handleStatusToggle = (softwareId: string) => {
+        if (!deviceId) {
+            toast.error("Device ID is required");
+            return;
+        }
+
+        const currentSoftware = deviceSoftwareDetails.find(sw => sw.id === softwareId);
+        if (!currentSoftware) {
+            toast.error("Software not found");
+            return;
+        }
+
+        const newStatus = !currentSoftware.hasIssue;
+
+        // Optimistically update the UI
+        setDeviceSoftwareDetails(prev => 
+            prev.map(software => 
+                software.id === softwareId 
+                    ? { ...software, hasIssue: newStatus }
+                    : software
+            )
+        );
+
+        // Call the API to update the status
+        updateSoftwareStatus({
+            device_id: deviceId,
+            softwareId: softwareId,
+            data: {
+                hasIssue: newStatus
+            }
+        });
     };
 
     const handleSubmit = () => {
@@ -177,7 +229,7 @@ const DeviceSoftwareModal = ({
         });
     };
 
-    const isLoading = isLoadingDeviceSoftware || isLoadingAllSoftware || isUpdating;
+    const isLoading = isLoadingDeviceSoftware || isLoadingAllSoftware || isUpdating || isUpdatingSoftwareStatus;
 
     return (
         <Modal
@@ -219,12 +271,22 @@ const DeviceSoftwareModal = ({
                                         <thead className="bg-gray-50">
                                             <tr>
                                                 <th className="px-4 py-2 text-left">Software Name</th>
+                                                <th className="px-4 py-2 text-left">Status</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {deviceSoftwareDetails.map((software) => (
                                                 <tr key={software.id} className="border-t border-[#E0E6ED]">
                                                     <td className="px-4 py-2 text-secondary">{software.name}</td>
+                                                    <td className="px-4 py-2">
+                                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                                            software.hasIssue 
+                                                                ? 'bg-red-100 text-red-800' 
+                                                                : 'bg-green-100 text-green-800'
+                                                        }`}>
+                                                            {software.hasIssue ? 'Has Issues' : 'Working'}
+                                                        </span>
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>

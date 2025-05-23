@@ -22,7 +22,7 @@ export const deviceReportControllerGetDeviceReportsQueryParamsSchema = z
     deviceId: z.string().describe('Filter by device ID').optional(),
     labId: z.string().describe('Filter by lab ID').optional(),
     reporterId: z.string().describe('Filter by reporter ID').optional(),
-    status: z.enum(['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED']).describe('Filter by status').optional(),
+    status: z.enum(['PENDING_REVIEW', 'IN_PROGRESS', 'RESOLVED', 'REJECTED']).describe('Filter by status').optional(),
     appId: z.string().describe('Filter by software ID').optional(),
     search: z.string().describe('Search across device names, descriptions, and reporter names').optional(),
     dateFrom: z.string().describe('Filter by date from (YYYY-MM-DD)').optional(),

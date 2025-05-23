@@ -24,10 +24,8 @@ export type DeviceReportControllerGetDeviceReportsQueryParamsSortOrderEnum =
 export const deviceReportControllerGetDeviceReportsQueryParamsStatusEnum = {
   PENDING_REVIEW: 'PENDING_REVIEW',
   IN_PROGRESS: 'IN_PROGRESS',
-  CONFIRMED: 'CONFIRMED',
   RESOLVED: 'RESOLVED',
   REJECTED: 'REJECTED',
-  CANCELLED: 'CANCELLED',
 } as const
 
 export type DeviceReportControllerGetDeviceReportsQueryParamsStatusEnum =

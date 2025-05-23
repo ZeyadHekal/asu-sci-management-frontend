@@ -11,7 +11,7 @@ export const reportMaintenanceHistoryDtoSchema = z.object({
   status: z.string().describe('Maintenance status'),
   description: z.string().describe('Maintenance description'),
   resolutionNotes: z.string().describe('Resolution notes').optional(),
-  involvedPersonnel: z.array(z.string()).describe('Involved personnel').optional(),
+  involvedPersonnel: z.string().describe('Involved personnel').optional(),
   completedAt: z.string().datetime({ offset: true }).describe('Completed at').optional(),
   created_at: z.string().datetime({ offset: true }).describe('Created at'),
   updated_at: z.string().datetime({ offset: true }).describe('Updated at'),

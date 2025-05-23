@@ -7182,7 +7182,7 @@ export const oas = {
             in: 'query',
             description: 'Filter by status',
             schema: {
-              enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED'],
+              enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'RESOLVED', 'REJECTED'],
               type: 'string',
             },
           },
@@ -7334,7 +7334,7 @@ export const oas = {
             in: 'query',
             description: 'Filter by status',
             schema: {
-              enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED'],
+              enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'RESOLVED', 'REJECTED'],
               type: 'string',
             },
           },
@@ -7485,7 +7485,7 @@ export const oas = {
             in: 'query',
             description: 'Filter by status',
             schema: {
-              enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED'],
+              enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'RESOLVED', 'REJECTED'],
               type: 'string',
             },
           },
@@ -7637,7 +7637,7 @@ export const oas = {
             in: 'query',
             description: 'Filter by status',
             schema: {
-              enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED'],
+              enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'RESOLVED', 'REJECTED'],
               type: 'string',
             },
           },
@@ -7809,7 +7809,7 @@ export const oas = {
             in: 'query',
             description: 'Filter by status',
             schema: {
-              enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED'],
+              enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'RESOLVED', 'REJECTED'],
               type: 'string',
             },
           },
@@ -13406,11 +13406,8 @@ export const oas = {
             description: 'Completion date',
           },
           involvedPersonnel: {
+            type: 'string',
             description: 'Involved personnel names',
-            type: 'array',
-            items: {
-              type: 'string',
-            },
           },
           softwareId: {
             type: 'string',
@@ -13463,11 +13460,8 @@ export const oas = {
             description: 'Completion date',
           },
           involvedPersonnel: {
+            type: 'string',
             description: 'Involved personnel names',
-            type: 'array',
-            items: {
-              type: 'string',
-            },
           },
           softwareId: {
             type: 'string',
@@ -13542,11 +13536,8 @@ export const oas = {
             description: 'Completion date',
           },
           involvedPersonnel: {
+            type: 'string',
             description: 'Involved personnel names',
-            type: 'array',
-            items: {
-              type: 'string',
-            },
           },
           softwareId: {
             type: 'string',
@@ -13621,11 +13612,8 @@ export const oas = {
             description: 'Completion date',
           },
           involvedPersonnel: {
+            type: 'string',
             description: 'Involved personnel names',
-            type: 'array',
-            items: {
-              type: 'string',
-            },
           },
           softwareId: {
             type: 'string',
@@ -13691,11 +13679,8 @@ export const oas = {
             description: 'Resolution notes',
           },
           involvedPersonnel: {
+            type: 'string',
             description: 'Involved personnel',
-            type: 'array',
-            items: {
-              type: 'string',
-            },
           },
           completedAt: {
             format: 'date-time',
@@ -13744,7 +13729,7 @@ export const oas = {
           },
           status: {
             type: 'string',
-            enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED'],
+            enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'RESOLVED', 'REJECTED'],
             description: 'Report status',
             default: 'PENDING_REVIEW',
           },
@@ -13809,7 +13794,7 @@ export const oas = {
           },
           status: {
             type: 'string',
-            enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED'],
+            enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'RESOLVED', 'REJECTED'],
             description: 'Report status',
             default: 'PENDING_REVIEW',
           },
@@ -13870,7 +13855,7 @@ export const oas = {
           },
           status: {
             type: 'string',
-            enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED'],
+            enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'RESOLVED', 'REJECTED'],
             description: 'Report status',
             default: 'PENDING_REVIEW',
           },

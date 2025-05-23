@@ -31,9 +31,9 @@ export type ReportMaintenanceHistoryDto = {
   resolutionNotes?: string | undefined
   /**
    * @description Involved personnel
-   * @type array | undefined
+   * @type string | undefined
    */
-  involvedPersonnel?: string[] | undefined
+  involvedPersonnel?: string | undefined
   /**
    * @description Completed at
    * @type string | undefined, date-time

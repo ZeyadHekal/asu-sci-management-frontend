@@ -24,6 +24,7 @@ interface ReportRecord {
     status: string;
     urgency: string;
     reportedBy: string;
+    softwareName?: string;
 }
 
 interface UpdateModalProps {
@@ -38,7 +39,7 @@ interface UpdateModalProps {
         status: string;
         issue?: string;
         resolution?: string;
-        involvedPersonnel: string[];
+        involvedPersonnel: string;
         reportId?: string;
         completedAt?: string;
     } | null;
@@ -108,8 +109,13 @@ const UpdateModal = ({
 
     // Fetch software list for the device
     const { data: deviceSoftwareData, isLoading: isLoadingSoftware } = useDeviceControllerGetSoftwares(
-        deviceId,
-        { limit: 100, page: 0 }, // Get all software for the device
+        deviceId || "",
+        {
+            page: 0,
+            limit: 100, // Get all software for this device
+            sortBy: "name",
+            sortOrder: "asc"
+        }, 
         { 
             query: { 
                 enabled: !!deviceId && isOpen,
@@ -120,27 +126,105 @@ const UpdateModal = ({
 
     // Update software list when data changes
     useEffect(() => {
-        if (deviceSoftwareData?.data && Array.isArray(deviceSoftwareData.data) && deviceSoftwareData.data.length > 0) {
-            // The response is an array of DeviceSoftwarePagedDto, take the first one
-            const pagedData = deviceSoftwareData.data[0];
-            if (pagedData?.items) {
-                const softwareOptions = pagedData.items.map((sw: any) => ({
+        console.log('=== Software List Loading Debug ===');
+        console.log('deviceSoftwareData:', deviceSoftwareData);
+        
+        if (deviceSoftwareData?.data) {
+            // Handle the response - could be array or single object depending on API generation
+            let softwareItems: any[] = [];
+            
+            if (Array.isArray(deviceSoftwareData.data)) {
+                // If it's an array, take the first item
+                const firstPage = deviceSoftwareData.data[0];
+                console.log('firstPage:', firstPage);
+                softwareItems = firstPage?.items || [];
+            } else if (deviceSoftwareData.data && typeof deviceSoftwareData.data === 'object' && 'items' in deviceSoftwareData.data) {
+                // If it's a single DeviceSoftwarePagedDto object
+                const pagedData = deviceSoftwareData.data as { items: any[]; total: number };
+                console.log('pagedData:', pagedData);
+                softwareItems = pagedData.items || [];
+            }
+            
+            console.log('softwareItems:', softwareItems);
+            
+            if (softwareItems.length > 0) {
+                const softwareOptions = softwareItems.map((sw: any) => ({
                     value: sw.id,
                     label: sw.name
                 }));
+                console.log('Setting software list:', softwareOptions);
                 setSoftwareList(softwareOptions);
             } else {
+                console.log('No software items found, clearing software list');
                 setSoftwareList([]);
                 setSelectedSoftware(null);
             }
         } else {
+            console.log('No software data, clearing software list');
             setSoftwareList([]);
             setSelectedSoftware(null);
         }
     }, [deviceSoftwareData]);
 
+    // Handle software pre-selection when software list is loaded or report is selected
+    useEffect(() => {
+        console.log('=== Software Auto-Selection Debug ===');
+        console.log('softwareList.length:', softwareList.length);
+        console.log('selectedReport:', selectedReport);
+        console.log('selectedReportOption:', selectedReportOption);
+        console.log('reportRecords:', reportRecords);
+        console.log('type:', type);
+        
+        if (softwareList.length > 0) {
+            let softwareNameToFind = null;
+            
+            // Check if we need to pre-select software based on selectedReport
+            if (selectedReport && selectedReport.softwareName) {
+                softwareNameToFind = selectedReport.softwareName;
+                console.log('Auto-selecting software from selectedReport:', softwareNameToFind);
+            }
+            // Check if we need to pre-select software based on selectedReportOption
+            else if (selectedReportOption) {
+                const report = reportRecords.find(r => r.id === selectedReportOption.value);
+                console.log('Found report from selectedReportOption:', report);
+                if (report && report.softwareName) {
+                    softwareNameToFind = report.softwareName;
+                    console.log('Auto-selecting software from selectedReportOption:', softwareNameToFind);
+                }
+            }
+            
+            if (softwareNameToFind) {
+                const matchingSoftware = softwareList.find(sw => sw.label === softwareNameToFind);
+                console.log('Available software list:', softwareList.map(sw => sw.label));
+                console.log('Looking for software:', softwareNameToFind);
+                console.log('Found matching software:', matchingSoftware);
+                
+                if (matchingSoftware && (!selectedSoftware || selectedSoftware.value !== matchingSoftware.value)) {
+                    setSelectedSoftware(matchingSoftware);
+                    console.log('Software auto-selected:', matchingSoftware);
+                } else {
+                    console.log('Software not auto-selected because:', {
+                        matchingSoftware: !!matchingSoftware,
+                        selectedSoftware,
+                        sameValue: selectedSoftware?.value === matchingSoftware?.value
+                    });
+                }
+            } else {
+                console.log('No software name to find');
+            }
+        } else {
+            console.log('Software list is empty or not loaded yet');
+        }
+        console.log('=== End Debug ===');
+    }, [softwareList, selectedReport, selectedReportOption, reportRecords, type]);
+
     // Reset form fields when modal opens/closes or edit mode changes
     useEffect(() => {
+        console.log('=== Form Reset Debug ===');
+        console.log('isOpen:', isOpen);
+        console.log('isEditMode:', isEditMode);
+        console.log('selectedReport in reset:', selectedReport);
+        
         if (isOpen) {
             if (isEditMode && updateData) {
                 // Populate form with existing data for editing
@@ -148,7 +232,7 @@ const UpdateModal = ({
                 setStatus({ value: updateData.status, label: updateData.status });
                 setIssue(updateData.issue || "");
                 setResolution(updateData.resolution || "");
-                setInvolvedPersonnel(updateData.involvedPersonnel.join(", "));
+                setInvolvedPersonnel(updateData.involvedPersonnel);
                 setCompletedAt(updateData.completedAt || formattedToday);
                 if (updateData.reportId && reportRecords.length > 0) {
                     const report = reportRecords.find(r => r.id === updateData.reportId);
@@ -164,12 +248,16 @@ const UpdateModal = ({
             } else {
                 setCompletedAt(formattedToday);
                 if (selectedReport) {
+                    console.log('Setting up form for selectedReport:', selectedReport);
+                    console.log('selectedReport.softwareName:', selectedReport.softwareName);
                     setType({ value: "USER_REPORT", label: "User report" });
                     setIssue(selectedReport.description);
                     setSelectedReportOption({
                         value: selectedReport.id,
                         label: `${selectedReport.problemType} - ${selectedReport.description.substring(0, 30)}...`
                     });
+                    
+                    // Software auto-selection is handled by the dedicated useEffect above
                 } else {
                     setType(null);
                     setSelectedReportOption(null);
@@ -206,17 +294,61 @@ const UpdateModal = ({
         label: `${report.problemType} - ${report.description.substring(0, 30)}${report.description.length > 30 ? '...' : ''}`
     })), [reportRecords]);
 
+    // Helper function to determine if software fields should be shown
+    const shouldShowSoftwareFields = () => {
+        // Case 1: Maintenance type is SOFTWARE_UPDATE
+        if (type?.value === "SOFTWARE_UPDATE") {
+            return true;
+        }
+        
+        // Case 2: Maintenance type is USER_REPORT and the report has softwareName
+        if (type?.value === "USER_REPORT") {
+            // Check if selected report has software name
+            if (selectedReport && (selectedReport as any).softwareName) {
+                return true;
+            }
+            // Check if selected report option corresponds to a report with software name
+            if (selectedReportOption) {
+                const report = reportRecords.find(r => r.id === selectedReportOption.value);
+                return report && (report as any).softwareName;
+            }
+        }
+        
+        return false;
+    };
+
+    // Helper function to determine if software should be pre-selected and disabled
+    const isSoftwarePreSelected = () => {
+        // Only pre-select if it's USER_REPORT with softwareName
+        if (type?.value === "USER_REPORT") {
+            if (selectedReport && (selectedReport as any).softwareName) {
+                return true;
+            }
+            if (selectedReportOption) {
+                const report = reportRecords.find(r => r.id === selectedReportOption.value);
+                return report && (report as any).softwareName;
+            }
+        }
+        return false;
+    };
+
     const handleSubmit = () => {
         if (!type || !status) {
             toast.error("Please fill in all required fields.");
             return;
         }
 
-        // Parse the comma-separated personnel names into an array (for legacy onSave callback)
-        const personnelArray = involvedPersonnel
-            .split(",")
-            .map(person => person.trim())
-            .filter(person => person.length > 0);
+        // Validate software fields if they should be shown
+        if (shouldShowSoftwareFields()) {
+            if (!selectedSoftware) {
+                toast.error("Please select a software.");
+                return;
+            }
+            if (!softwareStatus) {
+                toast.error("Please select software status.");
+                return;
+            }
+        }
 
         // Prepare data for backend API
         const maintenanceData = {
@@ -227,9 +359,9 @@ const UpdateModal = ({
             resolutionNotes: resolution || undefined,
             relatedReportId: selectedReportOption?.value || undefined,
             completedAt: status.value === "COMPLETED" ? new Date(completedAt).toISOString() : undefined,
-            involvedPersonnel: personnelArray.length > 0 ? personnelArray : undefined,
+            involvedPersonnel,
             softwareId: selectedSoftware?.value || undefined,
-            softwareHasIssue: softwareStatus?.value ? softwareStatus.value === "not_available" : undefined,
+            softwareHasIssue: softwareStatus?.value ? softwareStatus.value === "Has Issues" : undefined,
             deviceHasIssue: deviceStatus?.value ? deviceStatus.value === "not_available" : undefined,
         } as any; // Type assertion needed due to mismatch between generated types and actual API expectation
 
@@ -255,6 +387,13 @@ const UpdateModal = ({
             const report = reportRecords.find(r => r.id === selectedOption.value);
             if (report) {
                 setIssue(report.description);
+                
+                // Software auto-selection is handled by the dedicated useEffect above
+            }
+        } else {
+            // Clear software selection when no report is selected (unless it's SOFTWARE_UPDATE type)
+            if (type?.value !== "SOFTWARE_UPDATE") {
+                setSelectedSoftware(null);
             }
         }
     };
@@ -306,42 +445,49 @@ const UpdateModal = ({
                 </div>
 
                 {/* Software Selection Dropdown */}
-                {(type?.value === "SOFTWARE_UPDATE" || selectedReport?.problemType === "software issue") && (
+                {shouldShowSoftwareFields() && (
                     <div className="flex flex-col gap-1.5">
                         <label
                             htmlFor="softwareSelect"
                             className="font-semibold text-[#0E1726] text-sm"
                         >
-                            Select Software
+                            Select Software <span className="text-danger">*</span>
                         </label>
                         <Select
                             id="softwareSelect"
                             options={softwareList}
                             value={selectedSoftware}
                             onChange={(selectedOption) => setSelectedSoftware(selectedOption)}
-                            isDisabled={isProcessing || !!selectedReport}
+                            isDisabled={isProcessing || isSoftwarePreSelected()}
+                            placeholder="Select software"
                         />
+                        {isSoftwarePreSelected() && (
+                            <div className="text-xs text-gray-500 mt-1">
+                                Software is pre-selected based on the report
+                            </div>
+                        )}
                     </div>
                 )}
 
                 {/* Software Status Dropdown */}
-                {(type?.value === "SOFTWARE_UPDATE" || selectedReport?.problemType === "software issue") && (
+                {shouldShowSoftwareFields() && (
                     <div className="flex flex-col gap-1.5">
                         <label
                             htmlFor="softwareStatus"
                             className="font-semibold text-[#0E1726] text-sm"
                         >
-                            Software Status
+                            Software Status <span className="text-danger">*</span>
                         </label>
                         <Select
                             id="softwareStatus"
                             options={[
-                                { value: "available", label: "Working (No Issues)" },
-                                { value: "not_available", label: "Has Issues" }
+                                { value: "Working", label: "Working" },
+                                { value: "Has Issues", label: "Has Issues" }
                             ]}
                             value={softwareStatus}
                             onChange={(selectedOption) => setSoftwareStatus(selectedOption)}
                             isDisabled={isProcessing}
+                            placeholder="Select software status"
                         />
                     </div>
                 )}
