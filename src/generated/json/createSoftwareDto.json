@@ -1,0 +1,1 @@
+{"type":"object","properties":{"name":{"type":"string"},"requiredMemory":{"type":"string"},"requiredStorage":{"type":"string"}},"required":["name","requiredMemory","requiredStorage"],"x-readme-ref-name":"CreateSoftwareDto"}

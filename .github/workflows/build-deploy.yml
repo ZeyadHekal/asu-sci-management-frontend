@@ -1,0 +1,32 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract repository name
+        run: echo "REPO_NAME=${GITHUB_REPOSITORY#*/}" >> $GITHUB_ENV
+
+      - name: Create .env file from GitHub variables
+        run: |
+          # Create .env file with APP_ENV variables
+          echo "${{ vars.APP_ENV }}" > .env
+          
+          # Set COMPOSE_PROJECT_NAME to repository name
+          echo "COMPOSE_PROJECT_NAME=${{ env.REPO_NAME }}" >> .env
+
+      - name: Build and deploy with Docker Compose
+        run: |
+          # Build and start containers
+          docker-compose build
+          docker-compose down --remove-orphans
+          docker-compose up -d 

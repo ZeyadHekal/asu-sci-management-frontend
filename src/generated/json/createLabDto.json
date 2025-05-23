@@ -1,0 +1,1 @@
+{"type":"object","properties":{"name":{"type":"string"},"location":{"type":"string"},"supervisorId":{"type":"string"}},"required":["name","location","supervisorId"],"x-readme-ref-name":"CreateLabDto"}

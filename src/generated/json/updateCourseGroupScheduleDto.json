@@ -1,0 +1,1 @@
+{"type":"object","properties":{"courseGroupId":{"type":"string"},"assistantId":{"type":"string"},"weekDay":{"type":"string"},"startTime":{"type":"string","description":"Start time in HH:MM format"},"endTime":{"type":"string","description":"End time in HH:MM format"}},"x-readme-ref-name":"UpdateCourseGroupScheduleDto"}

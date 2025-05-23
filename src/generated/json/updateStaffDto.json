@@ -1,0 +1,1 @@
+{"type":"object","properties":{"name":{"type":"string"},"email":{"type":"string"},"title":{"type":"string"},"department":{"type":"string"},"userTypeId":{"type":"string","description":"User type ID to change staff type"}},"x-readme-ref-name":"UpdateStaffDto"}

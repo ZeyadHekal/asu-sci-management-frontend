@@ -1,0 +1,1 @@
+{"type":"object","properties":{"courseGroupId":{"type":"string"},"groupNumber":{"type":"number"}},"x-readme-ref-name":"UpdateEnrollmentDto"}

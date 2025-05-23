@@ -1,0 +1,1 @@
+{"type":"object","properties":{"courseId":{"type":"string"},"groupNumber":{"type":"number"},"date":{"format":"date-time","type":"string"}},"required":["courseId","groupNumber","date"],"x-readme-ref-name":"CreateLabSessionDto"}

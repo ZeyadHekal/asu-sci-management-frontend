@@ -1,0 +1,1 @@
+{"type":"object","properties":{"name":{"type":"string"},"username":{"type":"string","description":"Username has to be 4 letters or more"},"userTypeId":{"type":"string"},"id":{"type":"string"}},"required":["name","username","userTypeId","id"],"x-readme-ref-name":"UserDto"}

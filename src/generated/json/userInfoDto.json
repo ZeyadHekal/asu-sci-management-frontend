@@ -1,0 +1,1 @@
+{"type":"object","properties":{"id":{"type":"string"},"name":{"type":"string"},"username":{"type":"string"},"userType":{"type":"string"},"isStudent":{"type":"boolean"},"examModeStatus":{"type":"object","description":"Exam mode status for students"}},"required":["id","name","username","userType","isStudent"],"x-readme-ref-name":"UserInfoDto"}

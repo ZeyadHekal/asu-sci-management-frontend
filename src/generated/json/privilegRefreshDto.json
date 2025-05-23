@@ -1,0 +1,1 @@
+{"type":"object","properties":{"privileges":{"type":"array","items":{"type":"string"}}},"required":["privileges"],"x-readme-ref-name":"PrivilegRefreshDto"}

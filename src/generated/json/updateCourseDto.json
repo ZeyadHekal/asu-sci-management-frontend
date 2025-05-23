@@ -1,0 +1,1 @@
+{"type":"object","properties":{"name":{"type":"string"},"creditHours":{"type":"number"},"subjectCode":{"type":"string"},"courseNumber":{"type":"number"},"hasLab":{"type":"boolean"},"labDuration":{"type":"string"},"attendanceMarks":{"type":"number"}},"x-readme-ref-name":"UpdateCourseDto"}

@@ -1,0 +1,1 @@
+{"type":"object","properties":{"items":{"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"name":{"type":"string"},"hasIssue":{"type":"boolean"}},"required":["id","name","hasIssue"],"x-readme-ref-name":"DeviceSoftwareListDto"}},"total":{"type":"number"}},"required":["items","total"],"x-readme-ref-name":"DeviceSoftwarePagedDto"}

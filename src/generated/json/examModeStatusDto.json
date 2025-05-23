@@ -1,0 +1,1 @@
+{"type":"object","properties":{"isInExamMode":{"type":"boolean"},"examStartsIn":{"type":"number"},"examSchedules":{"type":"array","items":{"type":"string"}}},"required":["isInExamMode","examSchedules"],"x-readme-ref-name":"ExamModeStatusDto"}

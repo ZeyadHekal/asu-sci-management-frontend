@@ -1,0 +1,1 @@
+{"type":"object","properties":{"name":{"type":"string"},"username":{"type":"string","description":"Username has to be 4 letters or more"},"password":{"type":"string","example":"Abcd@1234"},"email":{"type":"string"},"title":{"type":"string"},"department":{"type":"string"}},"required":["name","username","password","email","title","department"],"x-readme-ref-name":"CreateStaffDto"}

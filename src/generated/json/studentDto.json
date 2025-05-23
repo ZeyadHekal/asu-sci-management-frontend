@@ -1,0 +1,1 @@
+{"type":"object","properties":{"id":{"type":"string"},"name":{"type":"string"},"username":{"type":"string"},"seatNo":{"type":"number"},"level":{"type":"number"},"program":{"type":"string"},"photo":{"type":"string","description":"Student photo ID"}},"required":["id","name","username","seatNo","level","program","photo"],"x-readme-ref-name":"StudentDto"}

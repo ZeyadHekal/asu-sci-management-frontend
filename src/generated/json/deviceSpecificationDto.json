@@ -1,0 +1,1 @@
+{"type":"object","properties":{"category":{"type":"string"},"value":{"type":"string"}},"required":["category","value"],"x-readme-ref-name":"DeviceSpecificationDto"}

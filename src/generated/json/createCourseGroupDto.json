@@ -1,0 +1,1 @@
+{"type":"object","properties":{"courseId":{"type":"string"},"order":{"type":"number"},"labId":{"type":"string","description":"Lab ID - can be null if no lab assigned"},"isDefault":{"type":"boolean"},"capacity":{"type":"number"}},"required":["courseId","order"],"x-readme-ref-name":"CreateCourseGroupDto"}

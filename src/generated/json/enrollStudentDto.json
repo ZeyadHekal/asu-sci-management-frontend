@@ -1,0 +1,1 @@
+{"type":"object","properties":{"studentId":{"type":"string"},"courseId":{"type":"string"}},"required":["studentId","courseId"],"x-readme-ref-name":"EnrollStudentDto"}

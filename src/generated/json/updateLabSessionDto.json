@@ -1,0 +1,1 @@
+{"type":"object","properties":{"courseId":{"type":"string"},"groupNumber":{"type":"number"},"date":{"format":"date-time","type":"string"}},"x-readme-ref-name":"UpdateLabSessionDto"}

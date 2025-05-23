@@ -1,0 +1,1 @@
+{"type":"object","properties":{"labId":{"type":"string"},"dateTime":{"format":"date-time","type":"string"},"examFiles":{"type":"string"},"assisstantId":{"type":"string"}},"x-readme-ref-name":"UpdateEventScheduleDto"}

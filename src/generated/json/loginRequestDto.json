@@ -1,0 +1,1 @@
+{"type":"object","properties":{"username":{"type":"string","example":"admin"},"password":{"type":"string","example":"Abcd@1234"}},"required":["username","password"],"x-readme-ref-name":"LoginRequestDto"}

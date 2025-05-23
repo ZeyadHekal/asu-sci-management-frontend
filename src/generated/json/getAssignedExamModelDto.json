@@ -1,0 +1,1 @@
+{"type":"object","properties":{"examModel":{"type":"string"},"examModelUrl":{"type":"string"}},"required":["examModel","examModelUrl"],"x-readme-ref-name":"GetAssignedExamModelDto"}
