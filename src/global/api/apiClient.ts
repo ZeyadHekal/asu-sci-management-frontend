@@ -98,16 +98,6 @@ axiosInstance.interceptors.request.use(
       config.headers.set('Authorization', `Bearer ${authToken}`);
     }
 
-    // Debug logging for create-with-groups requests
-    if (config.url?.includes('/events/create-with-groups')) {
-      console.log('🚀 API Request to create-with-groups:');
-      console.log('URL:', config.url);
-      console.log('Method:', config.method);
-      console.log('Data being sent:', config.data);
-      console.log('Data type:', typeof config.data);
-      console.log('Data JSON:', JSON.stringify(config.data, null, 2));
-    }
-
     return config;
   },
   (error) => {

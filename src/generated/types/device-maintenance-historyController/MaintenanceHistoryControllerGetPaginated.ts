@@ -30,6 +30,7 @@ export const maintenanceHistoryControllerGetPaginatedQueryParamsMaintenanceTypeE
   INSPECTION: 'INSPECTION',
   CALIBRATION: 'CALIBRATION',
   OTHER: 'OTHER',
+  USER_REPORT: 'USER_REPORT',
 } as const
 
 export type MaintenanceHistoryControllerGetPaginatedQueryParamsMaintenanceTypeEnum =

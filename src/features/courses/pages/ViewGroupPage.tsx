@@ -39,10 +39,10 @@ interface GroupDetails {
 
 interface AvailableGroup {
 	id: string;
-	groupName: string;
+	name: string;
 	order: number;
 	capacity: number;
-	currentStudents: number;
+	currentEnrollment: number;
 	isDefault: boolean;
 	isOverCapacity: boolean;
 }
@@ -370,7 +370,7 @@ const ViewGroupPage = () => {
 								<option value="">Choose a group...</option>
 								{availableGroups?.map((group) => (
 									<option key={group.id} value={group.id}>
-										{group.groupName} ({group.currentStudents}/{group.capacity || "∞"})
+										{group.name} ({group.currentEnrollment}/{group.capacity || "∞"})
 										{group.isOverCapacity && " - Over capacity"}
 									</option>
 								))}

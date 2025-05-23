@@ -22,6 +22,7 @@ import { useSoftwareControllerGetAll } from "../../../generated/hooks/softwaresH
 import { useQueryClient } from "@tanstack/react-query";
 import { deviceControllerGetPaginatedQueryKey } from "../../../generated/hooks/devicesHooks/useDeviceControllerGetPaginated";
 import type { DeviceListDto } from "../../../generated/types/DeviceListDto";
+import { useAuthStore } from "../../../store/authStore";
 
 // Available statuses for filtering
 const availableStatuses = [
@@ -32,6 +33,7 @@ const availableStatuses = [
 const DevicesPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const hasPrivilege = useAuthStore((state) => state.hasPrivilege);
   
   const [page, setPage] = useState(0); // API uses 0-based pagination
   const PAGE_SIZES = [10, 20, 30, 50, 100];
@@ -334,12 +336,14 @@ const DevicesPage = () => {
               <LuFilter size={16} />
               <span>Filters</span>
             </button>
-            <button
-              className="self-start h-10 px-3 rounded-lg bg-secondary flex items-center text-white"
-              onClick={handleAddDevice}
-            >
-              Add a New Device
-            </button>
+            {hasPrivilege("MANAGE_LABS") && (
+              <button
+                className="self-start h-10 px-3 rounded-lg bg-secondary flex items-center text-white"
+                onClick={handleAddDevice}
+              >
+                Add a New Device
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -564,13 +568,15 @@ const DevicesPage = () => {
                   >
                     <LuCode size={18} className="text-[#0E1726]" />
                   </button>
-                  <button
-                    onClick={() => handleDeleteDevice(row.id, row.name)}
-                    className="text-gray-500 hover:text-danger"
-                    title="Delete device"
-                  >
-                    <RiDeleteBinLine size={20} className="text-[#0E1726]" />
-                  </button>
+                  {hasPrivilege("MANAGE_LABS") && (
+                    <button
+                      onClick={() => handleDeleteDevice(row.id, row.name)}
+                      className="text-gray-500 hover:text-danger"
+                      title="Delete device"
+                    >
+                      <RiDeleteBinLine size={20} className="text-[#0E1726]" />
+                    </button>
+                  )}
                 </div>
               ),
             },
@@ -600,14 +606,14 @@ const DevicesPage = () => {
                   >
                     Clear Filters
                   </button>
-                ) : (
+                ) : hasPrivilege("MANAGE_LABS") ? (
                   <button
                     onClick={() => setIsDeviceModalOpen(true)}
                     className="mt-4 px-4 py-2 bg-secondary text-white rounded-md text-sm"
                   >
                     Add Device
                   </button>
-                )}
+                ) : null}
               </div>
             ) : undefined
           }

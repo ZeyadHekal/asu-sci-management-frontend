@@ -1,21 +1,21 @@
 import { useState, useEffect, useMemo } from "react";
-import { DataTable } from "mantine-datatable";
-import { LuSearch, LuHistory } from "react-icons/lu";
-import { FiAlertTriangle } from "react-icons/fi";
 import { useNavigate } from "react-router";
-import Modal from "../../../ui/modal/Modal";
-import { UpdateHistoryModal } from "../../devices/components";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Select from "react-select";
 import { toast } from "react-hot-toast";
+import { DataTable } from "mantine-datatable";
+import { LuSearch, LuHistory } from "react-icons/lu";
+import { FiAlertTriangle } from "react-icons/fi";
 import { useDeviceReportControllerGetMyReports } from "../../../generated/hooks/device-reportsHooks/useDeviceReportControllerGetMyReports";
 import { useDeviceReportControllerCreate } from "../../../generated/hooks/device-reportsHooks/useDeviceReportControllerCreate";
 import { useDeviceControllerGetAll } from "../../../generated/hooks/devicesHooks/useDeviceControllerGetAll";
+import { useDeviceControllerGetSoftwares } from "../../../generated/hooks/devicesHooks/useDeviceControllerGetSoftwares";
 import { useLabControllerGetAll } from "../../../generated/hooks/labsHooks/useLabControllerGetAll";
-import { DeviceReportDto } from "../../../generated/types/DeviceReportDto";
 import { DeviceReportListDto } from "../../../generated/types/DeviceReportListDto";
+import Modal from "../../../ui/modal/Modal";
+import UpdateHistoryModal from "../../devices/components/UpdateHistoryModal";
 import { getReportStatusBadge, getReportStatusLabel } from "../../../global/constants/reportStatus";
 
 // Type for paginated response structure
@@ -38,7 +38,20 @@ const reportSchema = z.object({
         value: z.string(),
         label: z.string()
     }, { required_error: "Please select a problem type" }),
+    softwareId: z.object({
+        value: z.string(),
+        label: z.string()
+    }).optional(),
     description: z.string().min(1, "Description is required"),
+}).refine((data) => {
+    // Make software selection required when problem type is "software"
+    if (data.problemType?.value === "software" && !data.softwareId) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Please select a software when reporting a software issue",
+    path: ["softwareId"]
 });
 
 type ReportFormData = z.infer<typeof reportSchema>;
@@ -65,6 +78,9 @@ const ReportsPage = () => {
     // State for UpdateHistoryModal
     const [selectedReportForHistory, setSelectedReportForHistory] = useState<DeviceReportListDto | null>(null);
     const [isUpdateHistoryModalOpen, setIsUpdateHistoryModalOpen] = useState(false);
+
+    // Software state
+    const [softwareOptions, setSoftwareOptions] = useState<{ value: string; label: string }[]>([]);
 
     // Fetch user's reports
     const { data: reportsData, isLoading: reportsLoading, refetch } = useDeviceReportControllerGetMyReports();
@@ -107,6 +123,58 @@ const ReportsPage = () => {
     const selectedLab = watch("labId");
     const selectedDevice = watch("deviceId");
     const selectedProblemType = watch("problemType");
+
+    // Fetch device software when device is selected and problem type is software
+    const { data: deviceSoftwareData, isLoading: isLoadingSoftware } = useDeviceControllerGetSoftwares(
+        selectedDevice?.value || "",
+        { limit: 100, page: 0 },
+        { 
+            query: { 
+                enabled: !!selectedDevice?.value && selectedProblemType?.value === "software" && isModalOpen,
+                staleTime: 5 * 60 * 1000, // 5 minutes
+            } 
+        }
+    );
+
+    // Update software options when device software data changes
+    useEffect(() => {
+        if (deviceSoftwareData?.data) {
+            let softwareItems: any[] = [];
+            
+            // Handle both array and single object responses
+            if (Array.isArray(deviceSoftwareData.data)) {
+                // If it's an array (as per generated types), take the first item
+                const firstPage = deviceSoftwareData.data[0];
+                softwareItems = firstPage?.items || [];
+            } else {
+                // If it's a single object (actual implementation)
+                const pagedData = deviceSoftwareData.data as unknown as { items: any[]; total: number };
+                softwareItems = pagedData.items || [];
+            }
+            
+            // Transform to dropdown options
+            const options = softwareItems.map((sw: any) => ({
+                value: sw.id,
+                label: sw.name
+            }));
+            setSoftwareOptions(options);
+        } else {
+            setSoftwareOptions([]);
+        }
+    }, [deviceSoftwareData]);
+
+    // Clear software selection when device or problem type changes
+    useEffect(() => {
+        if (selectedProblemType?.value !== "software") {
+            setValue("softwareId", undefined);
+            setSoftwareOptions([]);
+        }
+    }, [selectedProblemType, setValue]);
+
+    useEffect(() => {
+        setValue("softwareId", undefined);
+        setSoftwareOptions([]);
+    }, [selectedDevice, setValue]);
 
     // Memoize reports data to prevent infinite re-renders
     const reports = useMemo(() => {
@@ -177,8 +245,10 @@ const ReportsPage = () => {
             status: "REPORTED" as const
         };
 
-        // Note: appId is now optional in the backend
-        // In the future, we can add software selection for software-related issues
+        // Include software ID for software-related issues
+        if (data.problemType?.value === "software" && data.softwareId) {
+            reportData.appId = data.softwareId.value;
+        }
 
         createReport({
             data: reportData
@@ -382,6 +452,30 @@ const ReportsPage = () => {
                         )}
                     </div>
 
+                    {selectedProblemType?.value === "software" && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Software <span className="text-red-500">*</span>
+                            </label>
+                            <Select
+                                options={softwareOptions}
+                                onChange={(option) => {
+                                    if (option) {
+                                        setValue("softwareId", option);
+                                    }
+                                }}
+                                placeholder={isLoadingSoftware ? "Loading software..." : "Select software"}
+                                className="basic-single"
+                                classNamePrefix="select"
+                                isDisabled={!selectedDevice || isLoadingSoftware}
+                                isLoading={isLoadingSoftware}
+                            />
+                            {errors.softwareId && (
+                                <p className="mt-1 text-xs text-red-600">{errors.softwareId.message}</p>
+                            )}
+                        </div>
+                    )}
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Description
@@ -410,9 +504,10 @@ const ReportsPage = () => {
                         </button>
                         <button
                             type="submit"
-                            className="rounded-md bg-secondary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-secondary-dark focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2"
+                            disabled={isCreating}
+                            className="rounded-md bg-secondary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-secondary-dark focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Submit Report
+                            {isCreating ? "Submitting..." : "Submit Report"}
                         </button>
                     </div>
                 </form>

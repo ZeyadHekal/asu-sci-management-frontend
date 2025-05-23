@@ -793,7 +793,7 @@ export const oas = {
     '/users/staff/paginated': {
       get: {
         description:
-          'Retrieve staff with pagination and filtering. Available filters: department (string), userType (string), status (boolean). Example: ?page=0&limit=10&department=Computer%20Science&userType=Doctor&status=true',
+          'Retrieve staff with pagination, search, and filtering. Available search: name, username, title, department. Available filters: department (string), userType (string). Example: ?page=0&limit=10&search=john&department=Computer%20Science&userType=Doctor',
         operationId: 'UserController_getPaginatedStaff',
         parameters: [
           {
@@ -845,6 +845,15 @@ export const oas = {
             },
           },
           {
+            name: 'search',
+            required: false,
+            in: 'query',
+            description: 'Search by name, username, title, or department',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
             name: 'department',
             required: false,
             in: 'query',
@@ -860,15 +869,6 @@ export const oas = {
             description: 'Filter by user type name',
             schema: {
               type: 'string',
-            },
-          },
-          {
-            name: 'status',
-            required: false,
-            in: 'query',
-            description: 'Filter by user status',
-            schema: {
-              type: 'boolean',
             },
           },
         ],
@@ -1940,36 +1940,6 @@ export const oas = {
         tags: ['events'],
       },
     },
-    '/events/{scheduleId}/upload-exam-models': {
-      post: {
-        operationId: 'EventController_uploadExamModels',
-        parameters: [
-          {
-            name: 'scheduleId',
-            required: true,
-            in: 'path',
-            description: 'Event Schedule ID',
-            schema: {
-              type: 'string',
-            },
-          },
-        ],
-        responses: {
-          '200': {
-            description: 'Exam models uploaded successfully',
-            content: {
-              'application/json': {
-                schema: {
-                  $ref: '#/components/schemas/ExamModelsResponseDto',
-                },
-              },
-            },
-          },
-        },
-        summary: 'Upload multiple exam models for exam schedule',
-        tags: ['events'],
-      },
-    },
     '/events/{scheduleId}/download-submissions': {
       get: {
         operationId: 'EventController_downloadSubmissions',
@@ -2660,6 +2630,8 @@ export const oas = {
         tags: ['course-groups'],
       },
       delete: {
+        description:
+          'Delete a course group. All students enrolled in this group will be automatically moved to the default group of the same course. Default groups cannot be deleted.',
         operationId: 'CourseGroupController_delete',
         parameters: [
           {
@@ -2673,7 +2645,7 @@ export const oas = {
         ],
         responses: {
           '200': {
-            description: 'Course group deleted successfully.',
+            description: 'Course group deleted successfully and all students moved to default group.',
             content: {
               'application/json': {
                 schema: {
@@ -2681,6 +2653,9 @@ export const oas = {
                 },
               },
             },
+          },
+          '400': {
+            description: 'Cannot delete default groups.',
           },
           '404': {
             description: 'Course group not found.',
@@ -6732,7 +6707,7 @@ export const oas = {
             in: 'query',
             description: 'Filter by maintenance type',
             schema: {
-              enum: ['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER'],
+              enum: ['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER', 'USER_REPORT'],
               type: 'string',
             },
           },
@@ -6875,7 +6850,7 @@ export const oas = {
             in: 'query',
             description: 'Filter by maintenance type',
             schema: {
-              enum: ['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER'],
+              enum: ['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER', 'USER_REPORT'],
               type: 'string',
             },
           },
@@ -11389,21 +11364,6 @@ export const oas = {
         },
         required: ['schedules'],
       },
-      ExamModelsResponseDto: {
-        type: 'object',
-        properties: {
-          message: {
-            type: 'string',
-          },
-          uploadedModels: {
-            type: 'array',
-            items: {
-              type: 'array',
-            },
-          },
-        },
-        required: ['message', 'uploadedModels'],
-      },
       MarkUploadResponseDto: {
         type: 'object',
         properties: {
@@ -13403,6 +13363,10 @@ export const oas = {
             type: 'string',
             description: 'Resolution notes',
           },
+          involvedPersonnel: {
+            type: 'string',
+            description: 'Involved personnel',
+          },
         },
         required: ['status'],
       },
@@ -13419,7 +13383,7 @@ export const oas = {
           },
           maintenanceType: {
             type: 'string',
-            enum: ['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER'],
+            enum: ['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER', 'USER_REPORT'],
             description: 'Type of maintenance',
           },
           status: {
@@ -13447,6 +13411,18 @@ export const oas = {
             items: {
               type: 'string',
             },
+          },
+          softwareId: {
+            type: 'string',
+            description: 'Software ID for software-related maintenance',
+          },
+          softwareHasIssue: {
+            type: 'boolean',
+            description: 'Software status after maintenance (true = has issue, false = no issue)',
+          },
+          deviceHasIssue: {
+            type: 'boolean',
+            description: 'Device status after maintenance (true = has issue, false = no issue)',
           },
         },
         required: ['deviceId', 'maintenanceType', 'status', 'description'],
@@ -13464,7 +13440,7 @@ export const oas = {
           },
           maintenanceType: {
             type: 'string',
-            enum: ['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER'],
+            enum: ['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER', 'USER_REPORT'],
             description: 'Type of maintenance',
           },
           status: {
@@ -13492,6 +13468,18 @@ export const oas = {
             items: {
               type: 'string',
             },
+          },
+          softwareId: {
+            type: 'string',
+            description: 'Software ID for software-related maintenance',
+          },
+          softwareHasIssue: {
+            type: 'boolean',
+            description: 'Software status after maintenance (true = has issue, false = no issue)',
+          },
+          deviceHasIssue: {
+            type: 'boolean',
+            description: 'Device status after maintenance (true = has issue, false = no issue)',
           },
           id: {
             type: 'string',
@@ -13531,7 +13519,7 @@ export const oas = {
           },
           maintenanceType: {
             type: 'string',
-            enum: ['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER'],
+            enum: ['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER', 'USER_REPORT'],
             description: 'Type of maintenance',
           },
           status: {
@@ -13559,6 +13547,18 @@ export const oas = {
             items: {
               type: 'string',
             },
+          },
+          softwareId: {
+            type: 'string',
+            description: 'Software ID for software-related maintenance',
+          },
+          softwareHasIssue: {
+            type: 'boolean',
+            description: 'Software status after maintenance (true = has issue, false = no issue)',
+          },
+          deviceHasIssue: {
+            type: 'boolean',
+            description: 'Device status after maintenance (true = has issue, false = no issue)',
           },
           id: {
             type: 'string',
@@ -13598,7 +13598,7 @@ export const oas = {
           },
           maintenanceType: {
             type: 'string',
-            enum: ['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER'],
+            enum: ['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER', 'USER_REPORT'],
             description: 'Type of maintenance',
           },
           status: {
@@ -13626,6 +13626,18 @@ export const oas = {
             items: {
               type: 'string',
             },
+          },
+          softwareId: {
+            type: 'string',
+            description: 'Software ID for software-related maintenance',
+          },
+          softwareHasIssue: {
+            type: 'boolean',
+            description: 'Software status after maintenance (true = has issue, false = no issue)',
+          },
+          deviceHasIssue: {
+            type: 'boolean',
+            description: 'Device status after maintenance (true = has issue, false = no issue)',
           },
         },
       },

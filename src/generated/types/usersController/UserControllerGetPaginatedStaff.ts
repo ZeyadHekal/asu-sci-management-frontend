@@ -39,6 +39,11 @@ export type UserControllerGetPaginatedStaffQueryParams = {
    */
   ids?: string[] | undefined
   /**
+   * @description Search by name, username, title, or department
+   * @type string | undefined
+   */
+  search?: string | undefined
+  /**
    * @description Filter by department
    * @type string | undefined
    */
@@ -48,11 +53,6 @@ export type UserControllerGetPaginatedStaffQueryParams = {
    * @type string | undefined
    */
   userType?: string | undefined
-  /**
-   * @description Filter by user status
-   * @type boolean | undefined
-   */
-  status?: boolean | undefined
 }
 
 /**

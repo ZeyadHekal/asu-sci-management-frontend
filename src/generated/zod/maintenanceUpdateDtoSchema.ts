@@ -9,6 +9,7 @@ export const maintenanceUpdateDtoSchema = z.object({
   status: z.enum(['available', 'not available']).describe('Device availability status'),
   description: z.string().describe('Maintenance description').optional(),
   resolutionNotes: z.string().describe('Resolution notes').optional(),
+  involvedPersonnel: z.string().describe('Involved personnel').optional(),
 })
 
 export type MaintenanceUpdateDtoSchema = z.infer<typeof maintenanceUpdateDtoSchema>

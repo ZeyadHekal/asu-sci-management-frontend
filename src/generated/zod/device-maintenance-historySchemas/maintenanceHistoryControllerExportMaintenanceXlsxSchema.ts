@@ -16,7 +16,7 @@ export const maintenanceHistoryControllerExportMaintenanceXlsxQueryParamsSchema 
     labId: z.string().describe('Filter by lab ID').optional(),
     status: z.enum(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'FAILED']).describe('Filter by status').optional(),
     maintenanceType: z
-      .enum(['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER'])
+      .enum(['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER', 'USER_REPORT'])
       .describe('Filter by maintenance type')
       .optional(),
     relatedReportId: z.string().describe('Filter by related report ID').optional(),

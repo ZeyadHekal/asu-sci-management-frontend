@@ -13,9 +13,9 @@ export const userControllerGetPaginatedStaffQueryParamsSchema = z
     sortBy: z.string().default('created_at'),
     sortOrder: z.enum(['asc', 'desc']).default('desc'),
     ids: z.array(z.string()).optional(),
+    search: z.string().describe('Search by name, username, title, or department').optional(),
     department: z.string().describe('Filter by department').optional(),
     userType: z.string().describe('Filter by user type name').optional(),
-    status: z.boolean().describe('Filter by user status').optional(),
   })
   .optional()
 

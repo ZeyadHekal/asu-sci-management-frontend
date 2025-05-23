@@ -9,6 +9,7 @@ import type { UseMutationOptions, QueryClient } from '@tanstack/react-query'
 import type {
   CourseGroupControllerDeleteMutationResponse,
   CourseGroupControllerDeletePathParams,
+  CourseGroupControllerDelete400,
   CourseGroupControllerDelete404,
 } from '../../types/course-groupsController/CourseGroupControllerDelete.ts'
 import { useMutation } from '@tanstack/react-query'
@@ -18,6 +19,7 @@ export const courseGroupControllerDeleteMutationKey = () => [{ url: '/course-gro
 export type CourseGroupControllerDeleteMutationKey = ReturnType<typeof courseGroupControllerDeleteMutationKey>
 
 /**
+ * @description Delete a course group. All students enrolled in this group will be automatically moved to the default group of the same course. Default groups cannot be deleted.
  * @summary Delete a course-group
  * {@link /course-groups/:id}
  */
@@ -27,15 +29,16 @@ export async function courseGroupControllerDelete(
 ) {
   const { client: request = client, ...requestConfig } = config
 
-  const res = await request<CourseGroupControllerDeleteMutationResponse, ResponseErrorConfig<CourseGroupControllerDelete404>, unknown>({
-    method: 'DELETE',
-    url: `/course-groups/${id}`,
-    ...requestConfig,
-  })
+  const res = await request<
+    CourseGroupControllerDeleteMutationResponse,
+    ResponseErrorConfig<CourseGroupControllerDelete400 | CourseGroupControllerDelete404>,
+    unknown
+  >({ method: 'DELETE', url: `/course-groups/${id}`, ...requestConfig })
   return res
 }
 
 /**
+ * @description Delete a course group. All students enrolled in this group will be automatically moved to the default group of the same course. Default groups cannot be deleted.
  * @summary Delete a course-group
  * {@link /course-groups/:id}
  */
@@ -43,7 +46,7 @@ export function useCourseGroupControllerDelete<TContext>(
   options: {
     mutation?: UseMutationOptions<
       ResponseConfig<CourseGroupControllerDeleteMutationResponse>,
-      ResponseErrorConfig<CourseGroupControllerDelete404>,
+      ResponseErrorConfig<CourseGroupControllerDelete400 | CourseGroupControllerDelete404>,
       { id: CourseGroupControllerDeletePathParams['id'] },
       TContext
     > & { client?: QueryClient }
@@ -55,7 +58,7 @@ export function useCourseGroupControllerDelete<TContext>(
 
   return useMutation<
     ResponseConfig<CourseGroupControllerDeleteMutationResponse>,
-    ResponseErrorConfig<CourseGroupControllerDelete404>,
+    ResponseErrorConfig<CourseGroupControllerDelete400 | CourseGroupControllerDelete404>,
     { id: CourseGroupControllerDeletePathParams['id'] },
     TContext
   >(

@@ -216,6 +216,17 @@ const CourseGroupsPage = () => {
         setEditingGroup(null);
     };
 
+    const handleSuccess = () => {
+        // Invalidate queries to refresh table data
+        queryClient.invalidateQueries({
+            queryKey: courseGroupControllerGetScheduleTableQueryKey(),
+        });
+        // Also invalidate default group students query
+        queryClient.invalidateQueries({
+            queryKey: ['defaultGroupStudents', courseId],
+        });
+    };
+
     // Helper functions for reordering groups
     const handleMoveGroupUp = (group: any) => {
         const nonDefaultGroups = filteredGroups.filter(g => !g.isDefault);
@@ -504,7 +515,7 @@ const CourseGroupsPage = () => {
             <CreateCourseGroupModal
                 isOpen={isCreateGroupModalOpen}
                 onClose={handleCloseModal}
-                onSuccess={handleCloseModal}
+                onSuccess={handleSuccess}
                 courseId={courseId!}
                 courseName={course?.name || ""}
                 groupData={editingGroup}

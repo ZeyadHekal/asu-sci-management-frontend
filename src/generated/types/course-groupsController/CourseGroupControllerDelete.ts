@@ -13,9 +13,14 @@ export type CourseGroupControllerDeletePathParams = {
 }
 
 /**
- * @description Course group deleted successfully.
+ * @description Course group deleted successfully and all students moved to default group.
  */
 export type CourseGroupControllerDelete200 = DeleteDto
+
+/**
+ * @description Cannot delete default groups.
+ */
+export type CourseGroupControllerDelete400 = unknown
 
 /**
  * @description Course group not found.
@@ -27,5 +32,5 @@ export type CourseGroupControllerDeleteMutationResponse = CourseGroupControllerD
 export type CourseGroupControllerDeleteMutation = {
   Response: CourseGroupControllerDelete200
   PathParams: CourseGroupControllerDeletePathParams
-  Errors: CourseGroupControllerDelete404
+  Errors: CourseGroupControllerDelete400 | CourseGroupControllerDelete404
 }

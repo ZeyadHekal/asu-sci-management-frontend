@@ -81,7 +81,8 @@ const allLinks: MenuItem[] = [
     label: "Devices",
     to: "/devices",
     subMenu: [],
-    privilege: "MANAGE_LABS",
+    conditionalVisibility: (privileges) => 
+      privileges.includes("MANAGE_LABS") || privileges.includes("LAB_MAINTENANCE"),
   },
   {
     icon: <PiUsers size={20} />,

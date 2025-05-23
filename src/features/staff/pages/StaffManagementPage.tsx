@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DataTable } from "mantine-datatable";
-import { LuSearch, LuFilter } from "react-icons/lu";
+import { LuSearch } from "react-icons/lu";
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBinLine } from "react-icons/ri";
 import { PiUsers } from "react-icons/pi";
@@ -81,10 +81,9 @@ const StaffManagementPage = () => {
     const PAGE_SIZES = [10, 20, 30, 50, 100];
     const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
     const [search, setSearch] = useState("");
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [departmentFilter, setDepartmentFilter] = useState<{ value: string; label: string } | null>(null);
     const [userTypeFilter, setUserTypeFilter] = useState<{ value: string; label: string } | null>(null);
-    const [statusFilter, setStatusFilter] = useState<{ value: string; label: string } | null>(null);
     const [selectedStaff, setSelectedStaff] = useState<StaffDtoSchema | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
@@ -92,15 +91,29 @@ const StaffManagementPage = () => {
     const [isPermissionsModalOpen, setIsPermissionsModalOpen] = useState(false);
     const [selectedPrivileges, setSelectedPrivileges] = useState<string[]>([]);
 
-    // API hooks with server-side filtering
+    // Debounce search input
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    // Reset page when search or filters change
+    useEffect(() => {
+        setPage(1);
+    }, [debouncedSearch, departmentFilter, userTypeFilter]);
+
+    // API hooks with server-side filtering and search
     const { data: staffData, isLoading: isLoadingStaff, refetch: refetchStaff } = useUserControllerGetPaginatedStaff({
         page: page - 1, // API expects 0-based indexing
         limit: pageSize,
         sortBy: "created_at",
         sortOrder: "desc",
+        search: debouncedSearch || undefined,
         department: departmentFilter?.value || undefined,
         userType: userTypeFilter?.value || undefined,
-        status: statusFilter?.value === "active" ? true : statusFilter?.value === "inactive" ? false : undefined,
     });
 
     const { data: userTypesData, isLoading: isLoadingUserTypes } = useUserTypeControllerFindAllForStaffAssignment();
@@ -206,10 +219,7 @@ const StaffManagementPage = () => {
         label: type.name,
     }));
 
-    const statusOptions = [
-        { value: "active", label: "Active" },
-        { value: "inactive", label: "Inactive" },
-    ];
+
 
     // Available privileges for the permissions modal
     const privilegeOptions = allPrivileges.map((privilege) => ({
@@ -352,20 +362,10 @@ const StaffManagementPage = () => {
     };
 
     const clearFilters = () => {
+        setSearch("");
         setDepartmentFilter(null);
         setUserTypeFilter(null);
-        setStatusFilter(null);
     };
-
-    if (isLoadingStaff && page === 1) {
-        return (
-            <div className="panel mt-6">
-                <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-secondary"></div>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="panel mt-6">
@@ -375,26 +375,6 @@ const StaffManagementPage = () => {
                         <h2 className="text-2xl font-semibold text-secondary">Staff Management</h2>
                     </div>
                     <div className="flex flex-col gap-3 md:flex-row">
-                        <div className="relative flex items-center flex-1 md:flex-auto">
-                            <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                                <LuSearch size={20} className="text-[#0E1726]" />
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="Search staff..."
-                                className="h-10 pl-10 pr-4 w-[240px] rounded-md border border-[#E0E6ED] text-xs font-medium tracking-wider text-gray-500 outline-none focus:border-secondary transition-colors duration-200"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </div>
-                        <button
-                            className={`self-start h-10 px-3 rounded-md flex items-center gap-1 ${isFilterOpen ? "bg-secondary text-white" : "bg-gray-100 text-secondary"
-                                }`}
-                            onClick={() => setIsFilterOpen(!isFilterOpen)}
-                        >
-                            <LuFilter size={16} />
-                            <span>Filters</span>
-                        </button>
                         <button
                             className="self-start h-10 px-3 rounded-lg bg-secondary flex items-center text-white"
                             onClick={() => navigate("/staff/requests")}
@@ -419,56 +399,58 @@ const StaffManagementPage = () => {
                 </div>
             </div>
 
-            {/* Filter panel */}
-            {isFilterOpen && (
-                <div className="mb-6 p-4 bg-gray-50 border rounded-md relative z-10">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm text-gray-600 mb-1">Department</label>
-                            <Select
-                                options={departmentOptions}
-                                isClearable
-                                placeholder="Filter by department"
-                                value={departmentFilter}
-                                onChange={(option) => setDepartmentFilter(option)}
-                                className="text-sm"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm text-gray-600 mb-1">User Type</label>
-                            <Select
-                                options={userTypeOptions}
-                                isClearable
-                                placeholder="Filter by user type"
-                                value={userTypeFilter}
-                                onChange={(option) => setUserTypeFilter(option)}
-                                className="text-sm"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm text-gray-600 mb-1">Status</label>
-                            <Select
-                                options={statusOptions}
-                                isClearable
-                                placeholder="Filter by status"
-                                value={statusFilter}
-                                onChange={(option) => setStatusFilter(option)}
-                                className="text-sm"
+            {/* Search and Filter panel - Always visible */}
+            <div className="mb-6 p-4 bg-gray-50 border rounded-md relative z-10">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label className="block text-sm text-gray-600 mb-1">Search</label>
+                        <div className="relative">
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                                <LuSearch size={16} className="text-gray-400" />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Search staff..."
+                                className="w-full pl-10 pr-4 py-2 rounded-md border border-gray-300 text-sm focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
                             />
                         </div>
                     </div>
-                    {(departmentFilter || userTypeFilter || statusFilter) && (
-                        <div className="mt-4 flex justify-end">
-                            <button
-                                onClick={clearFilters}
-                                className="text-sm text-secondary hover:text-secondary-dark"
-                            >
-                                Clear all filters
-                            </button>
-                        </div>
-                    )}
+                    <div>
+                        <label className="block text-sm text-gray-600 mb-1">Department</label>
+                        <Select
+                            options={departmentOptions}
+                            isClearable
+                            placeholder="Filter by department"
+                            value={departmentFilter}
+                            onChange={(option) => setDepartmentFilter(option)}
+                            className="text-sm"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm text-gray-600 mb-1">User Type</label>
+                        <Select
+                            options={userTypeOptions}
+                            isClearable
+                            placeholder="Filter by user type"
+                            value={userTypeFilter}
+                            onChange={(option) => setUserTypeFilter(option)}
+                            className="text-sm"
+                        />
+                    </div>
                 </div>
-            )}
+                {(search || departmentFilter || userTypeFilter) && (
+                    <div className="mt-4 flex justify-end">
+                        <button
+                            onClick={clearFilters}
+                            className="text-sm text-secondary hover:text-secondary-dark"
+                        >
+                            Clear all filters
+                        </button>
+                    </div>
+                )}
+            </div>
 
             <div className="datatables">
                 <DataTable

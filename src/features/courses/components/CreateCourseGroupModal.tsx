@@ -11,6 +11,7 @@ import { useUserControllerGetAllAssistants } from "../../../generated/hooks/user
 import { useUserControllerGetAllStaff } from "../../../generated/hooks/usersHooks/useUserControllerGetAllStaff";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { courseGroupControllerGetPaginatedQueryKey } from "../../../generated/hooks/course-groupsHooks/useCourseGroupControllerGetPaginated";
+import { courseGroupControllerGetScheduleTableQueryKey } from "../../../generated/hooks/course-groupsHooks/useCourseGroupControllerGetScheduleTable";
 import { client } from "../../../global/api/apiClient";
 import toast from "react-hot-toast";
 
@@ -111,9 +112,14 @@ const CreateCourseGroupModal = ({
                     }
                 }
                 
+                // Invalidate both query keys to ensure all tables are updated
                 queryClient.invalidateQueries({
                     queryKey: courseGroupControllerGetPaginatedQueryKey(),
                 });
+                queryClient.invalidateQueries({
+                    queryKey: courseGroupControllerGetScheduleTableQueryKey(),
+                });
+                onSuccess();
                 onClose();
             },
             onError: (error) => {
@@ -128,9 +134,14 @@ const CreateCourseGroupModal = ({
         mutation: {
             onSuccess: () => {
                 toast.success("Group updated successfully");
+                // Invalidate both query keys to ensure all tables are updated
                 queryClient.invalidateQueries({
                     queryKey: courseGroupControllerGetPaginatedQueryKey(),
                 });
+                queryClient.invalidateQueries({
+                    queryKey: courseGroupControllerGetScheduleTableQueryKey(),
+                });
+                onSuccess();
                 onClose();
             },
             onError: (error) => {

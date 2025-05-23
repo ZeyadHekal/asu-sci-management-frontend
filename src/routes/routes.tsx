@@ -197,7 +197,7 @@ const router = createBrowserRouter([
       {
         path: "devices",
         element: (
-          <ProtectedRoute allowedPrivileges={["MANAGE_LABS"]}>
+          <ProtectedRoute allowedPrivileges={["MANAGE_LABS", "LAB_MAINTENANCE"]}>
             <SuspenseWrapper>
               <DevicesPage />
             </SuspenseWrapper>
@@ -207,7 +207,7 @@ const router = createBrowserRouter([
       {
         path: "devices/:deviceId/history",
         element: (
-          <ProtectedRoute allowedPrivileges={["MANAGE_LABS"]}>
+          <ProtectedRoute allowedPrivileges={["MANAGE_LABS", "LAB_MAINTENANCE", "LAB_ASSISTANT"]}>
             <SuspenseWrapper>
               <DeviceHistoryPage />
             </SuspenseWrapper>
@@ -217,7 +217,7 @@ const router = createBrowserRouter([
       {
         path: "devices/software",
         element: (
-          <ProtectedRoute allowedPrivileges={["MANAGE_LABS"]}>
+          <ProtectedRoute allowedPrivileges={["MANAGE_LABS", "LAB_MAINTENANCE"]}>
             <SuspenseWrapper>
               <SoftwarePage />
             </SuspenseWrapper>
@@ -227,7 +227,7 @@ const router = createBrowserRouter([
       {
         path: "devices/history",
         element: (
-          <ProtectedRoute allowedPrivileges={["MANAGE_LABS"]}>
+          <ProtectedRoute allowedPrivileges={["MANAGE_LABS", "LAB_MAINTENANCE"]}>
             <SuspenseWrapper>
               <AllDevicesHistoryPage />
             </SuspenseWrapper>

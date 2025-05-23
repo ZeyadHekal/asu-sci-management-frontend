@@ -181,7 +181,6 @@ export type { EventControllerStartExamMutationKey } from './hooks/eventsHooks/us
 export type { EventControllerSubmitFilesMutationKey } from './hooks/eventsHooks/useEventControllerSubmitFiles.ts'
 export type { EventControllerUpdateMutationKey } from './hooks/eventsHooks/useEventControllerUpdate.ts'
 export type { EventControllerUploadExamModelFilesMutationKey } from './hooks/eventsHooks/useEventControllerUploadExamModelFiles.ts'
-export type { EventControllerUploadExamModelsMutationKey } from './hooks/eventsHooks/useEventControllerUploadExamModels.ts'
 export type { EventControllerUploadMarksMutationKey } from './hooks/eventsHooks/useEventControllerUploadMarks.ts'
 export type { ExamModelControllerAssignExamModelsToStudentsMutationKey } from './hooks/exam-modelsHooks/useExamModelControllerAssignExamModelsToStudents.ts'
 export type { ExamModelControllerAssignRandomExamModelMutationKey } from './hooks/exam-modelsHooks/useExamModelControllerAssignRandomExamModel.ts'
@@ -488,6 +487,7 @@ export type {
 export type {
   CourseGroupControllerDeletePathParams,
   CourseGroupControllerDelete200,
+  CourseGroupControllerDelete400,
   CourseGroupControllerDelete404,
   CourseGroupControllerDeleteMutationResponse,
   CourseGroupControllerDeleteMutation,
@@ -1373,12 +1373,6 @@ export type {
   EventControllerUploadExamModelFilesMutation,
 } from './types/eventsController/EventControllerUploadExamModelFiles.ts'
 export type {
-  EventControllerUploadExamModelsPathParams,
-  EventControllerUploadExamModels200,
-  EventControllerUploadExamModelsMutationResponse,
-  EventControllerUploadExamModelsMutation,
-} from './types/eventsController/EventControllerUploadExamModels.ts'
-export type {
   EventControllerUploadMarksPathParams,
   EventControllerUploadMarks200,
   EventControllerUploadMarksMutationResponse,
@@ -1434,7 +1428,6 @@ export type {
 } from './types/exam-modelsController/ExamModelControllerUploadExamModels.ts'
 export type { ExamModelDto } from './types/ExamModelDto.ts'
 export type { ExamModelForEventDto } from './types/ExamModelForEventDto.ts'
-export type { ExamModelsResponseDto } from './types/ExamModelsResponseDto.ts'
 export type { ExamModeStatusDto } from './types/ExamModeStatusDto.ts'
 export type { ExamScheduleItemDto } from './types/ExamScheduleItemDto.ts'
 export type { FileResponseDto } from './types/FileResponseDto.ts'
@@ -2378,6 +2371,7 @@ export type {
 export type {
   CourseGroupControllerDeletePathParamsSchema,
   CourseGroupControllerDelete200Schema,
+  CourseGroupControllerDelete400Schema,
   CourseGroupControllerDelete404Schema,
   CourseGroupControllerDeleteMutationResponseSchema,
 } from './zod/course-groupsSchemas/courseGroupControllerDeleteSchema.ts'
@@ -3118,11 +3112,6 @@ export type {
   EventControllerUploadExamModelFilesMutationResponseSchema,
 } from './zod/eventsSchemas/eventControllerUploadExamModelFilesSchema.ts'
 export type {
-  EventControllerUploadExamModelsPathParamsSchema,
-  EventControllerUploadExamModels200Schema,
-  EventControllerUploadExamModelsMutationResponseSchema,
-} from './zod/eventsSchemas/eventControllerUploadExamModelsSchema.ts'
-export type {
   EventControllerUploadMarksPathParamsSchema,
   EventControllerUploadMarks200Schema,
   EventControllerUploadMarksMutationResponseSchema,
@@ -3169,7 +3158,6 @@ export type {
 } from './zod/exam-modelsSchemas/examModelControllerUploadExamModelsSchema.ts'
 export type { ExamModelDtoSchema } from './zod/examModelDtoSchema.ts'
 export type { ExamModelForEventDtoSchema } from './zod/examModelForEventDtoSchema.ts'
-export type { ExamModelsResponseDtoSchema } from './zod/examModelsResponseDtoSchema.ts'
 export type { ExamModeStatusDtoSchema } from './zod/examModeStatusDtoSchema.ts'
 export type { ExamScheduleItemDtoSchema } from './zod/examScheduleItemDtoSchema.ts'
 export type { FileResponseDtoSchema } from './zod/fileResponseDtoSchema.ts'
@@ -4845,11 +4833,6 @@ export {
   useEventControllerUploadExamModelFiles,
 } from './hooks/eventsHooks/useEventControllerUploadExamModelFiles.ts'
 export {
-  eventControllerUploadExamModelsMutationKey,
-  eventControllerUploadExamModels,
-  useEventControllerUploadExamModels,
-} from './hooks/eventsHooks/useEventControllerUploadExamModels.ts'
-export {
   eventControllerUploadMarksMutationKey,
   eventControllerUploadMarks,
   useEventControllerUploadMarks,
@@ -5867,6 +5850,7 @@ export {
 export {
   courseGroupControllerDeletePathParamsSchema,
   courseGroupControllerDelete200Schema,
+  courseGroupControllerDelete400Schema,
   courseGroupControllerDelete404Schema,
   courseGroupControllerDeleteMutationResponseSchema,
 } from './zod/course-groupsSchemas/courseGroupControllerDeleteSchema.ts'
@@ -6607,11 +6591,6 @@ export {
   eventControllerUploadExamModelFilesMutationResponseSchema,
 } from './zod/eventsSchemas/eventControllerUploadExamModelFilesSchema.ts'
 export {
-  eventControllerUploadExamModelsPathParamsSchema,
-  eventControllerUploadExamModels200Schema,
-  eventControllerUploadExamModelsMutationResponseSchema,
-} from './zod/eventsSchemas/eventControllerUploadExamModelsSchema.ts'
-export {
   eventControllerUploadMarksPathParamsSchema,
   eventControllerUploadMarks200Schema,
   eventControllerUploadMarksMutationResponseSchema,
@@ -6658,7 +6637,6 @@ export {
 } from './zod/exam-modelsSchemas/examModelControllerUploadExamModelsSchema.ts'
 export { examModelDtoSchema } from './zod/examModelDtoSchema.ts'
 export { examModelForEventDtoSchema } from './zod/examModelForEventDtoSchema.ts'
-export { examModelsResponseDtoSchema } from './zod/examModelsResponseDtoSchema.ts'
 export { examModeStatusDtoSchema } from './zod/examModeStatusDtoSchema.ts'
 export { examScheduleItemDtoSchema } from './zod/examScheduleItemDtoSchema.ts'
 export { fileResponseDtoSchema } from './zod/fileResponseDtoSchema.ts'

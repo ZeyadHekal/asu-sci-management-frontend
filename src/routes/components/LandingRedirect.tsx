@@ -34,7 +34,7 @@ const landingRoutes: RouteDefinition[] = [
     priority: 85
   },
   {
-    path: "/labs",
+    path: "/devices",
     privilege: "LAB_MAINTENANCE",
     priority: 80
   },

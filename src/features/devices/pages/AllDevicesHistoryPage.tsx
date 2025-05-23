@@ -31,6 +31,16 @@ const availableReportStatuses = [
     { value: ReportStatus.CANCELLED, label: getReportStatusLabel(ReportStatus.CANCELLED) }
 ];
 
+// Maintenance statuses
+const availableMaintenanceStatuses = [
+    { value: "all", label: "All Statuses" },
+    { value: "SCHEDULED", label: "Scheduled" },
+    { value: "IN_PROGRESS", label: "In Progress" },
+    { value: "COMPLETED", label: "Completed" },
+    { value: "CANCELLED", label: "Cancelled" },
+    { value: "FAILED", label: "Failed" }
+];
+
 const AllDevicesHistoryPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [activeTab, setActiveTab] = useState<"reports" | "maintenance">("reports");
@@ -45,6 +55,7 @@ const AllDevicesHistoryPage = () => {
     const [labFilter, setLabFilter] = useState<{ value: string; label: string } | null>(null);
     const [statusFilter, setStatusFilter] = useState<{ value: string; label: string } | null>(null);
     const [assistantFilter, setAssistantFilter] = useState<{ value: string; label: string } | null>(null);
+    const [maintenanceStatusFilter, setMaintenanceStatusFilter] = useState<{ value: string; label: string } | null>(null);
     const [dateFromFilter, setDateFromFilter] = useState("");
     const [dateToFilter, setDateToFilter] = useState("");
 
@@ -97,7 +108,7 @@ const AllDevicesHistoryPage = () => {
         limit: pageSize,
         ...(deviceFilter && { deviceId: deviceFilter.value }),
         ...(labFilter && { labId: labFilter.value }),
-        ...(statusFilter && statusFilter.value !== "all" && { status: statusFilter.value as any }),
+        ...(maintenanceStatusFilter && maintenanceStatusFilter.value !== "all" && { status: maintenanceStatusFilter.value as any }),
         ...(debouncedSearch && { search: debouncedSearch }),
         ...(dateFromFilter && { dateFrom: dateFromFilter }),
         ...(dateToFilter && { dateTo: dateToFilter }),
@@ -181,11 +192,18 @@ const AllDevicesHistoryPage = () => {
     const handleExportData = async () => {
         try {
             // Build the filter parameters based on current filters
-            const filterParams = {
+            const filterParams = activeTab === "reports" ? {
                 ...(deviceFilter && { deviceId: deviceFilter.value }),
                 ...(labFilter && { labId: labFilter.value }),
                 ...(statusFilter && statusFilter.value !== "all" && { status: statusFilter.value as any }),
                 ...(assistantFilter && { reporterId: assistantFilter.value }),
+                ...(debouncedSearch && { search: debouncedSearch }),
+                ...(dateFromFilter && { dateFrom: dateFromFilter }),
+                ...(dateToFilter && { dateTo: dateToFilter }),
+            } : {
+                ...(deviceFilter && { deviceId: deviceFilter.value }),
+                ...(labFilter && { labId: labFilter.value }),
+                ...(maintenanceStatusFilter && maintenanceStatusFilter.value !== "all" && { status: maintenanceStatusFilter.value as any }),
                 ...(debouncedSearch && { search: debouncedSearch }),
                 ...(dateFromFilter && { dateFrom: dateFromFilter }),
                 ...(dateToFilter && { dateTo: dateToFilter }),
@@ -223,6 +241,7 @@ const AllDevicesHistoryPage = () => {
         setLabFilter(null);
         setStatusFilter(null);
         setAssistantFilter(null);
+        setMaintenanceStatusFilter(null);
         setDateFromFilter("");
         setDateToFilter("");
     };
@@ -324,17 +343,32 @@ const AllDevicesHistoryPage = () => {
                                 />
                             </div>
                         )}
-                        <div>
-                            <label className="block text-sm text-gray-600 mb-1">{activeTab === "reports" ? "Reporter" : "Technician"}</label>
-                            <Select
-                                options={availableAssistants}
-                                isClearable
-                                placeholder={`Filter by ${activeTab === "reports" ? "reporter" : "technician"}`}
-                                value={assistantFilter}
-                                onChange={(option) => setAssistantFilter(option)}
-                                className="text-sm"
-                            />
-                        </div>
+                        {activeTab === "reports" && (
+                            <div>
+                                <label className="block text-sm text-gray-600 mb-1">Reporter</label>
+                                <Select
+                                    options={availableAssistants}
+                                    isClearable
+                                    placeholder="Filter by reporter"
+                                    value={assistantFilter}
+                                    onChange={(option) => setAssistantFilter(option)}
+                                    className="text-sm"
+                                />
+                            </div>
+                        )}
+                        {activeTab === "maintenance" && (
+                            <div>
+                                <label className="block text-sm text-gray-600 mb-1">Status</label>
+                                <Select
+                                    options={availableMaintenanceStatuses}
+                                    isClearable
+                                    placeholder="Filter by status"
+                                    value={maintenanceStatusFilter}
+                                    onChange={(option) => setMaintenanceStatusFilter(option)}
+                                    className="text-sm"
+                                />
+                            </div>
+                        )}
                         <div>
                             <label className="block text-sm text-gray-600 mb-1">Date From</label>
                             <input
@@ -552,13 +586,28 @@ const AllDevicesHistoryPage = () => {
                                 accessor: "involvedPersonnel",
                                 title: "Involved Personnel",
                                 sortable: true,
-                                render: (row) => (
-                                    <div className="max-w-xs">
-                                        <p className="truncate" title={row.involvedPersonnel?.join(", ") || "No personnel listed"}>
-                                            {row.involvedPersonnel?.join(", ") || "No personnel listed"}
-                                        </p>
-                                    </div>
-                                )
+                                render: (row) => {
+                                    const personnel = row.involvedPersonnel;
+                                    let displayText = "No personnel listed";
+                                    
+                                    if (personnel) {
+                                        if (Array.isArray(personnel)) {
+                                            displayText = personnel.join(", ");
+                                        } else if (typeof personnel === 'string') {
+                                            displayText = personnel;
+                                        } else {
+                                            displayText = String(personnel);
+                                        }
+                                    }
+                                    
+                                    return (
+                                        <div className="max-w-xs">
+                                            <p className="truncate" title={displayText}>
+                                                {displayText}
+                                            </p>
+                                        </div>
+                                    );
+                                }
                             },
                             {
                                 accessor: "resolutionNotes",
@@ -600,7 +649,7 @@ const AllDevicesHistoryPage = () => {
                     type: update.maintenanceType.replace('_', ' '),
                     issue: update.description,
                     resolution: update.resolutionNotes || undefined,
-                    involvedPersonnel: update.involvedPersonnel || []
+                    involvedPersonnel: Array.isArray(update.involvedPersonnel) ? update.involvedPersonnel : (update.involvedPersonnel ? [update.involvedPersonnel] : [])
                 })) || []}
                 reportDescription={selectedReportForHistory?.description || ""}
                 reportDate={selectedReportForHistory?.created_at ? new Date(selectedReportForHistory.created_at.toString()).toLocaleDateString() : ""}

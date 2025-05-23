@@ -9,7 +9,7 @@ export const updateMaintenanceHistoryDtoSchema = z.object({
   deviceId: z.string().describe('Device ID').optional(),
   relatedReportId: z.string().describe('Related report ID').optional(),
   maintenanceType: z
-    .enum(['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER'])
+    .enum(['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER', 'USER_REPORT'])
     .describe('Type of maintenance')
     .optional(),
   status: z.enum(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'FAILED']).default('SCHEDULED').describe('Maintenance status'),
@@ -17,6 +17,9 @@ export const updateMaintenanceHistoryDtoSchema = z.object({
   resolutionNotes: z.string().describe('Resolution notes').optional(),
   completedAt: z.string().datetime({ offset: true }).describe('Completion date').optional(),
   involvedPersonnel: z.array(z.string()).describe('Involved personnel names').optional(),
+  softwareId: z.string().describe('Software ID for software-related maintenance').optional(),
+  softwareHasIssue: z.boolean().describe('Software status after maintenance (true = has issue, false = no issue)').optional(),
+  deviceHasIssue: z.boolean().describe('Device status after maintenance (true = has issue, false = no issue)').optional(),
 })
 
 export type UpdateMaintenanceHistoryDtoSchema = z.infer<typeof updateMaintenanceHistoryDtoSchema>

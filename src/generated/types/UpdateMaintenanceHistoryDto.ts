@@ -11,6 +11,7 @@ export const updateMaintenanceHistoryDtoMaintenanceTypeEnum = {
   INSPECTION: 'INSPECTION',
   CALIBRATION: 'CALIBRATION',
   OTHER: 'OTHER',
+  USER_REPORT: 'USER_REPORT',
 } as const
 
 export type UpdateMaintenanceHistoryDtoMaintenanceTypeEnum =
@@ -68,4 +69,19 @@ export type UpdateMaintenanceHistoryDto = {
    * @type array | undefined
    */
   involvedPersonnel?: string[] | undefined
+  /**
+   * @description Software ID for software-related maintenance
+   * @type string | undefined
+   */
+  softwareId?: string | undefined
+  /**
+   * @description Software status after maintenance (true = has issue, false = no issue)
+   * @type boolean | undefined
+   */
+  softwareHasIssue?: boolean | undefined
+  /**
+   * @description Device status after maintenance (true = has issue, false = no issue)
+   * @type boolean | undefined
+   */
+  deviceHasIssue?: boolean | undefined
 }

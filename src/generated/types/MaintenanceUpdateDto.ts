@@ -26,4 +26,9 @@ export type MaintenanceUpdateDto = {
    * @type string | undefined
    */
   resolutionNotes?: string | undefined
+  /**
+   * @description Involved personnel
+   * @type string | undefined
+   */
+  involvedPersonnel?: string | undefined
 }

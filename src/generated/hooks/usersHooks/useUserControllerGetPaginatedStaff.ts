@@ -20,7 +20,7 @@ export const userControllerGetPaginatedStaffQueryKey = (params?: UserControllerG
 export type UserControllerGetPaginatedStaffQueryKey = ReturnType<typeof userControllerGetPaginatedStaffQueryKey>
 
 /**
- * @description Retrieve staff with pagination and filtering. Available filters: department (string), userType (string), status (boolean). Example: ?page=0&limit=10&department=Computer%20Science&userType=Doctor&status=true
+ * @description Retrieve staff with pagination, search, and filtering. Available search: name, username, title, department. Available filters: department (string), userType (string). Example: ?page=0&limit=10&search=john&department=Computer%20Science&userType=Doctor
  * @summary Get paginated staff
  * {@link /users/staff/paginated}
  */
@@ -58,7 +58,7 @@ export function userControllerGetPaginatedStaffQueryOptions(
 }
 
 /**
- * @description Retrieve staff with pagination and filtering. Available filters: department (string), userType (string), status (boolean). Example: ?page=0&limit=10&department=Computer%20Science&userType=Doctor&status=true
+ * @description Retrieve staff with pagination, search, and filtering. Available search: name, username, title, department. Available filters: department (string), userType (string). Example: ?page=0&limit=10&search=john&department=Computer%20Science&userType=Doctor
  * @summary Get paginated staff
  * {@link /users/staff/paginated}
  */

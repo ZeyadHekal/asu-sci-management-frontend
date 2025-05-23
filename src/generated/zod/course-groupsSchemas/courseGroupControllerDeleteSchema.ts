@@ -13,11 +13,18 @@ export const courseGroupControllerDeletePathParamsSchema = z.object({
 export type CourseGroupControllerDeletePathParamsSchema = z.infer<typeof courseGroupControllerDeletePathParamsSchema>
 
 /**
- * @description Course group deleted successfully.
+ * @description Course group deleted successfully and all students moved to default group.
  */
 export const courseGroupControllerDelete200Schema = z.lazy(() => deleteDtoSchema)
 
 export type CourseGroupControllerDelete200Schema = z.infer<typeof courseGroupControllerDelete200Schema>
+
+/**
+ * @description Cannot delete default groups.
+ */
+export const courseGroupControllerDelete400Schema = z.unknown()
+
+export type CourseGroupControllerDelete400Schema = z.infer<typeof courseGroupControllerDelete400Schema>
 
 /**
  * @description Course group not found.

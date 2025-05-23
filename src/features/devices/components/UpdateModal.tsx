@@ -7,6 +7,7 @@ import { formatDate } from "../../../utils/dateUtils";
 import { useAuth } from "../../../global/hooks/useAuth";
 import { useMaintenanceHistoryControllerCreate } from "../../../generated/hooks/device-maintenance-historyHooks/useMaintenanceHistoryControllerCreate";
 import { useMaintenanceHistoryControllerUpdate } from "../../../generated/hooks/device-maintenance-historyHooks/useMaintenanceHistoryControllerUpdate";
+import { useDeviceControllerGetSoftwares } from "../../../generated/hooks/devicesHooks/useDeviceControllerGetSoftwares";
 import { toast } from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { deviceControllerGetDeviceMaintenanceHistoryQueryKey } from "../../../generated/hooks/devicesHooks/useDeviceControllerGetDeviceMaintenanceHistory";
@@ -105,26 +106,38 @@ const UpdateModal = ({
         }
     });
 
-    // Fetch software list when device changes
+    // Fetch software list for the device
+    const { data: deviceSoftwareData, isLoading: isLoadingSoftware } = useDeviceControllerGetSoftwares(
+        deviceId,
+        { limit: 100, page: 0 }, // Get all software for the device
+        { 
+            query: { 
+                enabled: !!deviceId && isOpen,
+                staleTime: 5 * 60 * 1000, // 5 minutes
+            } 
+        }
+    );
+
+    // Update software list when data changes
     useEffect(() => {
-        if (deviceId) {
-            // Fetch software list for the selected device
-            // This is a placeholder. Replace with actual API call to fetch software list.
-            const fetchSoftwareList = async () => {
-                try {
-                    const response = await fetch(`/api/devices/${deviceId}/software`);
-                    const data = await response.json();
-                    setSoftwareList(data.map((sw: any) => ({ value: sw.id, label: sw.name })));
-                } catch (error) {
-                    console.error("Error fetching software list:", error);
-                }
-            };
-            fetchSoftwareList();
+        if (deviceSoftwareData?.data && Array.isArray(deviceSoftwareData.data) && deviceSoftwareData.data.length > 0) {
+            // The response is an array of DeviceSoftwarePagedDto, take the first one
+            const pagedData = deviceSoftwareData.data[0];
+            if (pagedData?.items) {
+                const softwareOptions = pagedData.items.map((sw: any) => ({
+                    value: sw.id,
+                    label: sw.name
+                }));
+                setSoftwareList(softwareOptions);
+            } else {
+                setSoftwareList([]);
+                setSelectedSoftware(null);
+            }
         } else {
             setSoftwareList([]);
             setSelectedSoftware(null);
         }
-    }, [deviceId]);
+    }, [deviceSoftwareData]);
 
     // Reset form fields when modal opens/closes or edit mode changes
     useEffect(() => {
@@ -216,8 +229,8 @@ const UpdateModal = ({
             completedAt: status.value === "COMPLETED" ? new Date(completedAt).toISOString() : undefined,
             involvedPersonnel: personnelArray.length > 0 ? personnelArray : undefined,
             softwareId: selectedSoftware?.value || undefined,
-            softwareStatus: softwareStatus?.value || undefined,
-            deviceStatus: deviceStatus?.value || undefined,
+            softwareHasIssue: softwareStatus?.value ? softwareStatus.value === "not_available" : undefined,
+            deviceHasIssue: deviceStatus?.value ? deviceStatus.value === "not_available" : undefined,
         } as any; // Type assertion needed due to mismatch between generated types and actual API expectation
 
         if (isEditMode && updateData?.id) {
@@ -323,8 +336,8 @@ const UpdateModal = ({
                         <Select
                             id="softwareStatus"
                             options={[
-                                { value: "available", label: "Available" },
-                                { value: "not_available", label: "Not Available" }
+                                { value: "available", label: "Working (No Issues)" },
+                                { value: "not_available", label: "Has Issues" }
                             ]}
                             value={softwareStatus}
                             onChange={(selectedOption) => setSoftwareStatus(selectedOption)}
@@ -344,8 +357,8 @@ const UpdateModal = ({
                     <Select
                         id="deviceStatus"
                         options={[
-                            { value: "available", label: "Available" },
-                            { value: "not_available", label: "Not Available" }
+                            { value: "available", label: "Working (No Issues)" },
+                            { value: "not_available", label: "Has Issues" }
                         ]}
                         value={deviceStatus}
                         onChange={(selectedOption) => setDeviceStatus(selectedOption)}
