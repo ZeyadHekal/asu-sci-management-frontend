@@ -11,5 +11,5 @@ export type ExamModelsResponseDto = {
   /**
    * @type array
    */
-  uploadedModels: string[]
+  uploadedModels: unknown[][]
 }

@@ -9,6 +9,7 @@ export type UpdateCourseGroupDto = {
    */
   courseId?: string | undefined
   /**
+   * @description Order will be auto-calculated if not provided
    * @type number | undefined
    */
   order?: number | undefined

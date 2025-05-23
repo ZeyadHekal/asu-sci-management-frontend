@@ -6,6 +6,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useDropzone } from "react-dropzone";
 import { FiUpload, FiX } from "react-icons/fi";
+import { useUserControllerCreateStudent } from "../../../generated/hooks/usersHooks/useUserControllerCreateStudent";
+import { useUserControllerUpdateStudent } from "../../../generated/hooks/usersHooks/useUserControllerUpdateStudent";
+import toast from "react-hot-toast";
 
 // Form schema for student
 const studentSchema = z.object({
@@ -13,8 +16,8 @@ const studentSchema = z.object({
     seatNo: z.coerce.number().min(1, "Seat number is required"),
     level: z.coerce.number().min(1, "Level is required").max(4, "Level must be between 1 and 4"),
     program: z.string().min(1, "Program is required"),
-    username: z.string().min(3, "Username must be at least 3 characters"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
+    username: z.string().min(4, "Username must be at least 4 characters"),
+    password: z.string().optional(),
     photo: z.instanceof(File).optional(),
 });
 
@@ -25,13 +28,17 @@ interface AddEditStudentModalProps {
     onClose: () => void;
     student: StudentDto | null;
     isEditing: boolean;
-    onSubmitSuccess?: (studentData: StudentFormValues) => void;
+    onSubmitSuccess?: () => void;
 }
 
 const AddEditStudentModal = ({ isOpen, onClose, student, isEditing, onSubmitSuccess }: AddEditStudentModalProps) => {
     const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-    // Initialize the form with the student data or empty values
+    // API hooks
+    const createStudentMutation = useUserControllerCreateStudent();
+    const updateStudentMutation = useUserControllerUpdateStudent();
+
+    // Initialize the form
     const {
         register,
         handleSubmit,
@@ -40,33 +47,45 @@ const AddEditStudentModal = ({ isOpen, onClose, student, isEditing, onSubmitSucc
         formState: { errors },
     } = useForm<StudentFormValues>({
         resolver: zodResolver(studentSchema),
-        defaultValues: student
-            ? {
-                name: student.name,
-                seatNo: student.seatNo || 0,
-                level: student.level || 1,
-                program: student.program || "",
-                username: student.username || "",
-                password: "", // Password is always empty for editing
-            }
-            : {
-                name: "",
-                seatNo: 0,
-                level: 1,
-                program: "",
-                username: "",
-                password: "",
-            },
     });
 
-    // Set image preview when student has a photo and we're editing
+    // Reset form when modal opens/closes or student changes
     useEffect(() => {
-        if (isEditing && student && student.photo) {
-            setImagePreview(student.photo);
-        } else {
-            setImagePreview(null);
+        if (isOpen) {
+            if (isEditing && student) {
+                // Autofill form with student data
+                reset({
+                    name: student.name,
+                    seatNo: student.seatNo,
+                    level: student.level,
+                    program: student.program,
+                    username: student.username,
+                    password: "", // Always start with empty password for editing
+                });
+                
+                // Set image preview if student has a photo
+                if (student.photo) {
+                    // If it's a URL/path, use it directly. If it's a File, create object URL
+                    if (typeof student.photo === 'string') {
+                        setImagePreview(student.photo);
+                    } else {
+                        setImagePreview(URL.createObjectURL(student.photo));
+                    }
+                }
+            } else {
+                // Reset form for adding new student
+                reset({
+                    name: "",
+                    seatNo: 0,
+                    level: 1,
+                    program: "",
+                    username: "",
+                    password: "",
+                });
+                setImagePreview(null);
+            }
         }
-    }, [student, isEditing]);
+    }, [isOpen, isEditing, student, reset]);
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
         const file = acceptedFiles[0];
@@ -93,30 +112,76 @@ const AddEditStudentModal = ({ isOpen, onClose, student, isEditing, onSubmitSucc
     const onSubmit = async (data: StudentFormValues) => {
         setIsSubmitting(true);
         try {
-            console.log("Form data:", data);
-            // Here you would either create a new student or update an existing one
-            // using the appropriate API calls
+            if (isEditing && student) {
+                // Update existing student
+                const updateData: any = {};
+                
+                if (data.name !== student.name) updateData.name = data.name;
+                if (data.seatNo !== student.seatNo) updateData.seatNo = data.seatNo.toString();
+                if (data.level !== student.level) updateData.level = data.level.toString();
+                if (data.program !== student.program) updateData.program = data.program;
+                if (data.username !== student.username) updateData.username = data.username;
+                if (data.password) updateData.password = data.password;
+                if (data.photo) updateData.photo = data.photo;
 
-            // Call onSubmitSuccess if it's defined, passing the student data
-            if (onSubmitSuccess) {
-                onSubmitSuccess(data);
+                await updateStudentMutation.mutateAsync({
+                    id: student.id,
+                    data: updateData,
+                });
+
+                toast.success("Student updated successfully");
+            } else {
+                // Create new student
+                if (!data.password) {
+                    toast.error("Password is required for new students");
+                    return;
+                }
+
+                const createData: any = {
+                    name: data.name,
+                    seatNo: data.seatNo.toString(),
+                    level: data.level.toString(),
+                    program: data.program,
+                    username: data.username,
+                    password: data.password,
+                };
+                
+                if (data.photo) {
+                    createData.photo = data.photo;
+                }
+
+                await createStudentMutation.mutateAsync({
+                    data: createData,
+                });
+
+                toast.success("Student created successfully");
             }
             
-            // Close the modal after successful submission
-            reset();
-            setImagePreview(null);
-            onClose();
-        } catch (error) {
+            // Call success callback to refresh data
+            if (onSubmitSuccess) {
+                onSubmitSuccess();
+            }
+            
+            // Close the modal and reset form
+            handleClose();
+        } catch (error: any) {
             console.error("Error submitting form:", error);
+            toast.error(error?.response?.data?.message || "An error occurred while saving the student");
         } finally {
             setIsSubmitting(false);
         }
     };
 
+    const handleClose = () => {
+        reset();
+        setImagePreview(null);
+        onClose();
+    };
+
     return (
         <Modal
             isOpen={isOpen}
-            onClose={onClose}
+            onClose={handleClose}
             title={isEditing ? "Edit Student" : "Add New Student"}
             size="lg"
         >
@@ -171,14 +236,17 @@ const AddEditStudentModal = ({ isOpen, onClose, student, isEditing, onSubmitSucc
 
                 <div>
                     <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                        Password
+                        Password {isEditing && <span className="text-gray-500">(leave blank to keep current)</span>}
                     </label>
                     <input
                         id="password"
                         type="password"
                         className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
                         placeholder={isEditing ? "Leave blank to keep current password" : "Enter password"}
-                        {...register("password")}
+                        {...register("password", {
+                            required: !isEditing ? "Password is required" : false,
+                            minLength: !isEditing ? { value: 6, message: "Password must be at least 6 characters" } : undefined,
+                        })}
                     />
                     {errors.password && (
                         <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>
@@ -281,7 +349,7 @@ const AddEditStudentModal = ({ isOpen, onClose, student, isEditing, onSubmitSucc
                 <div className="flex justify-end gap-3 mt-6">
                     <button
                         type="button"
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2"
                     >
                         Cancel
@@ -289,7 +357,7 @@ const AddEditStudentModal = ({ isOpen, onClose, student, isEditing, onSubmitSucc
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="rounded-md bg-secondary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-secondary-dark focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2"
+                        className="rounded-md bg-secondary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-secondary-dark focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isSubmitting ? "Saving..." : isEditing ? "Update" : "Add"}
                     </button>

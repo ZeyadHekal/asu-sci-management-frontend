@@ -11,6 +11,25 @@ export const deviceControllerGetDeviceReportsPathParamsSchema = z.object({
 
 export type DeviceControllerGetDeviceReportsPathParamsSchema = z.infer<typeof deviceControllerGetDeviceReportsPathParamsSchema>
 
+export const deviceControllerGetDeviceReportsQueryParamsSchema = z
+  .object({
+    limit: z.number().default(10),
+    page: z.number().default(0),
+    sortBy: z.string().default('created_at'),
+    sortOrder: z.enum(['asc', 'desc']).default('desc'),
+    ids: z.array(z.string()).optional(),
+    deviceName: z.string().describe('Filter by device name').optional(),
+    software: z.string().describe('Filter by software name').optional(),
+    labId: z.string().describe('Filter by lab ID').optional(),
+    status: z.string().describe('Filter by device status').optional(),
+    assistantId: z.string().describe('Filter by lab assistant ID').optional(),
+    specCategory: z.string().describe('Filter by specification category').optional(),
+    specValue: z.string().describe('Filter by specification value').optional(),
+  })
+  .optional()
+
+export type DeviceControllerGetDeviceReportsQueryParamsSchema = z.infer<typeof deviceControllerGetDeviceReportsQueryParamsSchema>
+
 /**
  * @description Device reports retrieved successfully
  */

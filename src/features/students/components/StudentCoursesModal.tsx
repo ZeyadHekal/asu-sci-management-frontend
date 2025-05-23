@@ -1,9 +1,15 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Modal from "../../../ui/modal/Modal";
 import { StudentDto } from "../../../generated/types/StudentDto";
+import { EnrollStudentDto } from "../../../generated/types/EnrollStudentDto";
 import { DataTable } from "mantine-datatable";
 import { RiDeleteBinLine } from "react-icons/ri";
 import Select from "react-select";
+import { useStudentCourseControllerGetAvailableCourses } from "../../../generated/hooks/student-coursesHooks/useStudentCourseControllerGetAvailableCourses";
+import { useStudentCourseControllerGetStudentCourses } from "../../../generated/hooks/student-coursesHooks/useStudentCourseControllerGetStudentCourses";
+import { useStudentCourseControllerEnrollStudent } from "../../../generated/hooks/student-coursesHooks/useStudentCourseControllerEnrollStudent";
+import { useStudentCourseControllerRemoveStudentFromCourse } from "../../../generated/hooks/student-coursesHooks/useStudentCourseControllerRemoveStudentFromCourse";
+import toast from "react-hot-toast";
 
 // Mock course data - in a real app this would come from the API
 interface CourseOption {
@@ -13,36 +19,12 @@ interface CourseOption {
 
 interface EnrolledCourse {
     id: string;
-    code: string;
-    name: string;
+    courseId: string;
+    courseName: string;
+    courseCode: string;
     credits: number;
     enrolledDate: string;
 }
-
-const availableCourses: CourseOption[] = [
-    { value: "MATH101", label: "MATH101 - Calculus I" },
-    { value: "COMP101", label: "COMP101 - Introduction to Programming" },
-    { value: "STAT101", label: "STAT101 - Statistics Fundamentals" },
-    { value: "PHYS101", label: "PHYS101 - Physics I" },
-];
-
-// Mock enrolled courses
-const mockEnrolledCourses: EnrolledCourse[] = [
-    {
-        id: "1",
-        code: "MATH201",
-        name: "Calculus II",
-        credits: 3,
-        enrolledDate: "2023-09-01",
-    },
-    {
-        id: "2",
-        code: "COMP201",
-        name: "Data Structures",
-        credits: 4,
-        enrolledDate: "2023-09-01",
-    },
-];
 
 interface StudentCoursesModalProps {
     isOpen: boolean;
@@ -51,55 +33,114 @@ interface StudentCoursesModalProps {
 }
 
 const StudentCoursesModal = ({ isOpen, onClose, student }: StudentCoursesModalProps) => {
-    const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
     const [selectedCourse, setSelectedCourse] = useState<CourseOption | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Fetch enrolled courses when student changes
-    useEffect(() => {
-        if (student) {
-            // In a real app, this would be an API call to get the student's enrolled courses
-            setEnrolledCourses(mockEnrolledCourses);
+    // Debug the student object
+    console.log("StudentCoursesModal - student object:", student);
+    console.log("StudentCoursesModal - isOpen:", isOpen);
+
+    // API hooks for fetching data
+    const { data: availableCoursesData, isLoading: loadingAvailableCourses } = useStudentCourseControllerGetAvailableCourses(
+        {
+            query: {
+                enabled: isOpen && !!student,
+                refetchOnWindowFocus: false
+            }
         }
-    }, [student]);
+    );
+
+    const { data: studentCoursesData, isLoading: loadingStudentCourses, refetch: refetchStudentCourses } = useStudentCourseControllerGetStudentCourses(
+        student?.id || "",
+        {
+            query: {
+                enabled: isOpen && !!student,
+                refetchOnWindowFocus: false
+            }
+        }
+    );
+
+    // API hooks for mutations
+    const enrollStudentMutation = useStudentCourseControllerEnrollStudent();
+    const removeStudentMutation = useStudentCourseControllerRemoveStudentFromCourse();
+
+    // Transform available courses data for react-select
+    const availableCourses: CourseOption[] = React.useMemo(() => {
+        if (!availableCoursesData?.data) return [];
+        
+        // Type the course object properly
+        return (availableCoursesData.data as any[]).map((course: any) => ({
+            value: course.id,
+            label: `${course.code} - ${course.name}`
+        }));
+    }, [availableCoursesData]);
+
+    // Transform enrolled courses data for the table
+    const enrolledCourses: EnrolledCourse[] = React.useMemo(() => {
+        if (!studentCoursesData?.data) return [];
+        
+        // Type the enrollment object properly
+        return (studentCoursesData.data as any[]).map((enrollment: any) => ({
+            id: enrollment.id || enrollment.courseId,
+            courseId: enrollment.courseId,
+            courseName: enrollment.courseName || "",
+            courseCode: enrollment.courseCode || "",
+            credits: enrollment.credits || 0,
+            enrolledDate: typeof enrollment.enrolledDate === 'string' 
+                ? enrollment.enrolledDate 
+                : new Date().toISOString().split("T")[0],
+        }));
+    }, [studentCoursesData]);
 
     const handleEnrollCourse = async () => {
-        if (!selectedCourse) return;
+        if (!selectedCourse || !student) return;
 
-        setIsSubmitting(true);
         try {
-            // In a real app, this would be an API call to enroll the student in the selected course
-            console.log(`Enrolling student ${student?.id} in course ${selectedCourse.value}`);
-
-            // Simulate adding a new course to the list
-            const newCourse: EnrolledCourse = {
-                id: Math.random().toString(),
-                code: selectedCourse.value,
-                name: selectedCourse.label.split(" - ")[1],
-                credits: 3, // Default credits, would come from the API in a real app
-                enrolledDate: new Date().toISOString().split("T")[0],
+            console.log("Enrolling student:", { studentId: student.id, courseId: selectedCourse.value });
+            
+            const enrollmentData: EnrollStudentDto = {
+                studentId: student.id,
+                courseId: selectedCourse.value,
             };
+            
+            await enrollStudentMutation.mutateAsync({
+                data: enrollmentData
+            });
 
-            setEnrolledCourses([...enrolledCourses, newCourse]);
+            toast.success("Student enrolled in course successfully");
             setSelectedCourse(null);
-        } catch (error) {
+            await refetchStudentCourses();
+        } catch (error: any) {
             console.error("Error enrolling in course:", error);
-        } finally {
-            setIsSubmitting(false);
+            console.error("Error details:", error?.response?.data);
+            toast.error(error?.response?.data?.message || "Failed to enroll student in course");
         }
     };
 
     const handleRemoveCourse = async (courseId: string) => {
-        try {
-            // In a real app, this would be an API call to remove the enrollment
-            console.log(`Removing course ${courseId} from student ${student?.id}`);
+        if (!student) return;
 
-            // Update the local state to remove the course
-            setEnrolledCourses(enrolledCourses.filter((course) => course.id !== courseId));
-        } catch (error) {
+        try {
+            console.log("Removing student from course:", { studentId: student.id, courseId });
+            
+            await removeStudentMutation.mutateAsync({
+                studentId: student.id,
+                courseId: courseId,
+            });
+
+            toast.success("Student removed from course successfully");
+            await refetchStudentCourses();
+        } catch (error: any) {
             console.error("Error removing course:", error);
+            console.error("Error details:", error?.response?.data);
+            toast.error(error?.response?.data?.message || "Failed to remove student from course");
         }
     };
+
+    // Filter out already enrolled courses from available courses
+    const filteredAvailableCourses = React.useMemo(() => {
+        const enrolledCourseIds = enrolledCourses.map(course => course.courseId);
+        return availableCourses.filter(course => !enrolledCourseIds.includes(course.value));
+    }, [availableCourses, enrolledCourses]);
 
     return (
         <Modal
@@ -114,58 +155,90 @@ const StudentCoursesModal = ({ isOpen, onClose, student }: StudentCoursesModalPr
                     <div className="flex gap-2">
                         <div className="flex-1">
                             <Select
-                                options={availableCourses}
+                                options={filteredAvailableCourses}
                                 value={selectedCourse}
                                 onChange={setSelectedCourse}
                                 placeholder="Select a course"
                                 isClearable
+                                isLoading={loadingAvailableCourses}
                                 className="w-full"
+                                isDisabled={filteredAvailableCourses.length === 0}
                             />
                         </div>
                         <button
                             onClick={handleEnrollCourse}
-                            disabled={!selectedCourse || isSubmitting}
+                            disabled={!selectedCourse || enrollStudentMutation.isPending}
                             className="px-4 py-2 bg-secondary text-white rounded-md disabled:bg-gray-300 disabled:cursor-not-allowed"
                         >
-                            {isSubmitting ? "Enrolling..." : "Enroll"}
+                            {enrollStudentMutation.isPending ? "Enrolling..." : "Enroll"}
                         </button>
                     </div>
+                    {filteredAvailableCourses.length === 0 && !loadingAvailableCourses && (
+                        <p className="text-sm text-gray-500 mt-2">
+                            No available courses to enroll in.
+                        </p>
+                    )}
                 </div>
 
                 <div>
                     <h3 className="text-sm font-medium mb-2">Enrolled Courses</h3>
-                    <DataTable
-                        highlightOnHover
-                        withBorder
-                        className="table-hover whitespace-nowrap"
-                        records={enrolledCourses}
-                        columns={[
-                            {
-                                accessor: "code",
-                                title: "Course Code",
-                                render: (row) => (
-                                    <span className="font-medium">{row.code}</span>
-                                ),
-                            },
-                            { accessor: "name", title: "Course Name" },
-                            { accessor: "credits", title: "Credits" },
-                            { accessor: "enrolledDate", title: "Enrolled Date" },
-                            {
-                                accessor: "actions",
-                                title: "Actions",
-                                render: (row) => (
-                                    <button
-                                        onClick={() => handleRemoveCourse(row.id)}
-                                        className="text-gray-500 hover:text-danger"
-                                        title="Remove course"
-                                    >
-                                        <RiDeleteBinLine size={20} className="text-[#0E1726]" />
-                                    </button>
-                                ),
-                            },
-                        ]}
-                    />
-                    {enrolledCourses.length === 0 && (
+                    {loadingStudentCourses ? (
+                        <div className="text-center py-4">
+                            <span className="text-gray-500">Loading courses...</span>
+                        </div>
+                    ) : (
+                        <DataTable
+                            highlightOnHover
+                            withBorder
+                            className="table-hover whitespace-nowrap"
+                            records={enrolledCourses}
+                            columns={[
+                                {
+                                    accessor: "courseCode",
+                                    title: "Course Code",
+                                    render: (row) => (
+                                        <span className="font-medium">{row.courseCode}</span>
+                                    ),
+                                },
+                                { 
+                                    accessor: "courseName", 
+                                    title: "Course Name",
+                                    render: (row) => (
+                                        <span>{row.courseName}</span>
+                                    ),
+                                },
+                                { 
+                                    accessor: "credits", 
+                                    title: "Credits",
+                                    render: (row) => (
+                                        <span>{row.credits}</span>
+                                    ),
+                                },
+                                { 
+                                    accessor: "enrolledDate", 
+                                    title: "Enrolled Date",
+                                    render: (row) => (
+                                        <span>{new Date(row.enrolledDate).toLocaleDateString()}</span>
+                                    ),
+                                },
+                                {
+                                    accessor: "actions",
+                                    title: "Actions",
+                                    render: (row) => (
+                                        <button
+                                            onClick={() => handleRemoveCourse(row.courseId)}
+                                            disabled={removeStudentMutation.isPending}
+                                            className="text-gray-500 hover:text-danger disabled:opacity-50"
+                                            title="Remove course"
+                                        >
+                                            <RiDeleteBinLine size={20} className="text-[#0E1726]" />
+                                        </button>
+                                    ),
+                                },
+                            ]}
+                        />
+                    )}
+                    {enrolledCourses.length === 0 && !loadingStudentCourses && (
                         <div className="text-center py-4 text-gray-500">
                             This student is not enrolled in any courses.
                         </div>

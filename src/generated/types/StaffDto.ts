@@ -15,7 +15,7 @@ export type StaffDto = {
   /**
    * @type string
    */
-  email: string
+  username: string
   /**
    * @type string
    */
@@ -29,6 +29,10 @@ export type StaffDto = {
    */
   userType: string
   /**
+   * @type string
+   */
+  userTypeId: string
+  /**
    * @type boolean
    */
   status: boolean
@@ -38,7 +42,18 @@ export type StaffDto = {
    */
   lastLogin: Date | null
   /**
+   * @description All privileges (user type + user specific) - for compatibility
    * @type array
    */
   privileges: string[]
+  /**
+   * @description Privileges inherited from user type (read-only)
+   * @type array
+   */
+  userTypePrivileges: string[]
+  /**
+   * @description User-specific privileges (editable)
+   * @type array
+   */
+  userPrivileges: string[]
 }

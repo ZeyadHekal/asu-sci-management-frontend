@@ -13,6 +13,8 @@ export const updateCourseDtoSchema = z.object({
   hasLab: z.boolean().optional(),
   labDuration: z.string().optional(),
   attendanceMarks: z.number().optional(),
+  doctorIds: z.array(z.string()).describe('Array of doctor IDs to assign to this course').optional(),
+  softwareIds: z.array(z.string()).describe('Array of software IDs required for this course').optional(),
 })
 
 export type UpdateCourseDtoSchema = z.infer<typeof updateCourseDtoSchema>

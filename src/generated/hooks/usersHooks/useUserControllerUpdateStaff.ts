@@ -22,7 +22,7 @@ export const userControllerUpdateStaffMutationKey = () => [{ url: '/users/staff/
 export type UserControllerUpdateStaffMutationKey = ReturnType<typeof userControllerUpdateStaffMutationKey>
 
 /**
- * @description Update an existing staff member by ID. Username cannot be changed. Email and userType can be updated.
+ * @description Update an existing staff member by ID. Username can be updated but must be unique. UserType can also be updated.
  * @summary Update staff
  * {@link /users/staff/:id}
  */
@@ -42,7 +42,7 @@ export async function userControllerUpdateStaff(
 }
 
 /**
- * @description Update an existing staff member by ID. Username cannot be changed. Email and userType can be updated.
+ * @description Update an existing staff member by ID. Username can be updated but must be unique. UserType can also be updated.
  * @summary Update staff
  * {@link /users/staff/:id}
  */

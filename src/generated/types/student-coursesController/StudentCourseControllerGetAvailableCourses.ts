@@ -3,10 +3,12 @@
  * Do not edit manually.
  */
 
+import type { AvailableCourseDto } from '../AvailableCourseDto.ts'
+
 /**
  * @description Return available courses.
  */
-export type StudentCourseControllerGetAvailableCourses200 = unknown[]
+export type StudentCourseControllerGetAvailableCourses200 = AvailableCourseDto[]
 
 export type StudentCourseControllerGetAvailableCoursesQueryResponse = StudentCourseControllerGetAvailableCourses200
 

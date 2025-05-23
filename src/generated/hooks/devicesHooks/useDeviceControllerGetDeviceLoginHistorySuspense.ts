@@ -9,14 +9,17 @@ import type { QueryKey, QueryClient, UseSuspenseQueryOptions, UseSuspenseQueryRe
 import type {
   DeviceControllerGetDeviceLoginHistoryQueryResponse,
   DeviceControllerGetDeviceLoginHistoryPathParams,
+  DeviceControllerGetDeviceLoginHistoryQueryParams,
   DeviceControllerGetDeviceLoginHistory401,
   DeviceControllerGetDeviceLoginHistory403,
   DeviceControllerGetDeviceLoginHistory404,
 } from '../../types/devicesController/DeviceControllerGetDeviceLoginHistory.ts'
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query'
 
-export const deviceControllerGetDeviceLoginHistorySuspenseQueryKey = (device_id: DeviceControllerGetDeviceLoginHistoryPathParams['device_id']) =>
-  [{ url: '/devices/:device_id/login-history', params: { device_id: device_id } }] as const
+export const deviceControllerGetDeviceLoginHistorySuspenseQueryKey = (
+  device_id: DeviceControllerGetDeviceLoginHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceLoginHistoryQueryParams,
+) => [{ url: '/devices/:device_id/login-history', params: { device_id: device_id } }, ...(params ? [params] : [])] as const
 
 export type DeviceControllerGetDeviceLoginHistorySuspenseQueryKey = ReturnType<typeof deviceControllerGetDeviceLoginHistorySuspenseQueryKey>
 
@@ -27,6 +30,7 @@ export type DeviceControllerGetDeviceLoginHistorySuspenseQueryKey = ReturnType<t
  */
 export async function deviceControllerGetDeviceLoginHistorySuspense(
   device_id: DeviceControllerGetDeviceLoginHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceLoginHistoryQueryParams,
   config: Partial<RequestConfig> & { client?: typeof client } = {},
 ) {
   const { client: request = client, ...requestConfig } = config
@@ -35,15 +39,16 @@ export async function deviceControllerGetDeviceLoginHistorySuspense(
     DeviceControllerGetDeviceLoginHistoryQueryResponse,
     ResponseErrorConfig<DeviceControllerGetDeviceLoginHistory401 | DeviceControllerGetDeviceLoginHistory403 | DeviceControllerGetDeviceLoginHistory404>,
     unknown
-  >({ method: 'GET', url: `/devices/${device_id}/login-history`, ...requestConfig })
+  >({ method: 'GET', url: `/devices/${device_id}/login-history`, params, ...requestConfig })
   return res
 }
 
 export function deviceControllerGetDeviceLoginHistorySuspenseQueryOptions(
   device_id: DeviceControllerGetDeviceLoginHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceLoginHistoryQueryParams,
   config: Partial<RequestConfig> & { client?: typeof client } = {},
 ) {
-  const queryKey = deviceControllerGetDeviceLoginHistorySuspenseQueryKey(device_id)
+  const queryKey = deviceControllerGetDeviceLoginHistorySuspenseQueryKey(device_id, params)
   return queryOptions<
     ResponseConfig<DeviceControllerGetDeviceLoginHistoryQueryResponse>,
     ResponseErrorConfig<DeviceControllerGetDeviceLoginHistory401 | DeviceControllerGetDeviceLoginHistory403 | DeviceControllerGetDeviceLoginHistory404>,
@@ -54,7 +59,7 @@ export function deviceControllerGetDeviceLoginHistorySuspenseQueryOptions(
     queryKey,
     queryFn: async ({ signal }) => {
       config.signal = signal
-      return deviceControllerGetDeviceLoginHistorySuspense(device_id, config)
+      return deviceControllerGetDeviceLoginHistorySuspense(device_id, params, config)
     },
   })
 }
@@ -69,6 +74,7 @@ export function useDeviceControllerGetDeviceLoginHistorySuspense<
   TQueryKey extends QueryKey = DeviceControllerGetDeviceLoginHistorySuspenseQueryKey,
 >(
   device_id: DeviceControllerGetDeviceLoginHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceLoginHistoryQueryParams,
   options: {
     query?: Partial<
       UseSuspenseQueryOptions<
@@ -82,11 +88,11 @@ export function useDeviceControllerGetDeviceLoginHistorySuspense<
   } = {},
 ) {
   const { query: { client: queryClient, ...queryOptions } = {}, client: config = {} } = options ?? {}
-  const queryKey = queryOptions?.queryKey ?? deviceControllerGetDeviceLoginHistorySuspenseQueryKey(device_id)
+  const queryKey = queryOptions?.queryKey ?? deviceControllerGetDeviceLoginHistorySuspenseQueryKey(device_id, params)
 
   const query = useSuspenseQuery(
     {
-      ...(deviceControllerGetDeviceLoginHistorySuspenseQueryOptions(device_id, config) as unknown as UseSuspenseQueryOptions),
+      ...(deviceControllerGetDeviceLoginHistorySuspenseQueryOptions(device_id, params, config) as unknown as UseSuspenseQueryOptions),
       queryKey,
       ...(queryOptions as unknown as Omit<UseSuspenseQueryOptions, 'queryKey'>),
     },

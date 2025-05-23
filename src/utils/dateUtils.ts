@@ -20,7 +20,7 @@ export const formatDate = (date: Date, format?: string): string => {
   const month = String(date.getMonth() + 1).padStart(2, "0"); // getMonth() returns 0-11
   const day = String(date.getDate()).padStart(2, "0");
 
-  return `${year}-${month}-${day}`;
+  return date.toISOString();
 };
 
 /**

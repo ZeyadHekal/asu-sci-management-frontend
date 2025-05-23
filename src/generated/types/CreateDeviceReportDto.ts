@@ -3,27 +3,12 @@
  * Do not edit manually.
  */
 
-export const createDeviceReportDtoStatusEnum = {
-  REPORTED: 'REPORTED',
-  IN_PROGRESS: 'IN_PROGRESS',
-  RESOLVED: 'RESOLVED',
-  CANCELLED: 'CANCELLED',
-} as const
-
-export type CreateDeviceReportDtoStatusEnum = (typeof createDeviceReportDtoStatusEnum)[keyof typeof createDeviceReportDtoStatusEnum]
-
 export type CreateDeviceReportDto = {
   /**
    * @description Report description
    * @type string
    */
   description: string
-  /**
-   * @description Report status
-   * @default "REPORTED"
-   * @type string
-   */
-  status: CreateDeviceReportDtoStatusEnum
   /**
    * @description Fix message
    * @type string | undefined
@@ -36,9 +21,9 @@ export type CreateDeviceReportDto = {
   deviceId: string
   /**
    * @description Software/App ID
-   * @type string
+   * @type string | undefined
    */
-  appId: string
+  appId?: string | undefined
   /**
    * @description Reporter ID
    * @type string | undefined

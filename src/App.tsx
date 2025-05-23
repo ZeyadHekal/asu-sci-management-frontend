@@ -18,7 +18,7 @@ const App = ({ children }: PropsWithChildren) => {
   const themeConfig = useThemeConfig();
   const [isLoading, setIsLoading] = useState(true);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated());
-  const { refreshPrivileges } = useAuth();
+  const { refreshPrivileges, refreshExamModeStatus } = useAuth();
 
   useEffect(() => {
     themeConfig.toggleTheme(
@@ -58,11 +58,12 @@ const App = ({ children }: PropsWithChildren) => {
     themeConfig.semidark,
   ]);
 
-  // Only refresh privileges once on initial mount if authenticated
+  // Only refresh privileges and exam mode status once on initial mount if authenticated
   useEffect(() => {
     const isAuth = useAuthStore.getState().isAuthenticated();
     if (isAuth) {
       refreshPrivileges();
+      refreshExamModeStatus();
     }
   }, []); // Empty dependency array ensures this only runs once on mount
 

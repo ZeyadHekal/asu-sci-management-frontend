@@ -4,35 +4,41 @@ import { TbDeviceAnalytics } from "react-icons/tb";
 import { DataTable } from "mantine-datatable";
 import Modal from "../../../ui/modal/Modal";
 import { toast } from "react-hot-toast";
+import { useAuthStore } from "../../../store/authStore";
+import { useCourseGroupControllerGetAssistantGroups } from "../../../generated/hooks/course-groupsHooks/useCourseGroupControllerGetAssistantGroups";
+import { useStudentCourseControllerGetGroupStudents } from "../../../generated/hooks/student-coursesHooks/useStudentCourseControllerGetGroupStudents";
 
 interface Group {
-  id: number;
-  name: string;
+  id: string;
+  groupName: string;
   studentsCount: number;
   maxCapacity: number;
   lastSession?: string;
   attendanceRate: number;
   averagePoints: number;
   isSessionActive?: boolean;
+  labName: string;
+  weekDay: string;
+  timeSlot: string;
 }
 
 interface Student {
-  id: number;
+  id: string;
   name: string;
   email: string;
   studentId: string;
   attendanceCount: number;
   totalSessions: number;
   points: number;
-  isPresent?: boolean;
+  isPresent: boolean;
   deviceId?: string;
 }
 
 interface AssistantGroupsTabProps {
-  courseId: number;
+  courseId: string;
 }
 
-const AssistantGroupsTab = ({ }: AssistantGroupsTabProps) => {
+const AssistantGroupsTab = ({ courseId }: AssistantGroupsTabProps) => {
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
@@ -40,55 +46,63 @@ const AssistantGroupsTab = ({ }: AssistantGroupsTabProps) => {
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [sessionStudents, setSessionStudents] = useState<Student[]>([]);
   const [newStudentEmail, setNewStudentEmail] = useState("");
-  const [pointsToAssign, setPointsToAssign] = useState<{[key: number]: number}>({});
+  const [pointsToAssign, setPointsToAssign] = useState<{[key: string]: number}>({});
 
-  // Mock data - replace with actual API calls
-  const groups: Group[] = [
-    {
-      id: 1,
-      name: "Group A",
-      studentsCount: 15,
-      maxCapacity: 20,
-      lastSession: "2024-01-15",
-      attendanceRate: 85,
-      averagePoints: 78,
-      isSessionActive: false
-    },
-    {
-      id: 2,
-      name: "Group B",
-      studentsCount: 18,
-      maxCapacity: 20,
-      lastSession: "2024-01-14",
-      attendanceRate: 92,
-      averagePoints: 82,
-      isSessionActive: true
-    }
-  ];
+  const user = useAuthStore((state) => state.user);
 
-  const students: Student[] = [
+  // Get assistant's assigned groups in this course
+  const { 
+    data: assistantGroupsData, 
+    isLoading: groupsLoading,
+    error: groupsError 
+  } = useCourseGroupControllerGetAssistantGroups(
+    user?.id!, 
+    courseId, 
     {
-      id: 1,
-      name: "Ahmed Mohamed",
-      email: "ahmed@example.com",
-      studentId: "2021001",
-      attendanceCount: 8,
-      totalSessions: 10,
-      points: 85,
-      isPresent: true,
-      deviceId: "PC-001"
-    },
-    {
-      id: 2,
-      name: "Sara Ali",
-      email: "sara@example.com",
-      studentId: "2021002",
-      attendanceCount: 9,
-      totalSessions: 10,
-      points: 92,
-      isPresent: false
+      query: {
+        enabled: !!user?.id && !!courseId
+      }
     }
-  ];
+  );
+
+  // Get group students when a group is selected
+  const { 
+    data: groupStudentsData, 
+    isLoading: studentsLoading 
+  } = useStudentCourseControllerGetGroupStudents(
+    selectedGroup?.id!, 
+    {
+      query: {
+        enabled: !!selectedGroup?.id
+      }
+    }
+  );
+
+  const groups: Group[] = assistantGroupsData?.data?.map((group) => ({
+    id: group.id || '',
+    groupName: group.groupName || 'No Group',
+    studentsCount: group.currentEnrollment || 0,
+    maxCapacity: group.totalCapacity || 0,
+    lastSession: "2024-01-15", // TODO: Get from real session data
+    attendanceRate: 85, // TODO: Calculate from real attendance data
+    averagePoints: 78, // TODO: Calculate from real points data
+    isSessionActive: false, // TODO: Get from real session status
+    labName: group.labName || 'No Lab',
+    weekDay: group.weekDay || 'Not Scheduled',
+    timeSlot: group.timeSlot || 'Not Scheduled'
+  })) || [];
+
+  const students: Student[] = groupStudentsData?.data?.map((student) => ({
+    id: student.studentId || '',
+    name: student.studentName || 'Unknown',
+    email: student.email || '',
+    studentId: student.studentId || '',
+    attendanceCount: 8, // TODO: Get from real attendance data
+    totalSessions: 10, // TODO: Get from real session data
+    points: 85, // TODO: Get from real points data
+    isPresent: true, // TODO: Get from current session status
+    deviceId: "PC-001" // TODO: Get from device assignment
+  })) || [];
 
   const handleStartSession = (group: Group) => {
     setSelectedGroup(group);
@@ -97,25 +111,8 @@ const AssistantGroupsTab = ({ }: AssistantGroupsTabProps) => {
   };
 
   const handleEndSession = (group: Group) => {
-    if (window.confirm("Are you sure you want to end this session? Attendance will be recorded.")) {
-      // Here you would call API to end session and save attendance
-      toast.success("Session ended and attendance recorded");
-    }
-  };
-
-  const handleToggleAttendance = (studentId: number) => {
-    setSessionStudents(prev => 
-      prev.map(s => 
-        s.id === studentId ? { ...s, isPresent: !s.isPresent } : s
-      )
-    );
-  };
-
-  const handleSaveAttendance = () => {
-    // Here you would call API to save attendance
-    const presentStudents = sessionStudents.filter(s => s.isPresent);
-    toast.success(`Attendance saved for ${presentStudents.length} students`);
-    setShowSessionModal(false);
+    // TODO: Implement session ending logic
+    toast.success(`Session ended for ${group.groupName}`);
   };
 
   const handleAssignPoints = (group: Group) => {
@@ -124,28 +121,52 @@ const AssistantGroupsTab = ({ }: AssistantGroupsTabProps) => {
     setShowPointsModal(true);
   };
 
-  const handleSavePoints = () => {
-    // Here you would call API to save points
-    const studentsWithPoints = Object.keys(pointsToAssign).length;
-    toast.success(`Points assigned to ${studentsWithPoints} students`);
-    setShowPointsModal(false);
-  };
-
   const handleAddStudent = () => {
     if (!newStudentEmail.trim()) {
-      toast.error("Please enter a valid email address");
+      toast.error("Please enter a student email");
       return;
     }
     
-    // Here you would call API to add student to group
-    toast.success(`Student with email ${newStudentEmail} added to group`);
+    // TODO: Implement add student logic
+    toast.success(`Student invitation sent to ${newStudentEmail}`);
     setNewStudentEmail("");
     setShowAddStudentModal(false);
   };
 
+  const handleSaveAttendance = () => {
+    // TODO: Implement save attendance logic
+    const presentCount = sessionStudents.filter(s => s.isPresent).length;
+    toast.success(`Attendance saved: ${presentCount}/${sessionStudents.length} students present`);
+    setShowSessionModal(false);
+  };
+
+  const handleSavePoints = () => {
+    // TODO: Implement save points logic
+    const assignedCount = Object.keys(pointsToAssign).length;
+    toast.success(`Points assigned to ${assignedCount} students`);
+    setShowPointsModal(false);
+  };
+
+  if (groupsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading your assigned groups...</div>
+      </div>
+    );
+  }
+
+  if (groupsError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <div className="text-red-500 text-lg font-semibold mb-2">Error loading groups</div>
+        <div className="text-gray-600">There was an error loading your assigned groups.</div>
+      </div>
+    );
+  }
+
   const groupColumns = [
     {
-      accessor: "name",
+      accessor: "groupName",
       title: "Group Name",
       render: (row: Group) => (
         <div className="flex items-center gap-2">
@@ -154,7 +175,7 @@ const AssistantGroupsTab = ({ }: AssistantGroupsTabProps) => {
           </div>
           <div>
             <div className="font-medium flex items-center gap-2">
-              {row.name}
+              {row.groupName}
               {row.isSessionActive && (
                 <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
                   Session Active
@@ -163,6 +184,16 @@ const AssistantGroupsTab = ({ }: AssistantGroupsTabProps) => {
             </div>
             <div className="text-sm text-gray-500">{row.studentsCount}/{row.maxCapacity} students</div>
           </div>
+        </div>
+      )
+    },
+    {
+      accessor: "labName",
+      title: "Lab & Schedule",
+      render: (row: Group) => (
+        <div>
+          <div className="font-medium">{row.labName}</div>
+          <div className="text-sm text-gray-500">{row.weekDay} - {row.timeSlot}</div>
         </div>
       )
     },
@@ -257,21 +288,36 @@ const AssistantGroupsTab = ({ }: AssistantGroupsTabProps) => {
       accessor: "name",
       title: "Student",
       render: (row: Student) => (
-        <div>
-          <div className="font-medium">{row.name}</div>
-          <div className="text-sm text-gray-500">{row.studentId}</div>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+            <span className="text-gray-600 text-xs">
+              {row.name.split(" ").map(n => n[0]).join("")}
+            </span>
+          </div>
+          <div>
+            <div className="font-medium">{row.name}</div>
+            <div className="text-sm text-gray-500">{row.studentId}</div>
+          </div>
         </div>
       )
     },
     {
-      accessor: "attendance",
+      accessor: "email",
+      title: "Email",
+      render: (row: Student) => (
+        <span className="text-gray-600">{row.email}</span>
+      )
+    },
+    {
+      accessor: "attendanceCount",
       title: "Attendance",
       render: (row: Student) => (
-        <div>
-          <div className="font-medium">{row.attendanceCount}/{row.totalSessions}</div>
-          <div className="text-sm text-gray-500">
-            {Math.round((row.attendanceCount / row.totalSessions) * 100)}%
-          </div>
+        <div className="flex items-center gap-2">
+          <div className={`w-3 h-3 rounded-full ${
+            (row.attendanceCount / row.totalSessions) >= 0.9 ? "bg-green-500" :
+            (row.attendanceCount / row.totalSessions) >= 0.75 ? "bg-yellow-500" : "bg-red-500"
+          }`}></div>
+          <span className="font-medium">{row.attendanceCount}/{row.totalSessions}</span>
         </div>
       )
     },
@@ -283,42 +329,6 @@ const AssistantGroupsTab = ({ }: AssistantGroupsTabProps) => {
           <FaStar className="text-yellow-500" size={14} />
           <span className="font-medium">{row.points}</span>
         </div>
-      )
-    }
-  ];
-
-  const sessionStudentColumns = [
-    {
-      accessor: "name",
-      title: "Student",
-      render: (row: Student) => (
-        <div>
-          <div className="font-medium">{row.name}</div>
-          <div className="text-sm text-gray-500">{row.studentId}</div>
-        </div>
-      )
-    },
-    {
-      accessor: "device",
-      title: "Device",
-      render: (row: Student) => (
-        <span className="text-sm">{row.deviceId || "Not assigned"}</span>
-      )
-    },
-    {
-      accessor: "attendance",
-      title: "Present",
-      render: (row: Student) => (
-        <button
-          onClick={() => handleToggleAttendance(row.id)}
-          className={`px-3 py-1 rounded-full text-sm font-medium ${
-            row.isPresent 
-              ? "bg-green-100 text-green-800" 
-              : "bg-gray-100 text-gray-800"
-          }`}
-        >
-          {row.isPresent ? "Present" : "Absent"}
-        </button>
       )
     }
   ];
@@ -341,7 +351,7 @@ const AssistantGroupsTab = ({ }: AssistantGroupsTabProps) => {
           <FaUsers size={48} className="text-gray-400 mb-4" />
           <div className="text-gray-600 text-lg font-semibold mb-2">No Groups Assigned</div>
           <div className="text-gray-500">
-            You haven't been assigned to any groups yet
+            You haven't been assigned to any groups yet in this course
           </div>
         </div>
       ) : (
@@ -351,6 +361,7 @@ const AssistantGroupsTab = ({ }: AssistantGroupsTabProps) => {
             className="table-hover whitespace-nowrap"
             records={groups}
             columns={groupColumns}
+            fetching={groupsLoading}
           />
         </div>
       )}
@@ -359,7 +370,7 @@ const AssistantGroupsTab = ({ }: AssistantGroupsTabProps) => {
       <Modal
         isOpen={showStudentModal}
         onClose={() => setShowStudentModal(false)}
-        title={`Students in ${selectedGroup?.name}`}
+        title={`Students in ${selectedGroup?.groupName}`}
         size="lg"
       >
         <div className="space-y-4">
@@ -368,6 +379,14 @@ const AssistantGroupsTab = ({ }: AssistantGroupsTabProps) => {
             className="table-hover whitespace-nowrap"
             records={students}
             columns={studentColumns}
+            fetching={studentsLoading}
+            emptyState={
+              <div className="flex flex-col items-center justify-center p-8">
+                <FaUsers size={48} className="text-gray-300 mb-4" />
+                <p className="text-gray-500 text-lg font-medium mb-2">No Students</p>
+                <p className="text-gray-400 text-sm">This group has no students assigned yet.</p>
+              </div>
+            }
           />
         </div>
       </Modal>
@@ -376,28 +395,52 @@ const AssistantGroupsTab = ({ }: AssistantGroupsTabProps) => {
       <Modal
         isOpen={showSessionModal}
         onClose={() => setShowSessionModal(false)}
-        title={`Session - ${selectedGroup?.name}`}
+        title={`Manage Session - ${selectedGroup?.groupName}`}
         size="lg"
       >
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h4 className="font-medium">Track Attendance</h4>
-            <div className="text-sm text-gray-600">
-              Present: {sessionStudents.filter(s => s.isPresent).length} / {sessionStudents.length}
+          <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+            <div>
+              <h4 className="font-medium text-blue-900">Active Session</h4>
+              <p className="text-sm text-blue-700">Mark attendance for today's lab session</p>
             </div>
           </div>
-          
-          <DataTable
-            highlightOnHover
-            className="table-hover whitespace-nowrap"
-            records={sessionStudents}
-            columns={sessionStudentColumns}
-          />
-          
-          <div className="flex justify-end gap-3">
+
+          <div className="space-y-2">
+            {sessionStudents.map((student, index) => (
+              <div key={student.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-600 text-xs">
+                      {student.name.split(" ").map(n => n[0]).join("")}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="font-medium">{student.name}</div>
+                    <div className="text-sm text-gray-500">{student.deviceId}</div>
+                  </div>
+                </div>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={student.isPresent}
+                    onChange={(e) => {
+                      const updatedStudents = [...sessionStudents];
+                      updatedStudents[index].isPresent = e.target.checked;
+                      setSessionStudents(updatedStudents);
+                    }}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Present</span>
+                </label>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
             <button
               onClick={() => setShowSessionModal(false)}
-              className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
             >
               Cancel
             </button>
@@ -415,48 +458,60 @@ const AssistantGroupsTab = ({ }: AssistantGroupsTabProps) => {
       <Modal
         isOpen={showPointsModal}
         onClose={() => setShowPointsModal(false)}
-        title={`Assign Points - ${selectedGroup?.name}`}
+        title={`Assign Points - ${selectedGroup?.groupName}`}
         size="lg"
       >
         <div className="space-y-4">
-          <p className="text-gray-600">Assign points to students who are present</p>
-          
+          <div className="p-4 bg-yellow-50 rounded-lg">
+            <h4 className="font-medium text-yellow-900 mb-2">Assign Points</h4>
+            <p className="text-sm text-yellow-700">
+              Assign points to students based on their performance in today's session
+            </p>
+          </div>
+
           <div className="space-y-3">
-            {students.filter(s => s.isPresent !== false).map(student => (
+            {students.map((student) => (
               <div key={student.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <div className="font-medium">{student.name}</div>
-                  <div className="text-sm text-gray-500">{student.studentId}</div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-600 text-xs">
+                      {student.name.split(" ").map(n => n[0]).join("")}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="font-medium">{student.name}</div>
+                    <div className="text-sm text-gray-500">Current: {student.points} points</div>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm">Points:</span>
                   <input
                     type="number"
                     min="0"
-                    max="100"
-                    className="w-20 px-2 py-1 border rounded-md text-center"
-                    value={pointsToAssign[student.id] || ""}
+                    max="10"
+                    placeholder="0"
+                    value={pointsToAssign[student.id] || ''}
                     onChange={(e) => setPointsToAssign(prev => ({
                       ...prev,
                       [student.id]: parseInt(e.target.value) || 0
                     }))}
-                    placeholder="0"
+                    className="w-20 px-2 py-1 border rounded text-center"
                   />
+                  <span className="text-sm text-gray-500">pts</span>
                 </div>
               </div>
             ))}
           </div>
-          
-          <div className="flex justify-end gap-3">
+
+          <div className="flex justify-end gap-3 pt-4">
             <button
               onClick={() => setShowPointsModal(false)}
-              className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
             >
               Cancel
             </button>
             <button
               onClick={handleSavePoints}
-              className="px-4 py-2 bg-secondary text-white rounded-md hover:bg-secondary-dark"
+              className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
             >
               Assign Points
             </button>
@@ -468,30 +523,30 @@ const AssistantGroupsTab = ({ }: AssistantGroupsTabProps) => {
       <Modal
         isOpen={showAddStudentModal}
         onClose={() => setShowAddStudentModal(false)}
-        title={`Add Student to ${selectedGroup?.name}`}
+        title={`Add Student to ${selectedGroup?.groupName}`}
         size="md"
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Student Email
             </label>
             <input
               type="email"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary"
-              placeholder="Enter student email address"
               value={newStudentEmail}
               onChange={(e) => setNewStudentEmail(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-secondary focus:border-secondary"
+              placeholder="student@example.com"
             />
             <p className="text-sm text-gray-500 mt-1">
-              The student will be added to this group manually
+              Enter the email address of the student you want to add to this group
             </p>
           </div>
-          
-          <div className="flex justify-end gap-3">
+
+          <div className="flex justify-end gap-3 pt-4">
             <button
               onClick={() => setShowAddStudentModal(false)}
-              className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
             >
               Cancel
             </button>
@@ -499,7 +554,7 @@ const AssistantGroupsTab = ({ }: AssistantGroupsTabProps) => {
               onClick={handleAddStudent}
               className="px-4 py-2 bg-secondary text-white rounded-md hover:bg-secondary-dark"
             >
-              Add Student
+              Send Invitation
             </button>
           </div>
         </div>

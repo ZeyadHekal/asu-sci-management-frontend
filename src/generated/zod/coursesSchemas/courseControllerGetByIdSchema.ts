@@ -3,7 +3,7 @@
  * Do not edit manually.
  */
 
-import { courseDtoSchema } from '../courseDtoSchema.ts'
+import { courseDetailDtoSchema } from '../courseDetailDtoSchema.ts'
 import { z } from 'zod'
 
 export const courseControllerGetByIdPathParamsSchema = z.object({
@@ -15,7 +15,7 @@ export type CourseControllerGetByIdPathParamsSchema = z.infer<typeof courseContr
 /**
  * @description Course retrieved successfully
  */
-export const courseControllerGetById200Schema = z.lazy(() => courseDtoSchema)
+export const courseControllerGetById200Schema = z.lazy(() => courseDetailDtoSchema)
 
 export type CourseControllerGetById200Schema = z.infer<typeof courseControllerGetById200Schema>
 

@@ -28,7 +28,7 @@ export type DeviceReportControllerUpdateMutationKey = ReturnType<typeof deviceRe
  */
 export async function deviceReportControllerUpdate(
   device_report_id: DeviceReportControllerUpdatePathParams['device_report_id'],
-  data?: DeviceReportControllerUpdateMutationRequest,
+  data: DeviceReportControllerUpdateMutationRequest,
   config: Partial<RequestConfig<DeviceReportControllerUpdateMutationRequest>> & { client?: typeof client } = {},
 ) {
   const { client: request = client, ...requestConfig } = config
@@ -53,7 +53,7 @@ export function useDeviceReportControllerUpdate<TContext>(
       ResponseErrorConfig<
         DeviceReportControllerUpdate400 | DeviceReportControllerUpdate401 | DeviceReportControllerUpdate403 | DeviceReportControllerUpdate404
       >,
-      { device_report_id: DeviceReportControllerUpdatePathParams['device_report_id']; data?: DeviceReportControllerUpdateMutationRequest },
+      { device_report_id: DeviceReportControllerUpdatePathParams['device_report_id']; data: DeviceReportControllerUpdateMutationRequest },
       TContext
     > & { client?: QueryClient }
     client?: Partial<RequestConfig<DeviceReportControllerUpdateMutationRequest>> & { client?: typeof client }
@@ -65,7 +65,7 @@ export function useDeviceReportControllerUpdate<TContext>(
   return useMutation<
     ResponseConfig<DeviceReportControllerUpdateMutationResponse>,
     ResponseErrorConfig<DeviceReportControllerUpdate400 | DeviceReportControllerUpdate401 | DeviceReportControllerUpdate403 | DeviceReportControllerUpdate404>,
-    { device_report_id: DeviceReportControllerUpdatePathParams['device_report_id']; data?: DeviceReportControllerUpdateMutationRequest },
+    { device_report_id: DeviceReportControllerUpdatePathParams['device_report_id']; data: DeviceReportControllerUpdateMutationRequest },
     TContext
   >(
     {

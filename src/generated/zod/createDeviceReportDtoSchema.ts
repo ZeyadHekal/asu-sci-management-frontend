@@ -7,10 +7,9 @@ import { z } from 'zod'
 
 export const createDeviceReportDtoSchema = z.object({
   description: z.string().describe('Report description'),
-  status: z.enum(['REPORTED', 'IN_PROGRESS', 'RESOLVED', 'CANCELLED']).default('REPORTED').describe('Report status'),
   fixMessage: z.string().describe('Fix message').optional(),
   deviceId: z.string().describe('Device ID'),
-  appId: z.string().describe('Software/App ID'),
+  appId: z.string().describe('Software/App ID').optional(),
   reporterId: z.string().describe('Reporter ID').optional(),
 })
 

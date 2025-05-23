@@ -12,7 +12,7 @@ export const eventControllerDownloadSubmissionsPathParamsSchema = z.object({
 export type EventControllerDownloadSubmissionsPathParamsSchema = z.infer<typeof eventControllerDownloadSubmissionsPathParamsSchema>
 
 /**
- * @description ZIP file with all submissions
+ * @description Compressed archive file with all submissions
  */
 export const eventControllerDownloadSubmissions200Schema = z.unknown()
 

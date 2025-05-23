@@ -7,7 +7,7 @@ import { z } from 'zod'
 
 export const fileSubmissionResponseDtoSchema = z.object({
   message: z.string(),
-  submittedFiles: z.array(z.string()),
+  submittedFiles: z.array(z.array(z.unknown())),
   submittedAt: z.string().datetime({ offset: true }),
 })
 

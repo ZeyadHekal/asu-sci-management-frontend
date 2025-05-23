@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { LuFileText, LuTriangle } from "react-icons/lu";
 import { useDeviceControllerGetDeviceReports } from "../../../generated/hooks/devicesHooks/useDeviceControllerGetDeviceReports";
 import { DeviceReportDto } from "../../../generated/types/DeviceReportDto";
+import { getReportStatusBadge, getReportStatusLabel } from "../../../global/constants/reportStatus";
+import { useDeviceAssistantWebSocket } from "../../../services/deviceReportWebSocketService";
+import { useWebSocket } from "../../../services/websocketService";
 
 interface DeviceReportsWidgetProps {
   deviceId: string;
@@ -11,8 +14,33 @@ interface DeviceReportsWidgetProps {
 const DeviceReportsWidget = ({ deviceId, deviceName }: DeviceReportsWidgetProps) => {
   const [reports, setReports] = useState<DeviceReportDto[]>([]);
 
+  // Initialize WebSocket connections
+  const { connect: connectWebSocket, status: webSocketStatus } = useWebSocket();
+  const { registerForDevices } = useDeviceAssistantWebSocket([deviceId]);
+
   // Fetch device reports using kubb generated hook
-  const { data: reportsData, isLoading, error } = useDeviceControllerGetDeviceReports(deviceId);
+  const { data: reportsData, isLoading, error, refetch } = useDeviceControllerGetDeviceReports(deviceId);
+
+  // Initialize WebSocket connection
+  useEffect(() => {
+    connectWebSocket();
+  }, [connectWebSocket]);
+
+  // Set up WebSocket event handlers for this specific device
+  useEffect(() => {
+    if (webSocketStatus === 'connected') {
+      const unsubscribe = registerForDevices((message) => {
+        // Refetch reports when this device's reports are updated
+        if (message.type === 'device_report:created' || 
+            message.type === 'device_report:updated' || 
+            message.type === 'device_report:status_changed') {
+          refetch();
+        }
+      });
+
+      return unsubscribe;
+    }
+  }, [webSocketStatus, registerForDevices, refetch]);
 
   useEffect(() => {
     if (reportsData?.data) {
@@ -25,7 +53,7 @@ const DeviceReportsWidget = ({ deviceId, deviceName }: DeviceReportsWidgetProps)
         {
           id: `temp-${deviceId}-1`,
           description: "Keyboard keys are sticking and not responding properly",
-          status: "REPORTED",
+          status: "PENDING_REVIEW",
           deviceId: deviceId,
           appId: "general",
           created_at: new Date("2024-03-15T10:30:00Z"),
@@ -74,19 +102,6 @@ const DeviceReportsWidget = ({ deviceId, deviceName }: DeviceReportsWidgetProps)
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "RESOLVED":
-        return "bg-green-100 text-green-800";
-      case "IN_PROGRESS":
-        return "bg-yellow-100 text-yellow-800";
-      case "CANCELLED":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "RESOLVED":
@@ -134,8 +149,8 @@ const DeviceReportsWidget = ({ deviceId, deviceName }: DeviceReportsWidgetProps)
                   )}
                 </div>
                 <div className="ml-2">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}>
-                    {getStatusIcon(report.status)} {report.status.replace('_', ' ')}
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getReportStatusBadge(report.status)}`}>
+                    {getStatusIcon(report.status)} {getReportStatusLabel(report.status)}
                   </span>
                 </div>
               </div>

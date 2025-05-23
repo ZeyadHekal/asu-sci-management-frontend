@@ -9,7 +9,6 @@ export const createStaffDtoSchema = z.object({
   name: z.string(),
   username: z.string().describe('Username has to be 4 letters or more'),
   password: z.string(),
-  email: z.string(),
   title: z.string(),
   department: z.string(),
 })

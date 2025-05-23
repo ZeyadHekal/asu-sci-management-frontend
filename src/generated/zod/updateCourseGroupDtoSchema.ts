@@ -7,7 +7,7 @@ import { z } from 'zod'
 
 export const updateCourseGroupDtoSchema = z.object({
   courseId: z.string().optional(),
-  order: z.number().optional(),
+  order: z.number().describe('Order will be auto-calculated if not provided').optional(),
   labId: z.string().describe('Lab ID - can be null if no lab assigned').optional(),
   isDefault: z.boolean().optional(),
   capacity: z.number().optional(),

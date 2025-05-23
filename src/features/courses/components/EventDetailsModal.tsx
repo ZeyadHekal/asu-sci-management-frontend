@@ -2,25 +2,58 @@ import { useState, useEffect } from "react";
 import { LuX, LuSave } from "react-icons/lu";
 import { EventDto } from "../../../generated/types/EventDto";
 import { CreateEventDto } from "../../../generated/types/CreateEventDto";
+import { useEventControllerCreate } from "../../../generated/hooks/eventsHooks/useEventControllerCreate";
+import { useEventControllerUpdate } from "../../../generated/hooks/eventsHooks/useEventControllerUpdate";
+import toast from "react-hot-toast";
 
 interface EventDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  event?: EventDto | null;
-  courseId: number;
+  onSuccess?: () => void;
+  event: EventDto | null;
+  courseId: string;
 }
 
-const EventDetailsModal = ({ isOpen, onClose, event, courseId }: EventDetailsModalProps) => {
+const EventDetailsModal = ({ isOpen, onClose, onSuccess, event, courseId }: EventDetailsModalProps) => {
   const [formData, setFormData] = useState({
     name: "",
     duration: 60,
     isExam: false,
     isInLab: false,
     examFiles: "",
-    degree: 0
+    degree: 0,
+    autoStart: false,
+    examModeStartMinutes: 30
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // API hooks
+  const createEventMutation = useEventControllerCreate({
+    mutation: {
+      onSuccess: () => {
+        toast.success("Event created successfully!");
+        onSuccess?.();
+        onClose();
+      },
+      onError: (error: any) => {
+        toast.error("Failed to create event");
+      },
+    },
+  });
+
+  const updateEventMutation = useEventControllerUpdate({
+    mutation: {
+      onSuccess: () => {
+        toast.success("Event updated successfully!");
+        onSuccess?.();
+        onClose();
+      },
+      onError: (error: any) => {
+        toast.error("Failed to update event");
+      },
+    },
+  });
 
   useEffect(() => {
     if (event) {
@@ -30,7 +63,9 @@ const EventDetailsModal = ({ isOpen, onClose, event, courseId }: EventDetailsMod
         isExam: event.isExam,
         isInLab: event.isInLab,
         examFiles: event.examFiles,
-        degree: event.degree
+        degree: event.degree,
+        autoStart: event.autoStart,
+        examModeStartMinutes: event.examModeStartMinutes
       });
     } else {
       setFormData({
@@ -39,7 +74,9 @@ const EventDetailsModal = ({ isOpen, onClose, event, courseId }: EventDetailsMod
         isExam: false,
         isInLab: false,
         examFiles: "",
-        degree: 0
+        degree: 0,
+        autoStart: false,
+        examModeStartMinutes: 30
       });
     }
     setErrors({});
@@ -71,14 +108,40 @@ const EventDetailsModal = ({ isOpen, onClose, event, courseId }: EventDetailsMod
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) return;
 
-    // Here you would make API call to create/update event
-    console.log("Saving event:", formData);
-    
-    // For now, just close the modal
-    onClose();
+    const eventData: CreateEventDto = {
+      name: formData.name,
+      duration: formData.duration,
+      eventType: formData.isExam ? 'exam' : 'assignment',
+      locationType: formData.isInLab ? 'lab_devices' : 'online',
+      hasMarks: formData.degree > 0,
+      totalMarks: formData.degree > 0 ? formData.degree : undefined,
+      requiresModels: false,
+      allowRandomModelAssignment: false,
+      courseId: courseId,
+      autoStart: formData.autoStart,
+      examModeStartMinutes: formData.examModeStartMinutes,
+      isExam: formData.isExam
+    };
+
+    try {
+      if (event) {
+        // Update existing event
+        await updateEventMutation.mutateAsync({
+          event_id: event.id,
+          data: eventData
+        });
+      } else {
+        // Create new event
+        await createEventMutation.mutateAsync({
+          data: eventData
+        });
+      }
+    } catch (error) {
+      // Error handling is done in mutation callbacks
+    }
   };
 
   if (!isOpen) return null;

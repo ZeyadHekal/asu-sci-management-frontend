@@ -173,12 +173,24 @@ export const examGradingApi = {
 
     // Download all submissions as zip
     downloadAllSubmissions: async (examId: string): Promise<Blob> => {
-        const response = await client<Blob>({
-            method: 'GET',
-            url: `/exam-grading/download-submissions/${examId}`,
-            responseType: 'blob',
-        });
-        return response.data;
+        console.log(`[examGradingApi] Starting downloadAllSubmissions for examId: ${examId}`);
+
+        try {
+            const response = await client<Blob>({
+                method: 'GET',
+                url: `/exam-grading/download-submissions/${examId}`,
+                responseType: 'blob',
+            });
+
+            console.log(`[examGradingApi] Successfully downloaded submissions. Blob size: ${response.data.size} bytes`);
+            console.log(`[examGradingApi] Response status: ${response.status}`);
+            console.log(`[examGradingApi] Response headers:`, response.headers);
+
+            return response.data;
+        } catch (error) {
+            console.error(`[examGradingApi] Error downloading submissions for examId ${examId}:`, error);
+            throw error;
+        }
     },
 
     // Generate and download grade template

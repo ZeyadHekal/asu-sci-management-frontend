@@ -9,9 +9,10 @@ export type CreateCourseGroupDto = {
    */
   courseId: string
   /**
-   * @type number
+   * @description Order will be auto-calculated if not provided
+   * @type number | undefined
    */
-  order: number
+  order?: number | undefined
   /**
    * @description Lab ID - can be null if no lab assigned
    * @type string | undefined

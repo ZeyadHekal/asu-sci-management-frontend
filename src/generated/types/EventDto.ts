@@ -3,31 +3,65 @@
  * Do not edit manually.
  */
 
+export const eventDtoEventTypeEnum = {
+  exam: 'exam',
+  quiz: 'quiz',
+  assignment: 'assignment',
+  lab_assignment: 'lab_assignment',
+  project: 'project',
+  presentation: 'presentation',
+  workshop: 'workshop',
+  practice: 'practice',
+  seminar: 'seminar',
+} as const
+
+export type EventDtoEventTypeEnum = (typeof eventDtoEventTypeEnum)[keyof typeof eventDtoEventTypeEnum]
+
+export const eventDtoLocationTypeEnum = {
+  lab_devices: 'lab_devices',
+  lecture_hall: 'lecture_hall',
+  online: 'online',
+  hybrid: 'hybrid',
+} as const
+
+export type EventDtoLocationTypeEnum = (typeof eventDtoLocationTypeEnum)[keyof typeof eventDtoLocationTypeEnum]
+
 export type EventDto = {
   /**
    * @type string
    */
   name: string
   /**
+   * @type string | undefined
+   */
+  description?: string | undefined
+  /**
    * @type number
    */
   duration: number
   /**
-   * @type boolean
+   * @default "assignment"
+   * @type string
    */
-  isExam: boolean
+  eventType: EventDtoEventTypeEnum
   /**
-   * @type boolean
+   * @default "online"
+   * @type string
    */
-  isInLab: boolean
+  locationType: EventDtoLocationTypeEnum
   /**
+   * @description Custom location when not using lab devices
    * @type string | undefined
    */
-  examFiles?: string | undefined
+  customLocation?: string | undefined
   /**
-   * @type number
+   * @type boolean
    */
-  degree: number
+  hasMarks: boolean
+  /**
+   * @type number | undefined
+   */
+  totalMarks?: number | undefined
   /**
    * @default false
    * @type boolean
@@ -39,9 +73,28 @@ export type EventDto = {
    */
   examModeStartMinutes: number
   /**
-   * @type string | undefined
+   * @description When the event should start
+   * @type string | undefined, date-time
    */
-  description?: string | undefined
+  startDateTime?: Date | undefined
+  /**
+   * @description Whether this event requires exam models
+   * @default false
+   * @type boolean
+   */
+  requiresModels: boolean
+  /**
+   * @description Allow random assignment of exam models to students
+   * @default false
+   * @type boolean
+   */
+  allowRandomModelAssignment: boolean
+  /**
+   * @description Whether this event should be treated as an exam
+   * @default false
+   * @type boolean
+   */
+  isExam: boolean
   /**
    * @type string
    */
@@ -50,4 +103,25 @@ export type EventDto = {
    * @type string
    */
   id: string
+  /**
+   * @description Computed: Whether this event is in lab
+   * @type boolean
+   */
+  isInLab: boolean
+  /**
+   * @description Computed: Whether this event is online
+   * @type boolean
+   */
+  isOnline: boolean
+  /**
+   * @deprecated
+   * @type string | undefined
+   */
+  examFiles?: string | undefined
+  /**
+   * @description Use totalMarks instead
+   * @deprecated
+   * @type number | undefined
+   */
+  degree?: number | undefined
 }

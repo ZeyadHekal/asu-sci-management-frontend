@@ -1,9 +1,8 @@
 import { DataTable } from "mantine-datatable";
 import { useEffect, useState } from "react";
-import { LuHistory, LuSearch, LuFilter, LuInfo, LuUser, LuFileText } from "react-icons/lu";
+import { LuHistory, LuSearch, LuFilter, LuInfo, LuUser, LuCode } from "react-icons/lu";
 import { FaRegEdit } from "react-icons/fa";
 import { RiDeleteBinLine } from "react-icons/ri";
-import { BsGearFill } from "react-icons/bs";
 import { FiAlertTriangle } from "react-icons/fi";
 import { Link, useNavigate } from "react-router";
 import { cn } from "../../../global/utils/cn";
@@ -16,36 +15,24 @@ import AssignAssistantModal from "../components/AssignAssistantModal";
 import { toast } from "react-hot-toast";
 import { useDeviceControllerGetPaginated } from "../../../generated/hooks/devicesHooks/useDeviceControllerGetPaginated";
 import { useDeviceControllerDelete } from "../../../generated/hooks/devicesHooks/useDeviceControllerDelete";
-import { useDeviceControllerGetDeviceReports } from "../../../generated/hooks/devicesHooks/useDeviceControllerGetDeviceReports";
+import { useDeviceControllerUpdate } from "../../../generated/hooks/devicesHooks/useDeviceControllerUpdate";
 import { useLabControllerGetAll } from "../../../generated/hooks/labsHooks/useLabControllerGetAll";
-import { DeviceListDto } from "../../../generated/types/DeviceListDto";
+import { useUserControllerGetAllAssistants } from "../../../generated/hooks/usersHooks/useUserControllerGetAllAssistants";
+import { useSoftwareControllerGetAll } from "../../../generated/hooks/softwaresHooks/useSoftwareControllerGetAll";
+import { useQueryClient } from "@tanstack/react-query";
+import { deviceControllerGetPaginatedQueryKey } from "../../../generated/hooks/devicesHooks/useDeviceControllerGetPaginated";
+import type { DeviceListDto } from "../../../generated/types/DeviceListDto";
 
-// Mock software data for filtering - This should come from API in the future
-const availableSoftware = [
-  { value: "Visual Studio Code", label: "Visual Studio Code" },
-  { value: "MySQL", label: "MySQL" },
-  { value: "Cisco Packet Tracer", label: "Cisco Packet Tracer" },
-  { value: "Unity", label: "Unity" },
-  { value: "Android Studio", label: "Android Studio" }
-];
-
-// Mock statuses for filtering
+// Available statuses for filtering
 const availableStatuses = [
   { value: "Available", label: "Available" },
   { value: "Needs Maintenance", label: "Needs Maintenance" }
 ];
 
-// Mock lab assistants data for filtering - This should come from API in the future
-const availableAssistants = [
-  { value: "1", label: "Ahmed Mahmoud" },
-  { value: "2", label: "Sara Ali" },
-  { value: "3", label: "Omar Mohamed" },
-  { value: "4", label: "Fatima Ibrahim" },
-  { value: "5", label: "Khalid Hassan" }
-];
-
 const DevicesPage = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  
   const [page, setPage] = useState(0); // API uses 0-based pagination
   const PAGE_SIZES = [10, 20, 30, 50, 100];
   const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
@@ -81,9 +68,6 @@ const DevicesPage = () => {
   const [deviceForAssistant, setDeviceForAssistant] = useState<{ id: string; name: string } | null>(null);
   const [currentAssistant, setCurrentAssistant] = useState<{ id: string; name: string } | null>(null);
 
-  // Device reports state
-  const [deviceReports, setDeviceReports] = useState<Record<string, number>>({});
-
   // Debounce search to avoid too many API calls
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -94,8 +78,41 @@ const DevicesPage = () => {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Fetch labs for lab name mapping
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(0);
+  }, [labFilter, statusFilter, assistantFilter, specFilter, softwareFilter]);
+
+  // Fetch labs for lab name mapping and filtering
   const { data: labsData } = useLabControllerGetAll();
+
+  // Fetch users with LAB_ASSISTANT privilege for assistant filtering
+  const { data: assistantsData } = useUserControllerGetAllAssistants();
+
+  // Fetch software for software filtering
+  const { data: softwareData } = useSoftwareControllerGetAll();
+
+  // Create lab options for filtering from actual lab data
+  const availableLabs = labsData?.data 
+    ? (Array.isArray(labsData.data) ? labsData.data : [labsData.data]).map(lab => ({ 
+        value: lab.id, 
+        label: lab.name 
+      }))
+    : [];
+
+  // Create assistant options for filtering from actual lab assistants data
+  const availableAssistants = assistantsData?.data?.map(assistant => ({
+    value: assistant.id,
+    label: assistant.name
+  })) || [];
+
+  // Create software options for filtering from actual software data
+  const availableSoftware = softwareData?.data
+    ? (Array.isArray(softwareData.data) ? softwareData.data : [softwareData.data]).map(software => ({
+        value: software.name,
+        label: software.name
+      }))
+    : [];
 
   // Create a map of lab IDs to lab names
   const labMap = new Map<string, string>();
@@ -106,12 +123,7 @@ const DevicesPage = () => {
     });
   }
 
-  // Create lab options for filtering from actual lab data
-  const availableLabs = labsData?.data 
-    ? (Array.isArray(labsData.data) ? labsData.data : [labsData.data]).map(lab => ({ value: lab.id, label: lab.name }))
-    : [];
-
-  // Fetch devices using the generated hook
+  // Fetch devices using the generated hook with server-side filtering
   const { 
     data: devicesData, 
     isLoading, 
@@ -121,7 +133,14 @@ const DevicesPage = () => {
     page,
     limit: pageSize,
     sortBy: "created_at",
-    sortOrder: "desc"
+    sortOrder: "desc",
+    // Server-side filtering parameters
+    deviceName: debouncedSearch || undefined,
+    software: softwareFilter?.value || undefined,
+    labId: labFilter?.value || undefined,
+    status: statusFilter?.value || undefined,
+    assistantId: assistantFilter?.value || undefined,
+    specValue: specFilter || undefined,
   });
 
   // Delete device mutation
@@ -129,9 +148,12 @@ const DevicesPage = () => {
     mutation: {
       onSuccess: () => {
         toast.success("Device deleted successfully");
-        refetch();
+        queryClient.invalidateQueries({
+          queryKey: deviceControllerGetPaginatedQueryKey(),
+        });
         setIsDeleteModalOpen(false);
         setDeleteDeviceId(null);
+        setSelectedDevice(null);
       },
       onError: (error: any) => {
         toast.error(`Failed to delete device: ${error?.response?.data?.message || "An error occurred"}`);
@@ -139,28 +161,23 @@ const DevicesPage = () => {
     }
   });
 
-  // Fetch device reports count for each device
-  useEffect(() => {
-    const fetchDeviceReports = async () => {
-      if (devicesData?.data?.items) {
-        const devices = Array.isArray(devicesData.data.items) 
-          ? devicesData.data.items 
-          : [devicesData.data.items];
-        
-        const reportsCount: Record<string, number> = {};
-        
-        // For now, use temporary data since API might not be fully implemented
-        devices.forEach((device: DeviceListDto) => {
-          // Simulate reports count - replace with actual API call when available
-          reportsCount[device.id] = Math.floor(Math.random() * 5); // 0-4 reports per device
+  // Update device mutation for assistant assignment
+  const { mutate: updateDevice, isPending: isUpdatingDevice } = useDeviceControllerUpdate({
+    mutation: {
+      onSuccess: () => {
+        toast.success("Lab assistant assigned successfully");
+        queryClient.invalidateQueries({
+          queryKey: deviceControllerGetPaginatedQueryKey(),
         });
-        
-        setDeviceReports(reportsCount);
+        setIsAssistantModalOpen(false);
+        setDeviceForAssistant(null);
+        setCurrentAssistant(null);
+      },
+      onError: (error: any) => {
+        toast.error(`Failed to assign assistant: ${error?.response?.data?.message || "An error occurred"}`);
       }
-    };
-
-    fetchDeviceReports();
-  }, [devicesData]);
+    }
+  });
 
   const handleOpenSoftwareModal = (id: string, deviceName: string) => {
     setSelectedDevice({ id, name: deviceName });
@@ -218,13 +235,15 @@ const DevicesPage = () => {
     setIsAssistantModalOpen(true);
   };
 
-  const saveAssistantAssignment = (assistantId: number, assistantName: string) => {
+  const saveAssistantAssignment = (assistantId: string, assistantName: string) => {
     if (deviceForAssistant) {
-      // In a real implementation, you would call an API to update the device
-      toast.success(`Assistant ${assistantName} assigned successfully`);
-      refetch();
+      updateDevice({
+        device_id: deviceForAssistant.id,
+        data: {
+          assisstantId: assistantId, // Already a string UUID
+        }
+      });
     }
-    setIsAssistantModalOpen(false);
   };
 
   const handleViewSpecs = (deviceName: string, specs: string, specDetails: Array<{ category: string; value: string }>) => {
@@ -236,52 +255,14 @@ const DevicesPage = () => {
     setIsSpecsModalOpen(true);
   };
 
-  // Filter devices based on current filter settings
-  const getFilteredDevices = () => {
-    const devices = Array.isArray(devicesData?.data?.items) 
-      ? devicesData.data.items 
-      : devicesData?.data?.items 
-        ? [devicesData.data.items] 
-        : [];
-
-    return devices.filter((device: DeviceListDto) => {
-      // Search filter
-      if (debouncedSearch) {
-        const matchesSearch = device.name.toLowerCase().includes(debouncedSearch.toLowerCase()) || device.IPAddress.toLowerCase().includes(debouncedSearch.toLowerCase());
-        if (!matchesSearch) return false;
-      }
-
-      // Lab filter
-      if (labFilter && device.labId !== labFilter.value) {
-        return false;
-      }
-
-      // Status filter
-      if (statusFilter && device.status !== statusFilter.value) {
-        return false;
-      }
-
-      // Assistant filter
-      if (assistantFilter && device.assisstantId !== assistantFilter.value) {
-        return false;
-      }
-
-      // Spec filter
-      if (specFilter) {
-        const specsText = device.specDetails
-          ?.map(spec => spec.value)
-          .join(', ')
-          .toLowerCase() || '';
-        if (!specsText.includes(specFilter.toLowerCase())) {
-          return false;
-        }
-      }
-
-      // Software filter - note: this would need to be implemented based on actual software data
-      // For now, we'll skip it as the current device structure doesn't include software info
-      
-      return true;
-    });
+  const clearAllFilters = () => {
+    setSearch("");
+    setSoftwareFilter(null);
+    setLabFilter(null);
+    setStatusFilter(null);
+    setAssistantFilter(null);
+    setSpecFilter("");
+    setPage(0);
   };
 
   // Show error state
@@ -290,7 +271,7 @@ const DevicesPage = () => {
       <div className="panel mt-6">
         <div className="flex flex-col items-center justify-center h-64">
           <div className="text-red-500 text-lg font-semibold mb-2">Error loading devices</div>
-          <div className="text-gray-600 mb-4">{error.message}</div>
+          <div className="text-gray-600 mb-4">{error?.message || "Please try again."}</div>
           <button 
             onClick={() => refetch()}
             className="px-4 py-2 bg-secondary text-white rounded-md hover:bg-secondary-dark"
@@ -302,8 +283,14 @@ const DevicesPage = () => {
     );
   }
 
-  const filteredDevices = getFilteredDevices();
-  const totalRecords = filteredDevices.length;
+  // Use server-side filtered data directly
+  const devices = Array.isArray(devicesData?.data?.items) 
+    ? devicesData.data.items 
+    : devicesData?.data?.items 
+      ? [devicesData.data.items] 
+      : [];
+  
+  const totalRecords = devicesData?.data?.total || devices.length;
 
   return (
     <div className="panel mt-6">
@@ -315,7 +302,7 @@ const DevicesPage = () => {
               to="/devices/software"
               className="flex items-center gap-1 text-secondary bg-gray-100 px-2 py-1 rounded-md text-sm"
             >
-              <BsGearFill size={14} />
+              <LuCode size={14} />
               <span>Manage Software</span>
             </Link>
             <Link
@@ -360,6 +347,15 @@ const DevicesPage = () => {
       {/* Filter panel */}
       {isFilterOpen && (
         <div className="mb-6 p-4 bg-gray-50 border rounded-md relative z-10">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-sm font-medium text-gray-700">Filter Devices</h3>
+            <button
+              onClick={clearAllFilters}
+              className="text-sm text-secondary hover:text-secondary-dark"
+            >
+              Clear all filters
+            </button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm text-gray-600 mb-1">Software</label>
@@ -370,6 +366,7 @@ const DevicesPage = () => {
                 value={softwareFilter}
                 onChange={(option) => setSoftwareFilter(option)}
                 className="text-sm"
+                isLoading={!softwareData}
               />
             </div>
             <div>
@@ -381,6 +378,7 @@ const DevicesPage = () => {
                 value={labFilter}
                 onChange={(option) => setLabFilter(option)}
                 className="text-sm"
+                isLoading={!labsData}
               />
             </div>
             <div>
@@ -403,6 +401,7 @@ const DevicesPage = () => {
                 value={assistantFilter}
                 onChange={(option) => setAssistantFilter(option)}
                 className="text-sm"
+                isLoading={!assistantsData}
               />
             </div>
             <div>
@@ -424,7 +423,7 @@ const DevicesPage = () => {
           highlightOnHover
           withBorder
           className="table-hover whitespace-nowrap"
-          records={filteredDevices}
+          records={devices}
           columns={[
             {
               accessor: "name",
@@ -445,7 +444,7 @@ const DevicesPage = () => {
               title: "Lab",
               render: (row) => (
                 <span className="text-gray-700">
-                  {labMap.get(row.labId) || row.labId}
+                  {row.labName || labMap.get(row.labId) || row.labId}
                 </span>
               )
             },
@@ -467,7 +466,10 @@ const DevicesPage = () => {
                       onClick={() => handleViewSpecs(
                         row.name, 
                         specsArray.map(spec => spec.value).join(', '),
-                        specsArray.map(spec => ({ category: "Specification", value: spec.value }))
+                        specsArray.map(spec => ({ 
+                          category: spec.category || "Specification", 
+                          value: spec.value 
+                        }))
                       )}
                       className="text-gray-500 hover:text-secondary"
                       title="View full specifications"
@@ -519,7 +521,7 @@ const DevicesPage = () => {
               accessor: "reports",
               title: "Reports",
               render: (row) => {
-                const reportCount = deviceReports[row.id] || 0;
+                const reportCount = row.totalReports || 0;
                 return (
                   <button
                     onClick={() => handleViewDeviceReports(row.id)}
@@ -556,24 +558,16 @@ const DevicesPage = () => {
                     <LuHistory size={20} className="text-[#0E1726]" />
                   </button>
                   <button
-                    onClick={() => handleViewDeviceReports(row.id)}
-                    className="hover:text-secondary transition-colors"
-                    title="View device reports"
-                  >
-                    <LuFileText size={20} className="text-[#0E1726]" />
-                  </button>
-                  <button
                     onClick={() => handleOpenSoftwareModal(row.id, row.name)}
                     className="hover:text-secondary transition-colors"
                     title="Manage software"
                   >
-                    <BsGearFill size={18} className="text-[#0E1726]" />
+                    <LuCode size={18} className="text-[#0E1726]" />
                   </button>
                   <button
                     onClick={() => handleDeleteDevice(row.id, row.name)}
                     className="text-gray-500 hover:text-danger"
                     title="Delete device"
-                    disabled={isDeleting}
                   >
                     <RiDeleteBinLine size={20} className="text-[#0E1726]" />
                   </button>
@@ -593,13 +587,20 @@ const DevicesPage = () => {
           fetching={isLoading}
           noRecordsText="No devices found"
           emptyState={
-            !isLoading && filteredDevices.length === 0 ? (
+            !isLoading && devices.length === 0 ? (
               <div className="text-center py-8">
                 <div className="text-gray-500 text-lg font-medium">No devices found</div>
                 <div className="text-gray-400 text-sm mt-1">
-                  {search || labFilter || statusFilter || assistantFilter || specFilter ? 'Try adjusting your filters' : 'Add your first device to get started'}
+                  {search || labFilter || statusFilter || assistantFilter || specFilter || softwareFilter ? 'Try adjusting your filters' : 'Add your first device to get started'}
                 </div>
-                {!search && !labFilter && !statusFilter && !assistantFilter && !specFilter && (
+                {search || labFilter || statusFilter || assistantFilter || specFilter || softwareFilter ? (
+                  <button
+                    onClick={clearAllFilters}
+                    className="mt-4 px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200"
+                  >
+                    Clear Filters
+                  </button>
+                ) : (
                   <button
                     onClick={() => setIsDeviceModalOpen(true)}
                     className="mt-4 px-4 py-2 bg-secondary text-white rounded-md text-sm"
@@ -617,8 +618,8 @@ const DevicesPage = () => {
       <DeviceDetailsModal
         isOpen={isDeviceModalOpen}
         onClose={handleCloseDeviceModal}
-        deviceId={editDeviceId ? parseInt(editDeviceId) : null}
-        onAssignAssistant={(deviceId: number, deviceName: string) => handleAssignAssistant(deviceId.toString(), deviceName)}
+        deviceId={editDeviceId}
+        onAssignAssistant={(deviceId: string, deviceName: string) => handleAssignAssistant(deviceId, deviceName)}
       />
 
       {/* Device Software Modal */}
@@ -627,6 +628,7 @@ const DevicesPage = () => {
         onClose={() => setIsSoftwareModalOpen(false)}
         deviceId={selectedDevice?.id}
         deviceName={selectedDevice?.name}
+        onDeviceUpdated={refetch}
       />
 
       {/* Delete Confirmation Modal */}
@@ -669,8 +671,9 @@ const DevicesPage = () => {
         isOpen={isAssistantModalOpen}
         onClose={() => setIsAssistantModalOpen(false)}
         deviceName={deviceForAssistant?.name || ""}
-        currentAssistant={currentAssistant ? { id: parseInt(currentAssistant.id), name: currentAssistant.name } : null}
+        currentAssistant={currentAssistant}
         onSave={saveAssistantAssignment}
+        isSaving={isUpdatingDevice}
       />
     </div>
   );

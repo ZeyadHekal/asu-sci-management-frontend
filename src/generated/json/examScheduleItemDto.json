@@ -1,0 +1,1 @@
+{"type":"object","properties":{"eventScheduleId":{"type":"string"},"eventName":{"type":"string"},"dateTime":{"format":"date-time","type":"string"},"status":{"type":"string"}},"required":["eventScheduleId","eventName","dateTime","status"],"x-readme-ref-name":"ExamScheduleItemDto"}

@@ -7,11 +7,11 @@ import { z } from 'zod'
 
 export const updateDeviceReportDtoSchema = z.object({
   description: z.string().describe('Report description').optional(),
-  status: z.enum(['REPORTED', 'IN_PROGRESS', 'RESOLVED', 'CANCELLED']).default('REPORTED').describe('Report status'),
   fixMessage: z.string().describe('Fix message').optional(),
   deviceId: z.string().describe('Device ID').optional(),
   appId: z.string().describe('Software/App ID').optional(),
   reporterId: z.string().describe('Reporter ID').optional(),
+  status: z.enum(['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED']).default('PENDING_REVIEW').describe('Report status'),
 })
 
 export type UpdateDeviceReportDtoSchema = z.infer<typeof updateDeviceReportDtoSchema>

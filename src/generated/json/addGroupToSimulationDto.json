@@ -1,0 +1,1 @@
+{"type":"object","properties":{"labId":{"type":"string"},"proposedCapacity":{"type":"number","description":"Proposed capacity, defaults to lab effective capacity if not specified"}},"required":["labId"],"x-readme-ref-name":"AddGroupToSimulationDto"}

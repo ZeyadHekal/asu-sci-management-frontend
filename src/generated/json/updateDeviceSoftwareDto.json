@@ -1,0 +1,1 @@
+{"type":"object","properties":{"hasIssue":{"type":"boolean","description":"Whether the software has issues"},"issueDescription":{"type":"string","description":"Description of any issues"}},"x-readme-ref-name":"UpdateDeviceSoftwareDto"}

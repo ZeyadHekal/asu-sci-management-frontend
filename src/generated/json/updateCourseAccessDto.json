@@ -1,0 +1,1 @@
+{"type":"object","properties":{"canView":{"type":"boolean","default":false},"canEdit":{"type":"boolean","default":false},"canDelete":{"type":"boolean","default":false}},"required":["canView","canEdit","canDelete"],"x-readme-ref-name":"UpdateCourseAccessDto"}

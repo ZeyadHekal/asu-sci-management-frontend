@@ -17,6 +17,7 @@ export const courseListDtoSchema = z.object({
   courseCode: z.string().describe('Course code (subjectCode + courseNumber)'),
   courseType: z.string().describe('Course type based on hasLab field'),
   assignedDoctors: z.array(z.string()).describe('List of assigned doctor names'),
+  requiredSoftware: z.array(z.string()).describe('List of required software names'),
   numberOfStudents: z.number().describe('Total number of enrolled students'),
   hasDefaultGroup: z.boolean().describe('Indicates if course has default group created'),
 })

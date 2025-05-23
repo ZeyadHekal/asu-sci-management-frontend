@@ -12,7 +12,7 @@ export type EventControllerDownloadSubmissionsPathParams = {
 }
 
 /**
- * @description ZIP file with all submissions
+ * @description Compressed archive file with all submissions
  */
 export type EventControllerDownloadSubmissions200 = unknown
 

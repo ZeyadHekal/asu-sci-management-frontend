@@ -1,0 +1,1 @@
+{"type":"object","properties":{"id":{"type":"string","description":"Course ID"},"code":{"type":"string","description":"Course code like \"CS101\""},"name":{"type":"string","description":"Course name"},"credits":{"type":"number","description":"Credit hours"}},"required":["id","code","name","credits"],"x-readme-ref-name":"AvailableCourseDto"}

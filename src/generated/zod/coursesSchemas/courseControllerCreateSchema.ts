@@ -3,14 +3,14 @@
  * Do not edit manually.
  */
 
-import { courseDtoSchema } from '../courseDtoSchema.ts'
+import { courseDetailDtoSchema } from '../courseDetailDtoSchema.ts'
 import { createCourseDtoSchema } from '../createCourseDtoSchema.ts'
 import { z } from 'zod'
 
 /**
  * @description Course created successfully
  */
-export const courseControllerCreate201Schema = z.lazy(() => courseDtoSchema)
+export const courseControllerCreate201Schema = z.lazy(() => courseDetailDtoSchema)
 
 export type CourseControllerCreate201Schema = z.infer<typeof courseControllerCreate201Schema>
 

@@ -18,7 +18,7 @@ export const eventControllerDownloadSubmissionsQueryKey = (scheduleId: EventCont
 export type EventControllerDownloadSubmissionsQueryKey = ReturnType<typeof eventControllerDownloadSubmissionsQueryKey>
 
 /**
- * @summary Download all student submissions as ZIP file
+ * @summary Download all student submissions as compressed archive (RAR or tar.gz)
  * {@link /events/:scheduleId/download-submissions}
  */
 export async function eventControllerDownloadSubmissions(
@@ -56,7 +56,7 @@ export function eventControllerDownloadSubmissionsQueryOptions(
 }
 
 /**
- * @summary Download all student submissions as ZIP file
+ * @summary Download all student submissions as compressed archive (RAR or tar.gz)
  * {@link /events/:scheduleId/download-submissions}
  */
 export function useEventControllerDownloadSubmissions<

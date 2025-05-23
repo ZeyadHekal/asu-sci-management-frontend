@@ -17,6 +17,8 @@ export const deviceListDtoSchema = z.object({
   specDetails: z.array(z.lazy(() => deviceSpecificationDtoSchema)),
   labAssistant: z.string(),
   labName: z.string(),
+  totalReports: z.number().describe('Total number of reports for this device'),
+  openReports: z.number().describe('Number of non-closed (open) reports for this device'),
 })
 
 export type DeviceListDtoSchema = z.infer<typeof deviceListDtoSchema>

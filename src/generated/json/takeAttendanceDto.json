@@ -1,0 +1,1 @@
+{"type":"object","properties":{"studentId":{"type":"string","description":"Student ID"},"isPresent":{"type":"boolean","description":"Whether marking as present (true) or absent (false)"},"absencePoints":{"type":"number","description":"Points to deduct for absence (negative value)"}},"required":["studentId","isPresent"],"x-readme-ref-name":"TakeAttendanceDto"}

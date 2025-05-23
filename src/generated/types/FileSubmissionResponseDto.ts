@@ -11,7 +11,7 @@ export type FileSubmissionResponseDto = {
   /**
    * @type array
    */
-  submittedFiles: string[]
+  submittedFiles: unknown[][]
   /**
    * @type string, date-time
    */

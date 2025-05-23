@@ -1,1 +1,1 @@
-{"type":"object","properties":{"message":{"type":"string"},"submittedFiles":{"type":"array","items":{"type":"string"}},"submittedAt":{"format":"date-time","type":"string"}},"required":["message","submittedFiles","submittedAt"],"x-readme-ref-name":"FileSubmissionResponseDto"}
+{"type":"object","properties":{"message":{"type":"string"},"submittedFiles":{"type":"array","items":{"type":"array"}},"submittedAt":{"format":"date-time","type":"string"}},"required":["message","submittedFiles","submittedAt"],"x-readme-ref-name":"FileSubmissionResponseDto"}

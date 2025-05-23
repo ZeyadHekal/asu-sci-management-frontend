@@ -1,64 +1,38 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { FaArrowLeft, FaUsers, FaClock, FaCalendarAlt } from "react-icons/fa";
-import { LuGraduationCap, LuPlus } from "react-icons/lu";
 import { DataTable } from "mantine-datatable";
-import { EventScheduleDto } from "../../../generated/types/EventScheduleDto";
-
-// Mock event group data
-const mockEventGroupData: EventScheduleDto & { 
-  groupName: string; 
-  enrolledStudents: number; 
-  capacity: number;
-  labName: string;
-  eventName: string;
-} = {
-  id: "1",
-  labId: "lab1",
-  labName: "Lab A1-110",
-  dateTime: new Date("2024-04-15T10:00:00"),
-  examFiles: "midterm-files.zip",
-  assisstantId: "ta1",
-  groupName: "Group A",
-  enrolledStudents: 18,
-  capacity: 20,
-  eventName: "Midterm Exam"
-};
-
-// Mock students data for this event group
-const mockStudentsData = [
-  {
-    id: 1,
-    name: "Ahmed Mohamed",
-    studentId: "20201234",
-    email: "ahmed.mohamed@example.com",
-    attendanceStatus: "present",
-    grade: 85
-  },
-  {
-    id: 2,
-    name: "Sara Ahmed", 
-    studentId: "20205678",
-    email: "sara.ahmed@example.com",
-    attendanceStatus: "present",
-    grade: 92
-  },
-  {
-    id: 3,
-    name: "Mohamed Ibrahim",
-    studentId: "20209012", 
-    email: "mohamed.ibrahim@example.com",
-    attendanceStatus: "absent",
-    grade: null
-  },
-  // Add more students...
-];
+import { useEventGroupControllerGetEventGroups } from "../../../generated/hooks/event-groupsHooks/useEventGroupControllerGetEventGroups";
+import { useEventGroupControllerGetEventGroupStudents } from "../../../generated/hooks/event-groupsHooks/useEventGroupControllerGetEventGroupStudents";
+import { EventGroupDto } from "../../../generated/types/EventGroupDto";
+import { EventGroupStudentDto } from "../../../generated/types/EventGroupStudentDto";
 
 const EventGroupDetailPage = () => {
   const { courseId, eventId, groupId } = useParams();
   const navigate = useNavigate();
-  const [eventGroup, setEventGroup] = useState(mockEventGroupData);
-  const [students, setStudents] = useState(mockStudentsData);
+
+  // API hooks - get all groups for the event and find the specific one
+  const { data: eventGroupsData, isLoading: groupsLoading, error: groupsError } = useEventGroupControllerGetEventGroups(
+    eventId || '',
+    {
+      query: {
+        enabled: !!eventId
+      }
+    }
+  );
+
+  const { data: studentsData, isLoading: studentsLoading, error: studentsError } = useEventGroupControllerGetEventGroupStudents(
+    groupId || '',
+    {
+      query: {
+        enabled: !!groupId
+      }
+    }
+  );
+
+  const eventGroups = (eventGroupsData?.data as EventGroupDto[]) || [];
+  const eventGroup = eventGroups.find(group => group.id === groupId);
+  const students = (studentsData?.data as EventGroupStudentDto[]) || [];
 
   const formatDateTime = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {
@@ -68,8 +42,30 @@ const EventGroupDetailPage = () => {
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit"
-    }).format(date);
+    }).format(new Date(date));
   };
+
+  if (groupsLoading || studentsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <span className="ml-3">Loading group details...</span>
+      </div>
+    );
+  }
+
+  if (groupsError || !eventGroup) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <h3 className="text-red-800 font-medium">Error Loading Group</h3>
+          <p className="text-red-600 text-sm mt-1">
+            {groupsError ? 'Failed to load group data' : 'Group not found'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="panel mt-6">
@@ -85,13 +81,19 @@ const EventGroupDetailPage = () => {
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-secondary">{eventGroup.groupName}</h1>
+            <h1 className="text-2xl font-bold text-secondary">Event Group</h1>
             <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-              <span className="font-semibold">{eventGroup.eventName}</span>
-              <span>•</span>
-              <span>{eventGroup.labName}</span>
+              <span className="font-semibold">{eventGroup.labName}</span>
               <span>•</span>
               <span>{formatDateTime(eventGroup.dateTime)}</span>
+              <span>•</span>
+              <span className={`px-2 py-1 text-xs rounded-full ${
+                eventGroup.autoStart 
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-gray-100 text-gray-800'
+              }`}>
+                {eventGroup.autoStart ? 'Auto Start Enabled' : 'Manual Start'}
+              </span>
             </div>
           </div>
 
@@ -142,94 +144,105 @@ const EventGroupDetailPage = () => {
             </div>
             <div>
               <p className="text-gray-600 text-sm">Capacity</p>
-              <p className="text-2xl font-semibold">{eventGroup.enrolledStudents}/{eventGroup.capacity}</p>
+              <p className="text-2xl font-semibold">{eventGroup.enrolledStudents}/{eventGroup.maxStudents}</p>
             </div>
           </div>
         </div>
 
-        {/* Attendance Rate */}
+        {/* Status */}
         <div className="bg-white p-4 rounded-md border shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-full bg-success-light text-success">
+            <div className={`p-3 rounded-full ${
+              eventGroup.status === 'started' 
+                ? 'bg-green-100 text-green-600'
+                : eventGroup.status === 'scheduled'
+                ? 'bg-blue-100 text-blue-600'
+                : 'bg-gray-100 text-gray-600'
+            }`}>
               <FaClock size={24} />
             </div>
             <div>
-              <p className="text-gray-600 text-sm">Attendance</p>
-              <p className="text-2xl font-semibold">
-                {Math.round((students.filter(s => s.attendanceStatus === 'present').length / students.length) * 100)}%
-              </p>
+              <p className="text-gray-600 text-sm">Status</p>
+              <p className="text-lg font-semibold capitalize">{eventGroup.status}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Students Table */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Students</h2>
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h2 className="text-lg font-medium">Students ({students.length})</h2>
         </div>
 
-        <div className="panel">
-          <DataTable
-            highlightOnHover
-            withBorder
-            className="table-hover"
-            records={students}
-            columns={[
-              {
-                accessor: "studentId",
-                title: "Student ID",
-                width: 120,
-              },
-              {
-                accessor: "name",
-                title: "Student Name",
-                render: (row) => (
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                      <span className="text-gray-600 text-xs">
-                        {row.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </span>
+        {studentsError ? (
+          <div className="p-6">
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <h3 className="text-red-800 font-medium">Error Loading Students</h3>
+              <p className="text-red-600 text-sm mt-1">Failed to load student data</p>
+            </div>
+          </div>
+        ) : students.length === 0 ? (
+          <div className="p-12 text-center">
+            <FaUsers className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Students Enrolled</h3>
+            <p className="text-gray-600">No students are currently enrolled in this group</p>
+          </div>
+        ) : (
+          <div className="p-6">
+            <DataTable
+              records={students}
+              columns={[
+                {
+                  accessor: "studentId",
+                  title: "Student ID",
+                  width: 120,
+                },
+                {
+                  accessor: "studentName",
+                  title: "Student Name",
+                  render: (row: EventGroupStudentDto) => (
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-600 text-xs">
+                          {row.studentName
+                            ? row.studentName.split(" ").map((n) => n[0]).join("")
+                            : "??"}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium">{row.studentName}</p>
+                        <p className="text-xs text-gray-500">{row.studentId}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">{row.name}</p>
-                      <p className="text-xs text-gray-500">{row.email}</p>
+                  ),
+                },
+                {
+                  accessor: "status",
+                  title: "Status",
+                  render: (row: EventGroupStudentDto) => (
+                    <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                      Enrolled
+                    </span>
+                  ),
+                },
+                {
+                  accessor: "actions",
+                  title: "Actions",
+                  render: (row: EventGroupStudentDto) => (
+                    <div className="flex gap-2">
+                      <button className="text-blue-600 hover:text-blue-800 text-sm">
+                        View Details
+                      </button>
                     </div>
-                  </div>
-                ),
-              },
-              {
-                accessor: "attendanceStatus",
-                title: "Attendance",
-                render: (row) => (
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    row.attendanceStatus === 'present' 
-                      ? "bg-green-100 text-green-800" 
-                      : "bg-red-100 text-red-800"
-                  }`}>
-                    {row.attendanceStatus === 'present' ? 'Present' : 'Absent'}
-                  </span>
-                ),
-              },
-              {
-                accessor: "grade",
-                title: "Grade",
-                render: (row) => (
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    row.grade !== null 
-                      ? "bg-blue-100 text-blue-800" 
-                      : "bg-gray-100 text-gray-600"
-                  }`}>
-                    {row.grade !== null ? `${row.grade}/100` : 'Not graded'}
-                  </span>
-                ),
-              },
-            ]}
-          />
-        </div>
+                  ),
+                },
+              ]}
+              minHeight={200}
+              noRecordsText="No students found"
+            />
+          </div>
+        )}
       </div>
     </div>
   );

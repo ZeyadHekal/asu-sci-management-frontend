@@ -52,6 +52,11 @@ export type CourseListDto = {
    */
   assignedDoctors: string[]
   /**
+   * @description List of required software names
+   * @type array
+   */
+  requiredSoftware: string[]
+  /**
    * @description Total number of enrolled students
    * @type number
    */

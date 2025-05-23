@@ -84,20 +84,26 @@ const ExamControlPanel = ({ event, schedules = [], onRefresh }: ExamControlPanel
 
     try {
       // Create basic schedule structure based on the calculation result
-      // Note: The API returns arrays of strings instead of objects
+      // Note: The API returns arrays of objects
       const scheduleData: CreateScheduleDto[] = [];
       
       // We'll create one schedule per group distribution item
-      calculationResult.groupDistribution.forEach((groupId, index) => {
-        const labId = calculationResult.labAvailability[index % calculationResult.labAvailability.length];
+      calculationResult.groupDistribution.forEach((group, index) => {
+        const lab = calculationResult.labAvailability[index % calculationResult.labAvailability.length];
         
-        scheduleData.push({
-          courseGroupId: groupId,
-          labId: labId,
-          dateTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-          assistantId: 'assistant-1', // Would be selected from UI
-          maxStudents: 30, // Default value - would be calculated properly
-        });
+        // Extract the string IDs from the objects
+        const courseGroupId = group.courseGroupId;
+        const labId = lab.labId;
+        
+        if (courseGroupId) {
+          scheduleData.push({
+            courseGroupId: courseGroupId,
+            labId: labId,
+            dateTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+            assistantId: 'assistant-1', // Would be selected from UI
+            maxStudents: 30, // Default value - would be calculated properly
+          });
+        }
       });
 
       await createGroupsMutation.mutateAsync({
@@ -347,30 +353,30 @@ const ExamControlPanel = ({ event, schedules = [], onRefresh }: ExamControlPanel
               </div>
             </div>
 
-            {/* Group Distribution - Note: API returns string arrays */}
+            {/* Group Distribution - Note: API returns object arrays */}
             <div>
               <h4 className="font-semibold text-gray-900 mb-2">Group Distribution</h4>
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm text-gray-600 mb-2">Groups identified:</p>
                 <div className="flex flex-wrap gap-2">
-                  {calculationResult.groupDistribution.map((groupId, index) => (
+                  {calculationResult.groupDistribution.map((group, index) => (
                     <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
-                      {groupId}
+                      {group.courseGroupName || group.courseGroupId || `Group ${index + 1}`}
                     </span>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* Lab Availability - Note: API returns string arrays */}
+            {/* Lab Availability - Note: API returns object arrays */}
             <div>
               <h4 className="font-semibold text-gray-900 mb-2">Available Labs</h4>
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-sm text-gray-600 mb-2">Labs available:</p>
                 <div className="flex flex-wrap gap-2">
-                  {calculationResult.labAvailability.map((labId, index) => (
+                  {calculationResult.labAvailability.map((lab, index) => (
                     <span key={index} className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">
-                      {labId}
+                      {lab.labName || lab.labId || `Lab ${index + 1}`}
                     </span>
                   ))}
                 </div>

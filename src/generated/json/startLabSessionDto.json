@@ -1,0 +1,1 @@
+{"type":"object","properties":{"courseGroupId":{"type":"string","description":"Course Group ID for which to start the session"},"sessionDateTime":{"format":"date-time","type":"string","description":"Session date and time"}},"required":["courseGroupId","sessionDateTime"],"x-readme-ref-name":"StartLabSessionDto"}

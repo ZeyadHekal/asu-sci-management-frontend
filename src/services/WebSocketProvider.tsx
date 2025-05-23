@@ -12,7 +12,7 @@ interface WebSocketProviderProps extends PropsWithChildren {}
 const WebSocketProvider = ({ children }: WebSocketProviderProps) => {
   // Get WebSocket methods and state
   const { connect, disconnect, status, registerMessageHandler } = useWebSocketStore();
-  const { refreshPrivileges } = useAuth();
+  const { refreshPrivileges, refreshExamModeStatus } = useAuth();
   const queryClient = useQueryClient();
 
   // Get auth state
@@ -72,11 +72,19 @@ const WebSocketProvider = ({ children }: WebSocketProviderProps) => {
       console.log('User privileges refreshed due to WebSocket event.');
     };
 
+    const handleExamModeStatusChange = async (message: any) => {
+      console.log('Received exam:mode_status_change event:', message);
+      await refreshExamModeStatus();
+      console.log('Exam mode status refreshed due to WebSocket event.');
+    };
+
     let unsubscribePrivilegeChange: (() => void) | undefined;
+    let unsubscribeExamModeChange: (() => void) | undefined;
 
     if (status === 'connected') {
       unsubscribePrivilegeChange = registerMessageHandler('privilege:change', handlePrivilegeChange);
-      console.log('Registered handler for privilege:change events.');
+      unsubscribeExamModeChange = registerMessageHandler('exam:mode_status_change', handleExamModeStatusChange);
+      console.log('Registered handlers for privilege:change and exam:mode_status_change events.');
     }
 
     return () => {
@@ -84,8 +92,12 @@ const WebSocketProvider = ({ children }: WebSocketProviderProps) => {
         unsubscribePrivilegeChange();
         console.log('Unregistered handler for privilege:change events.');
       }
+      if (unsubscribeExamModeChange) {
+        unsubscribeExamModeChange();
+        console.log('Unregistered handler for exam:mode_status_change events.');
+      }
     };
-  }, [status, registerMessageHandler, refreshPrivileges]);
+  }, [status, registerMessageHandler, refreshPrivileges, refreshExamModeStatus]);
 
   // Return the children
   return <>{children}</>;

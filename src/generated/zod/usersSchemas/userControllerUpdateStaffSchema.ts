@@ -21,7 +21,7 @@ export const userControllerUpdateStaff200Schema = z.lazy(() => staffDtoSchema)
 export type UserControllerUpdateStaff200Schema = z.infer<typeof userControllerUpdateStaff200Schema>
 
 /**
- * @description Bad Request - Invalid data or email already in use
+ * @description Bad Request - Invalid data or username already in use
  */
 export const userControllerUpdateStaff400Schema = z.unknown()
 

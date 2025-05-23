@@ -1,0 +1,1 @@
+{"type":"object","properties":{"studentId":{"type":"string"},"fromCourseGroupId":{"type":"string"},"toCourseGroupId":{"type":"string"},"courseId":{"type":"string"}},"required":["studentId","fromCourseGroupId","toCourseGroupId","courseId"],"x-readme-ref-name":"MoveStudentBetweenGroupsDto"}

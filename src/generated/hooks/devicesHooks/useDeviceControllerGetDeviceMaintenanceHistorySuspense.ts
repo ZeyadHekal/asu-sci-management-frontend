@@ -9,14 +9,17 @@ import type { QueryKey, QueryClient, UseSuspenseQueryOptions, UseSuspenseQueryRe
 import type {
   DeviceControllerGetDeviceMaintenanceHistoryQueryResponse,
   DeviceControllerGetDeviceMaintenanceHistoryPathParams,
+  DeviceControllerGetDeviceMaintenanceHistoryQueryParams,
   DeviceControllerGetDeviceMaintenanceHistory401,
   DeviceControllerGetDeviceMaintenanceHistory403,
   DeviceControllerGetDeviceMaintenanceHistory404,
 } from '../../types/devicesController/DeviceControllerGetDeviceMaintenanceHistory.ts'
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query'
 
-export const deviceControllerGetDeviceMaintenanceHistorySuspenseQueryKey = (device_id: DeviceControllerGetDeviceMaintenanceHistoryPathParams['device_id']) =>
-  [{ url: '/devices/:device_id/maintenance-history', params: { device_id: device_id } }] as const
+export const deviceControllerGetDeviceMaintenanceHistorySuspenseQueryKey = (
+  device_id: DeviceControllerGetDeviceMaintenanceHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceMaintenanceHistoryQueryParams,
+) => [{ url: '/devices/:device_id/maintenance-history', params: { device_id: device_id } }, ...(params ? [params] : [])] as const
 
 export type DeviceControllerGetDeviceMaintenanceHistorySuspenseQueryKey = ReturnType<typeof deviceControllerGetDeviceMaintenanceHistorySuspenseQueryKey>
 
@@ -27,6 +30,7 @@ export type DeviceControllerGetDeviceMaintenanceHistorySuspenseQueryKey = Return
  */
 export async function deviceControllerGetDeviceMaintenanceHistorySuspense(
   device_id: DeviceControllerGetDeviceMaintenanceHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceMaintenanceHistoryQueryParams,
   config: Partial<RequestConfig> & { client?: typeof client } = {},
 ) {
   const { client: request = client, ...requestConfig } = config
@@ -37,15 +41,16 @@ export async function deviceControllerGetDeviceMaintenanceHistorySuspense(
       DeviceControllerGetDeviceMaintenanceHistory401 | DeviceControllerGetDeviceMaintenanceHistory403 | DeviceControllerGetDeviceMaintenanceHistory404
     >,
     unknown
-  >({ method: 'GET', url: `/devices/${device_id}/maintenance-history`, ...requestConfig })
+  >({ method: 'GET', url: `/devices/${device_id}/maintenance-history`, params, ...requestConfig })
   return res
 }
 
 export function deviceControllerGetDeviceMaintenanceHistorySuspenseQueryOptions(
   device_id: DeviceControllerGetDeviceMaintenanceHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceMaintenanceHistoryQueryParams,
   config: Partial<RequestConfig> & { client?: typeof client } = {},
 ) {
-  const queryKey = deviceControllerGetDeviceMaintenanceHistorySuspenseQueryKey(device_id)
+  const queryKey = deviceControllerGetDeviceMaintenanceHistorySuspenseQueryKey(device_id, params)
   return queryOptions<
     ResponseConfig<DeviceControllerGetDeviceMaintenanceHistoryQueryResponse>,
     ResponseErrorConfig<
@@ -58,7 +63,7 @@ export function deviceControllerGetDeviceMaintenanceHistorySuspenseQueryOptions(
     queryKey,
     queryFn: async ({ signal }) => {
       config.signal = signal
-      return deviceControllerGetDeviceMaintenanceHistorySuspense(device_id, config)
+      return deviceControllerGetDeviceMaintenanceHistorySuspense(device_id, params, config)
     },
   })
 }
@@ -73,6 +78,7 @@ export function useDeviceControllerGetDeviceMaintenanceHistorySuspense<
   TQueryKey extends QueryKey = DeviceControllerGetDeviceMaintenanceHistorySuspenseQueryKey,
 >(
   device_id: DeviceControllerGetDeviceMaintenanceHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceMaintenanceHistoryQueryParams,
   options: {
     query?: Partial<
       UseSuspenseQueryOptions<
@@ -88,11 +94,11 @@ export function useDeviceControllerGetDeviceMaintenanceHistorySuspense<
   } = {},
 ) {
   const { query: { client: queryClient, ...queryOptions } = {}, client: config = {} } = options ?? {}
-  const queryKey = queryOptions?.queryKey ?? deviceControllerGetDeviceMaintenanceHistorySuspenseQueryKey(device_id)
+  const queryKey = queryOptions?.queryKey ?? deviceControllerGetDeviceMaintenanceHistorySuspenseQueryKey(device_id, params)
 
   const query = useSuspenseQuery(
     {
-      ...(deviceControllerGetDeviceMaintenanceHistorySuspenseQueryOptions(device_id, config) as unknown as UseSuspenseQueryOptions),
+      ...(deviceControllerGetDeviceMaintenanceHistorySuspenseQueryOptions(device_id, params, config) as unknown as UseSuspenseQueryOptions),
       queryKey,
       ...(queryOptions as unknown as Omit<UseSuspenseQueryOptions, 'queryKey'>),
     },

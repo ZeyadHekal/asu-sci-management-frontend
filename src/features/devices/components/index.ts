@@ -4,4 +4,5 @@ export { default as AssignAssistantModal } from './AssignAssistantModal';
 export { default as DeviceDetailsModal } from './DeviceDetailsModal';
 export { default as DeviceSoftwareModal } from './DeviceSoftwareModal';
 export { default as SoftwareDetailsModal } from './SoftwareDetailsModal';
-export { default as UpdateHistoryModal } from './UpdateHistoryModal'; 
+export { default as UpdateHistoryModal } from './UpdateHistoryModal';
+export { default as ReporterNotifications } from './ReporterNotifications'; 

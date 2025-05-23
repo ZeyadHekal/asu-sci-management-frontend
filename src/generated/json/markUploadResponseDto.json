@@ -1,1 +1,1 @@
-{"type":"object","properties":{"message":{"type":"string"},"processedStudents":{"type":"number"},"errors":{"type":"array","items":{"type":"string"}}},"required":["message","processedStudents","errors"],"x-readme-ref-name":"MarkUploadResponseDto"}
+{"type":"object","properties":{"message":{"type":"string"},"processedStudents":{"type":"number"},"errors":{"type":"array","items":{"type":"array"}}},"required":["message","processedStudents","errors"],"x-readme-ref-name":"MarkUploadResponseDto"}

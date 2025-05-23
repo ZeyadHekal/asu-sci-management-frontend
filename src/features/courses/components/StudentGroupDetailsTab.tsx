@@ -2,9 +2,14 @@ import { useState } from "react";
 import { FaUsers, FaClipboardCheck, FaStar } from "react-icons/fa";
 import { TbDeviceAnalytics } from "react-icons/tb";
 import { DataTable } from "mantine-datatable";
+import { useAuthStore } from "../../../store/authStore";
+import { useStudentCourseControllerGetStudentGroupDetails } from "../../../generated/hooks/student-coursesHooks/useStudentCourseControllerGetStudentGroupDetails";
+import { useStudentCourseControllerGetGroupStudents } from "../../../generated/hooks/student-coursesHooks/useStudentCourseControllerGetGroupStudents";
+import { useQuery } from "@tanstack/react-query";
+import { client } from "../../../global/api/apiClient";
 
 interface GroupMember {
-  id: number;
+  id: string;
   name: string;
   email: string;
   studentId: string;
@@ -24,81 +29,99 @@ interface Session {
 }
 
 interface StudentGroupDetailsTabProps {
-  courseId: number;
+  courseId: string;
 }
 
-const StudentGroupDetailsTab = ({ }: StudentGroupDetailsTabProps) => {
+const StudentGroupDetailsTab = ({ courseId }: StudentGroupDetailsTabProps) => {
   const [activeTab, setActiveTab] = useState("overview");
+  const user = useAuthStore((state) => state.user);
 
-  // Mock data - replace with actual API calls
-  const groupInfo = {
-    id: 1,
-    name: "Group A",
-    capacity: 20,
-    currentMembers: 15,
-    assistantName: "Dr. Ahmed Hassan",
-    assistantEmail: "ahmed.hassan@example.com",
-    labRoom: "Lab 101",
-    schedule: "Monday & Wednesday 10:00-12:00"
-  };
-
-  const groupMembers: GroupMember[] = [
+  // Get student's group details in this course
+  const { 
+    data: groupDetails, 
+    isLoading: groupLoading,
+    error: groupError 
+  } = useStudentCourseControllerGetStudentGroupDetails(
+    user?.id!, 
+    courseId, 
     {
-      id: 1,
-      name: "Ahmed Mohamed",
-      email: "ahmed@example.com",
-      studentId: "2021001",
-      attendanceRate: 85,
-      points: 78,
-      isCurrentUser: true
-    },
-    {
-      id: 2,
-      name: "Sara Ali",
-      email: "sara@example.com",
-      studentId: "2021002",
-      attendanceRate: 92,
-      points: 85
-    },
-    {
-      id: 3,
-      name: "Omar Hassan",
-      email: "omar@example.com",
-      studentId: "2021003",
-      attendanceRate: 78,
-      points: 72
+      query: {
+        enabled: !!user?.id && !!courseId
+      }
     }
-  ];
+  );
 
-  const sessions: Session[] = [
+  // Get group members if we have a group
+  const { 
+    data: groupMembersData, 
+    isLoading: membersLoading 
+  } = useStudentCourseControllerGetGroupStudents(
+    groupDetails?.data?.courseGroupId!, 
     {
-      id: 1,
-      date: "2024-01-15",
-      type: "Regular Lab",
-      duration: 120,
-      attended: true,
-      pointsEarned: 8,
-      notes: "Completed assignment on time"
-    },
-    {
-      id: 2,
-      date: "2024-01-13",
-      type: "Project Work",
-      duration: 120,
-      attended: true,
-      pointsEarned: 10,
-      notes: "Excellent collaboration"
-    },
-    {
-      id: 3,
-      date: "2024-01-10",
-      type: "Regular Lab",
-      duration: 120,
-      attended: false,
-      pointsEarned: 0,
-      notes: "Absent"
+      query: {
+        enabled: !!groupDetails?.data?.courseGroupId
+      }
     }
-  ];
+  );
+
+  // Mock session data - this would need to be integrated with attendance/lab session backend
+  const { data: sessionsData } = useQuery({
+    queryKey: ['studentSessions', user?.id, courseId],
+    queryFn: async () => {
+      // TODO: Replace with real API call when lab sessions/attendance is implemented
+      return [
+        {
+          id: 1,
+          date: "2024-01-15",
+          type: "Regular Lab",
+          duration: 120,
+          attended: true,
+          pointsEarned: 8,
+          notes: "Completed assignment on time"
+        },
+        {
+          id: 2,
+          date: "2024-01-13", 
+          type: "Project Work",
+          duration: 120,
+          attended: true,
+          pointsEarned: 10,
+          notes: "Excellent collaboration"
+        }
+      ];
+    },
+    enabled: !!user?.id && !!courseId
+  });
+
+  const group = groupDetails?.data;
+  const groupMembers: GroupMember[] = groupMembersData?.data?.map((member) => ({
+    id: member.studentId || '',
+    name: member.studentName || 'Unknown',
+    email: member.email || '',
+    studentId: member.studentId || '',
+    attendanceRate: 85, // TODO: Calculate from real attendance data
+    points: 78, // TODO: Calculate from real points data  
+    isCurrentUser: member.studentId === user?.id
+  })) || [];
+
+  const sessions: Session[] = sessionsData || [];
+
+  if (groupLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading group details...</div>
+      </div>
+    );
+  }
+
+  if (groupError || !group) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <div className="text-red-500 text-lg font-semibold mb-2">Group not found</div>
+        <div className="text-gray-600">You may not be enrolled in this course or assigned to a group yet.</div>
+      </div>
+    );
+  }
 
   const memberColumns = [
     {
@@ -120,7 +143,7 @@ const StudentGroupDetailsTab = ({ }: StudentGroupDetailsTabProps) => {
     },
     {
       accessor: "attendanceRate",
-      title: "Attendance",
+      title: "Attendance", 
       render: (row: GroupMember) => (
         <div className="flex items-center gap-2">
           <div className={`w-3 h-3 rounded-full ${
@@ -155,7 +178,7 @@ const StudentGroupDetailsTab = ({ }: StudentGroupDetailsTabProps) => {
       )
     },
     {
-      accessor: "duration",
+      accessor: "duration", 
       title: "Duration",
       render: (row: Session) => (
         <span className="text-gray-600">{row.duration} min</span>
@@ -179,7 +202,7 @@ const StudentGroupDetailsTab = ({ }: StudentGroupDetailsTabProps) => {
     },
     {
       accessor: "pointsEarned",
-      title: "Points Earned",
+      title: "Points Earned", 
       render: (row: Session) => (
         <div className="flex items-center gap-1">
           <FaStar className="text-yellow-500" size={14} />
@@ -212,7 +235,7 @@ const StudentGroupDetailsTab = ({ }: StudentGroupDetailsTabProps) => {
             </div>
             <div>
               <p className="text-gray-600 text-sm">Group Members</p>
-              <p className="text-xl font-semibold">{groupInfo.currentMembers}/{groupInfo.capacity}</p>
+              <p className="text-xl font-semibold">{group.groupStudentsCount || 0}/{group.groupCapacity || 0}</p>
             </div>
           </div>
         </div>
@@ -226,7 +249,7 @@ const StudentGroupDetailsTab = ({ }: StudentGroupDetailsTabProps) => {
               <p className="text-gray-600 text-sm">My Attendance</p>
               <p className="text-xl font-semibold">{attendedSessions}/{totalSessions}</p>
               <p className="text-sm text-gray-500">
-                {Math.round((attendedSessions / totalSessions) * 100)}%
+                {totalSessions > 0 ? Math.round((attendedSessions / totalSessions) * 100) : 0}%
               </p>
             </div>
           </div>
@@ -251,45 +274,52 @@ const StudentGroupDetailsTab = ({ }: StudentGroupDetailsTabProps) => {
               <TbDeviceAnalytics size={20} />
             </div>
             <div>
-              <p className="text-gray-600 text-sm">Lab Room</p>
-              <p className="text-xl font-semibold">{groupInfo.labRoom}</p>
+              <p className="text-gray-600 text-sm">Group Performance</p>
+              <p className="text-xl font-semibold">{Math.round(groupMembers.reduce((sum, m) => sum + m.points, 0) / groupMembers.length) || 0}</p>
+              <p className="text-sm text-gray-500">Average points</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Group Information */}
-      <div className="bg-white rounded-lg border">
-        <div className="p-4 border-b">
-          <h3 className="text-lg font-semibold">{groupInfo.name} - Information</h3>
-        </div>
-        <div className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-medium text-gray-900 mb-2">Assistant Information</h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Name:</span>
-                  <span className="font-medium">{groupInfo.assistantName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Email:</span>
-                  <span className="font-medium">{groupInfo.assistantEmail}</span>
-                </div>
+      {/* Group Details */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white p-4 rounded-lg border">
+          <div>
+            <h4 className="font-medium text-gray-900 mb-2">Group Information</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Group Name:</span>
+                <span className="font-medium">{group.groupName || 'No Group'}</span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Lab:</span>
+                <span className="font-medium">{group.labName || 'No Lab Assigned'}</span>
+              </div>
+              {group.labRoom && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Room:</span>
+                  <span className="font-medium">{group.labRoom}</span>
+                </div>
+              )}
             </div>
-            <div>
-              <h4 className="font-medium text-gray-900 mb-2">Schedule Information</h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Schedule:</span>
-                  <span className="font-medium">{groupInfo.schedule}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Lab Room:</span>
-                  <span className="font-medium">{groupInfo.labRoom}</span>
-                </div>
-              </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-lg border">
+          <div>
+            <h4 className="font-medium text-gray-900 mb-2">Teaching Staff</h4>
+            <div className="space-y-2 text-sm">
+              {group.assignedDoctors && group.assignedDoctors.length > 0 ? (
+                group.assignedDoctors.map((doctor, index) => (
+                  <div key={index} className="flex justify-between">
+                    <span className="text-gray-600">Instructor:</span>
+                    <span className="font-medium">{doctor}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-gray-500">No instructors assigned</div>
+              )}
             </div>
           </div>
         </div>
@@ -322,7 +352,7 @@ const StudentGroupDetailsTab = ({ }: StudentGroupDetailsTabProps) => {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white rounded-lg border">
+      <div>
         {activeTab === "members" && (
           <div className="p-4">
             <div className="datatables">
@@ -330,6 +360,14 @@ const StudentGroupDetailsTab = ({ }: StudentGroupDetailsTabProps) => {
                 records={groupMembers}
                 columns={memberColumns}
                 minHeight={200}
+                fetching={membersLoading}
+                emptyState={
+                  <div className="flex flex-col items-center justify-center p-8">
+                    <FaUsers size={48} className="text-gray-300 mb-4" />
+                    <p className="text-gray-500 text-lg font-medium mb-2">No Group Members</p>
+                    <p className="text-gray-400 text-sm">This group has no members assigned yet.</p>
+                  </div>
+                }
               />
             </div>
           </div>
@@ -342,6 +380,13 @@ const StudentGroupDetailsTab = ({ }: StudentGroupDetailsTabProps) => {
                 records={sessions}
                 columns={sessionColumns}
                 minHeight={200}
+                emptyState={
+                  <div className="flex flex-col items-center justify-center p-8">
+                    <FaClipboardCheck size={48} className="text-gray-300 mb-4" />
+                    <p className="text-gray-500 text-lg font-medium mb-2">No Sessions Yet</p>
+                    <p className="text-gray-400 text-sm">Lab sessions will appear here once they begin.</p>
+                  </div>
+                }
               />
             </div>
           </div>

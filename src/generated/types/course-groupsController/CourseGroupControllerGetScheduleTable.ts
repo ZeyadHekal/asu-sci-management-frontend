@@ -3,7 +3,7 @@
  * Do not edit manually.
  */
 
-import type { CourseGroupScheduleTableDto } from '../CourseGroupScheduleTableDto.ts'
+import type { CourseGroupScheduleTablePagedDto } from '../CourseGroupScheduleTablePagedDto.ts'
 
 export const courseGroupControllerGetScheduleTableQueryParamsSortOrderEnum = {
   asc: 'asc',
@@ -59,7 +59,7 @@ export type CourseGroupControllerGetScheduleTableQueryParams = {
 /**
  * @description Return course group schedule table.
  */
-export type CourseGroupControllerGetScheduleTable200 = CourseGroupScheduleTableDto[]
+export type CourseGroupControllerGetScheduleTable200 = CourseGroupScheduleTablePagedDto
 
 export type CourseGroupControllerGetScheduleTableQueryResponse = CourseGroupControllerGetScheduleTable200
 

@@ -3,10 +3,14 @@
  * Do not edit manually.
  */
 
+import type { ReportMaintenanceHistoryDto } from './ReportMaintenanceHistoryDto.ts'
+
 export const deviceReportListDtoStatusEnum = {
-  REPORTED: 'REPORTED',
+  PENDING_REVIEW: 'PENDING_REVIEW',
   IN_PROGRESS: 'IN_PROGRESS',
+  CONFIRMED: 'CONFIRMED',
   RESOLVED: 'RESOLVED',
+  REJECTED: 'REJECTED',
   CANCELLED: 'CANCELLED',
 } as const
 
@@ -19,12 +23,6 @@ export type DeviceReportListDto = {
    */
   description: string
   /**
-   * @description Report status
-   * @default "REPORTED"
-   * @type string
-   */
-  status: DeviceReportListDtoStatusEnum
-  /**
    * @description Fix message
    * @type string | undefined
    */
@@ -36,9 +34,9 @@ export type DeviceReportListDto = {
   deviceId: string
   /**
    * @description Software/App ID
-   * @type string
+   * @type string | undefined
    */
-  appId: string
+  appId?: string | undefined
   /**
    * @description Reporter ID
    * @type string | undefined
@@ -49,6 +47,12 @@ export type DeviceReportListDto = {
    * @type string
    */
   id: string
+  /**
+   * @description Report status
+   * @default "PENDING_REVIEW"
+   * @type string
+   */
+  status: DeviceReportListDtoStatusEnum
   /**
    * @description Created at
    * @type string, date-time
@@ -74,4 +78,9 @@ export type DeviceReportListDto = {
    * @type string | undefined
    */
   reporterName?: string | undefined
+  /**
+   * @description Resolution updates/maintenance history
+   * @type array | undefined
+   */
+  resolutionUpdates?: ReportMaintenanceHistoryDto[] | undefined
 }

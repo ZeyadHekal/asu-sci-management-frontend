@@ -146,9 +146,13 @@ export const useExamWebSocket = () => {
     const examLocalStore = useExamWebSocketStore();
     const examStore = useExamStore();
     const baseWS = useWebSocketStore();
+    const currentUserId = useAuthStore.getState().user?.id;
 
     // Setup exam message handlers when this hook is used
     React.useEffect(() => {
+        // Only set up handlers if user is logged in
+        if (!currentUserId) return;
+
         // Register handlers for exam-specific messages
         const unsubscribeHandlers: (() => void)[] = [];
 
@@ -200,7 +204,7 @@ export const useExamWebSocket = () => {
         return () => {
             unsubscribeHandlers.forEach(unsubscribe => unsubscribe());
         };
-    }, []);
+    }, [currentUserId]); // Add currentUserId as dependency
 
     // Subscribe to exam channels for real-time updates
     const subscribeToExamChannels = (channelData: ExamChannelData[]) => {
@@ -261,13 +265,24 @@ export const useExamWebSocket = () => {
 // Hook to get and monitor student's exam mode status
 export const useStudentExamModeStatus = () => {
     const examStore = useExamStore();
+    const authStore = useAuthStore();
+    const currentUserId = authStore.user?.id;
 
     const { data: examModeStatus, isLoading, error, refetch } = useEventControllerGetStudentExamModeStatus({
         query: {
             refetchInterval: 30000, // Poll every 30 seconds
             staleTime: 25000, // Consider data stale after 25 seconds
+            enabled: !!currentUserId, // Only run query when user is logged in
         }
     });
+
+    // Reset exam store when user changes
+    React.useEffect(() => {
+        if (currentUserId) {
+            // Clear previous user's exam state when switching users
+            examStore.resetExamStore();
+        }
+    }, [currentUserId]);
 
     React.useEffect(() => {
         if (examModeStatus?.data) {

@@ -18,7 +18,7 @@ export const eventControllerDownloadSubmissionsSuspenseQueryKey = (scheduleId: E
 export type EventControllerDownloadSubmissionsSuspenseQueryKey = ReturnType<typeof eventControllerDownloadSubmissionsSuspenseQueryKey>
 
 /**
- * @summary Download all student submissions as ZIP file
+ * @summary Download all student submissions as compressed archive (RAR or tar.gz)
  * {@link /events/:scheduleId/download-submissions}
  */
 export async function eventControllerDownloadSubmissionsSuspense(
@@ -56,7 +56,7 @@ export function eventControllerDownloadSubmissionsSuspenseQueryOptions(
 }
 
 /**
- * @summary Download all student submissions as ZIP file
+ * @summary Download all student submissions as compressed archive (RAR or tar.gz)
  * {@link /events/:scheduleId/download-submissions}
  */
 export function useEventControllerDownloadSubmissionsSuspense<

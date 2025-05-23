@@ -20,10 +20,6 @@ export type CreateStaffDto = {
   /**
    * @type string
    */
-  email: string
-  /**
-   * @type string
-   */
   title: string
   /**
    * @type string

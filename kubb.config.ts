@@ -8,7 +8,7 @@ export default defineConfig({
   root: ".",
   input: {
     // path: "https://api-asu.zeyadhekal.tech/api-json",
-    path: "http://localhost:3001/api-json",
+    path: "http://localhost:3000/api-json",
   },
   output: {
     path: "./src/generated",
@@ -58,11 +58,7 @@ export default defineConfig({
       mutation: {
         methods: ["post", "put", "delete", "patch"],
       },
-      infinite: {
-        queryParam: "limit",
-        initialPageParam: 0,
-        cursorParam: "page",
-      },
+      infinite: false,
       query: {
         methods: ["get"],
         importPath: "@tanstack/react-query",

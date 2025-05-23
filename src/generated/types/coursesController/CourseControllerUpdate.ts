@@ -3,7 +3,7 @@
  * Do not edit manually.
  */
 
-import type { CourseDto } from '../CourseDto.ts'
+import type { CourseDetailDto } from '../CourseDetailDto.ts'
 import type { UpdateCourseDto } from '../UpdateCourseDto.ts'
 
 export type CourseControllerUpdatePathParams = {
@@ -17,7 +17,7 @@ export type CourseControllerUpdatePathParams = {
 /**
  * @description Course updated successfully
  */
-export type CourseControllerUpdate200 = CourseDto
+export type CourseControllerUpdate200 = CourseDetailDto
 
 /**
  * @description Bad Request - Invalid data

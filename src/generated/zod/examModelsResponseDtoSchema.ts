@@ -7,7 +7,7 @@ import { z } from 'zod'
 
 export const examModelsResponseDtoSchema = z.object({
   message: z.string(),
-  uploadedModels: z.array(z.string()),
+  uploadedModels: z.array(z.array(z.unknown())),
 })
 
 export type ExamModelsResponseDtoSchema = z.infer<typeof examModelsResponseDtoSchema>

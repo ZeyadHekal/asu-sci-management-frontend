@@ -3,31 +3,65 @@
  * Do not edit manually.
  */
 
+export const updateEventDtoEventTypeEnum = {
+  exam: 'exam',
+  quiz: 'quiz',
+  assignment: 'assignment',
+  lab_assignment: 'lab_assignment',
+  project: 'project',
+  presentation: 'presentation',
+  workshop: 'workshop',
+  practice: 'practice',
+  seminar: 'seminar',
+} as const
+
+export type UpdateEventDtoEventTypeEnum = (typeof updateEventDtoEventTypeEnum)[keyof typeof updateEventDtoEventTypeEnum]
+
+export const updateEventDtoLocationTypeEnum = {
+  lab_devices: 'lab_devices',
+  lecture_hall: 'lecture_hall',
+  online: 'online',
+  hybrid: 'hybrid',
+} as const
+
+export type UpdateEventDtoLocationTypeEnum = (typeof updateEventDtoLocationTypeEnum)[keyof typeof updateEventDtoLocationTypeEnum]
+
 export type UpdateEventDto = {
   /**
    * @type string | undefined
    */
   name?: string | undefined
   /**
+   * @type string | undefined
+   */
+  description?: string | undefined
+  /**
    * @type number | undefined
    */
   duration?: number | undefined
   /**
-   * @type boolean | undefined
-   */
-  isExam?: boolean | undefined
-  /**
-   * @type boolean | undefined
-   */
-  isInLab?: boolean | undefined
-  /**
+   * @default "assignment"
    * @type string | undefined
    */
-  examFiles?: string | undefined
+  eventType?: UpdateEventDtoEventTypeEnum | undefined
+  /**
+   * @default "online"
+   * @type string | undefined
+   */
+  locationType?: UpdateEventDtoLocationTypeEnum | undefined
+  /**
+   * @description Custom location when not using lab devices
+   * @type string | undefined
+   */
+  customLocation?: string | undefined
+  /**
+   * @type boolean | undefined
+   */
+  hasMarks?: boolean | undefined
   /**
    * @type number | undefined
    */
-  degree?: number | undefined
+  totalMarks?: number | undefined
   /**
    * @default false
    * @type boolean | undefined
@@ -39,9 +73,28 @@ export type UpdateEventDto = {
    */
   examModeStartMinutes?: number | undefined
   /**
-   * @type string | undefined
+   * @description When the event should start
+   * @type string | undefined, date-time
    */
-  description?: string | undefined
+  startDateTime?: Date | undefined
+  /**
+   * @description Whether this event requires exam models
+   * @default false
+   * @type boolean | undefined
+   */
+  requiresModels?: boolean | undefined
+  /**
+   * @description Allow random assignment of exam models to students
+   * @default false
+   * @type boolean | undefined
+   */
+  allowRandomModelAssignment?: boolean | undefined
+  /**
+   * @description Whether this event should be treated as an exam
+   * @default false
+   * @type boolean | undefined
+   */
+  isExam?: boolean | undefined
   /**
    * @type string | undefined
    */

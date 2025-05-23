@@ -3,7 +3,7 @@
  * Do not edit manually.
  */
 
-import { courseGroupScheduleTableDtoSchema } from '../courseGroupScheduleTableDtoSchema.ts'
+import { courseGroupScheduleTablePagedDtoSchema } from '../courseGroupScheduleTablePagedDtoSchema.ts'
 import { z } from 'zod'
 
 export const courseGroupControllerGetScheduleTableQueryParamsSchema = z
@@ -25,7 +25,7 @@ export type CourseGroupControllerGetScheduleTableQueryParamsSchema = z.infer<typ
 /**
  * @description Return course group schedule table.
  */
-export const courseGroupControllerGetScheduleTable200Schema = z.array(z.lazy(() => courseGroupScheduleTableDtoSchema))
+export const courseGroupControllerGetScheduleTable200Schema = z.lazy(() => courseGroupScheduleTablePagedDtoSchema)
 
 export type CourseGroupControllerGetScheduleTable200Schema = z.infer<typeof courseGroupControllerGetScheduleTable200Schema>
 

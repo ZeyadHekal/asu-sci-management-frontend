@@ -1,1 +1,1 @@
-{"type":"object","properties":{"message":{"type":"string"},"uploadedModels":{"type":"array","items":{"type":"string"}}},"required":["message","uploadedModels"],"x-readme-ref-name":"ExamModelsResponseDto"}
+{"type":"object","properties":{"message":{"type":"string"},"uploadedModels":{"type":"array","items":{"type":"array"}}},"required":["message","uploadedModels"],"x-readme-ref-name":"ExamModelsResponseDto"}

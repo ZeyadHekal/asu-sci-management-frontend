@@ -3,13 +3,13 @@
  * Do not edit manually.
  */
 
-import type { CourseDto } from '../CourseDto.ts'
+import type { CourseDetailDto } from '../CourseDetailDto.ts'
 import type { CreateCourseDto } from '../CreateCourseDto.ts'
 
 /**
  * @description Course created successfully
  */
-export type CourseControllerCreate201 = CourseDto
+export type CourseControllerCreate201 = CourseDetailDto
 
 /**
  * @description Bad Request - Invalid data

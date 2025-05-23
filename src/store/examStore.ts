@@ -19,6 +19,7 @@ interface ExamStore {
     currentExamMode: boolean;
     currentExamSchedules: ExamScheduleWithDetails[];
     examModeStatus: ExamModeStatusDto | null;
+    currentExamScheduleId: string | null;
 
     // Admin exam management
     events: EventDto[];
@@ -32,8 +33,10 @@ interface ExamStore {
     // Actions
     setExamMode: (enabled: boolean) => void;
     setExamModeStatus: (status: ExamModeStatusDto) => void;
+    setCurrentExamScheduleId: (id: string | null) => void;
     addExamNotification: (notification: any) => void;
     clearExamNotifications: () => void;
+    resetExamStore: () => void;
     setEvents: (events: EventDto[]) => void;
     setSelectedEvent: (event: EventDto | null) => void;
     addEventSchedule: (eventId: string, schedule: ExamScheduleWithDetails) => void;
@@ -54,6 +57,7 @@ export const useExamStore = create<ExamStore>()(
             currentExamMode: false,
             currentExamSchedules: [],
             examModeStatus: null,
+            currentExamScheduleId: null,
             events: [],
             selectedEvent: null,
             eventSchedules: new Map(),
@@ -65,7 +69,21 @@ export const useExamStore = create<ExamStore>()(
                 set({ currentExamMode: enabled }, false, 'setExamMode'),
 
             setExamModeStatus: (status) =>
-                set({ examModeStatus: status }, false, 'setExamModeStatus'),
+                set((state) => {
+                    // Get the active exam schedule ID from the status
+                    const activeSchedule = status.examSchedules?.find(
+                        schedule => schedule.status === 'started' || schedule.status === 'exam_mode_active'
+                    );
+                    const scheduleId = activeSchedule?.eventScheduleId || null;
+
+                    return {
+                        examModeStatus: status,
+                        currentExamScheduleId: scheduleId
+                    };
+                }, false, 'setExamModeStatus'),
+
+            setCurrentExamScheduleId: (id) =>
+                set({ currentExamScheduleId: id }, false, 'setCurrentExamScheduleId'),
 
             addExamNotification: (notification) =>
                 set(
@@ -78,6 +96,23 @@ export const useExamStore = create<ExamStore>()(
 
             clearExamNotifications: () =>
                 set({ examNotifications: [] }, false, 'clearExamNotifications'),
+
+            resetExamStore: () =>
+                set(
+                    {
+                        currentExamMode: false,
+                        currentExamSchedules: [],
+                        examModeStatus: null,
+                        currentExamScheduleId: null,
+                        events: [],
+                        selectedEvent: null,
+                        eventSchedules: new Map(),
+                        subscribedChannels: new Set(),
+                        examNotifications: [],
+                    },
+                    false,
+                    'resetExamStore'
+                ),
 
             setEvents: (events) =>
                 set({ events }, false, 'setEvents'),

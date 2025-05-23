@@ -32,4 +32,14 @@ export type UpdateCourseDto = {
    * @type number | undefined
    */
   attendanceMarks?: number | undefined
+  /**
+   * @description Array of doctor IDs to assign to this course
+   * @type array | undefined
+   */
+  doctorIds?: string[] | undefined
+  /**
+   * @description Array of software IDs required for this course
+   * @type array | undefined
+   */
+  softwareIds?: string[] | undefined
 }

@@ -1,0 +1,1 @@
+{"type":"object","properties":{"id":{"type":"string"},"name":{"type":"string"},"hasIssue":{"type":"boolean"},"issueDescription":{"type":"string"}},"required":["id","name","hasIssue"],"x-readme-ref-name":"DeviceSoftwareDto"}

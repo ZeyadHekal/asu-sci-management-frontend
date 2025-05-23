@@ -114,16 +114,25 @@ const ExamGradingManagementPage = () => {
   });
 
   const handleDownloadAllSubmissions = async () => {
+    console.log(`[ExamGradingManagement] Starting download all submissions for exam: ${examInfo.name} (ID: ${examInfo.id})`);
+    console.log(`[ExamGradingManagement] Exam info:`, examInfo);
+    
     setIsDownloading(true);
     
     try {
-      // TODO: Replace with actual API call
-      // const response = await examGradingApi.downloadAllSubmissions(examInfo.id);
+      console.log(`[ExamGradingManagement] Initiating download process...`);
       
+      // TODO: Replace with actual API call
+      // console.log(`[ExamGradingManagement] Making API call to examGradingApi.downloadAllSubmissions`);
+      // const response = await examGradingApi.downloadAllSubmissions(examInfo.id);
+      // console.log(`[ExamGradingManagement] API response received:`, response);
+      
+      console.log(`[ExamGradingManagement] Simulating download with 3 second delay...`);
       await new Promise(resolve => setTimeout(resolve, 3000));
       
       // Mock download - in real implementation, this would trigger a file download
       const fileName = `${examInfo.name.replace(/\s+/g, '_')}_Submissions_${new Date().toISOString().split('T')[0]}.zip`;
+      console.log(`[ExamGradingManagement] Generated filename: ${fileName}`);
       
       // Create mock download link
       const link = document.createElement('a');
@@ -131,12 +140,17 @@ const ExamGradingManagementPage = () => {
       link.download = fileName;
       link.click();
       
+      console.log(`[ExamGradingManagement] Mock download link created and clicked`);
+      
       toast.success('All submissions downloaded successfully!');
+      console.log(`[ExamGradingManagement] Download completed successfully`);
       
     } catch (error) {
+      console.error(`[ExamGradingManagement] Error during download:`, error);
       toast.error('Failed to download submissions. Please try again.');
     } finally {
       setIsDownloading(false);
+      console.log(`[ExamGradingManagement] Download process finished, isDownloading set to false`);
     }
   };
 

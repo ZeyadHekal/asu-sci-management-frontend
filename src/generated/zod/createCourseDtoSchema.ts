@@ -13,6 +13,8 @@ export const createCourseDtoSchema = z.object({
   hasLab: z.boolean(),
   labDuration: z.string(),
   attendanceMarks: z.number(),
+  doctorIds: z.array(z.string()).describe('Array of doctor IDs to assign to this course').optional(),
+  softwareIds: z.array(z.string()).describe('Array of software IDs required for this course').optional(),
 })
 
 export type CreateCourseDtoSchema = z.infer<typeof createCourseDtoSchema>
