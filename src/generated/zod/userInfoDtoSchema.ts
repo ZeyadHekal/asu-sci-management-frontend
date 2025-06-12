@@ -3,6 +3,7 @@
  * Do not edit manually.
  */
 
+import { examModeStatusDtoSchema } from './examModeStatusDtoSchema.ts'
 import { z } from 'zod'
 
 export const userInfoDtoSchema = z.object({
@@ -11,7 +12,10 @@ export const userInfoDtoSchema = z.object({
   username: z.string(),
   userType: z.string(),
   isStudent: z.boolean(),
-  examModeStatus: z.object({}).describe('Exam mode status for students').optional(),
+  examModeStatus: z
+    .lazy(() => examModeStatusDtoSchema)
+    .describe('Exam mode status for students')
+    .optional(),
 })
 
 export type UserInfoDtoSchema = z.infer<typeof userInfoDtoSchema>

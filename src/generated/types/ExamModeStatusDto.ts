@@ -3,6 +3,8 @@
  * Do not edit manually.
  */
 
+import type { ExamScheduleItemDto } from './ExamScheduleItemDto.ts'
+
 export type ExamModeStatusDto = {
   /**
    * @type boolean
@@ -13,7 +15,8 @@ export type ExamModeStatusDto = {
    */
   examStartsIn?: number | undefined
   /**
+   * @description Array of exam schedules for the student
    * @type array
    */
-  examSchedules: string[]
+  examSchedules: ExamScheduleItemDto[]
 }

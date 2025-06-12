@@ -7,7 +7,7 @@ import { z } from 'zod'
 
 export const createStaffRequestDtoSchema = z.object({
   name: z.string(),
-  email: z.string(),
+  username: z.string(),
   title: z.string(),
   department: z.string(),
   password: z.string(),

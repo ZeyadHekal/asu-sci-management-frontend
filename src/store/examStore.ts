@@ -34,6 +34,7 @@ interface ExamStore {
     setExamModeStatus: (status: ExamModeStatusDto) => void;
     addExamNotification: (notification: any) => void;
     clearExamNotifications: () => void;
+    resetExamStore: () => void;
     setEvents: (events: EventDto[]) => void;
     setSelectedEvent: (event: EventDto | null) => void;
     addEventSchedule: (eventId: string, schedule: ExamScheduleWithDetails) => void;
@@ -78,6 +79,22 @@ export const useExamStore = create<ExamStore>()(
 
             clearExamNotifications: () =>
                 set({ examNotifications: [] }, false, 'clearExamNotifications'),
+
+            resetExamStore: () =>
+                set(
+                    {
+                        currentExamMode: false,
+                        currentExamSchedules: [],
+                        examModeStatus: null,
+                        events: [],
+                        selectedEvent: null,
+                        eventSchedules: new Map(),
+                        subscribedChannels: new Set(),
+                        examNotifications: [],
+                    },
+                    false,
+                    'resetExamStore'
+                ),
 
             setEvents: (events) =>
                 set({ events }, false, 'setEvents'),

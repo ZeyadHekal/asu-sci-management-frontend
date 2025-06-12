@@ -14,9 +14,11 @@ export type DeviceReportControllerGetMyReportsQueryParamsSortOrderEnum =
   (typeof deviceReportControllerGetMyReportsQueryParamsSortOrderEnum)[keyof typeof deviceReportControllerGetMyReportsQueryParamsSortOrderEnum]
 
 export const deviceReportControllerGetMyReportsQueryParamsStatusEnum = {
-  REPORTED: 'REPORTED',
+  PENDING_REVIEW: 'PENDING_REVIEW',
   IN_PROGRESS: 'IN_PROGRESS',
+  CONFIRMED: 'CONFIRMED',
   RESOLVED: 'RESOLVED',
+  REJECTED: 'REJECTED',
   CANCELLED: 'CANCELLED',
 } as const
 
@@ -54,6 +56,11 @@ export type DeviceReportControllerGetMyReportsQueryParams = {
    */
   deviceId?: string | undefined
   /**
+   * @description Filter by lab ID
+   * @type string | undefined
+   */
+  labId?: string | undefined
+  /**
    * @description Filter by reporter ID
    * @type string | undefined
    */
@@ -68,6 +75,21 @@ export type DeviceReportControllerGetMyReportsQueryParams = {
    * @type string | undefined
    */
   appId?: string | undefined
+  /**
+   * @description Search across device names, descriptions, and reporter names
+   * @type string | undefined
+   */
+  search?: string | undefined
+  /**
+   * @description Filter by date from (YYYY-MM-DD)
+   * @type string | undefined
+   */
+  dateFrom?: string | undefined
+  /**
+   * @description Filter by date to (YYYY-MM-DD)
+   * @type string | undefined
+   */
+  dateTo?: string | undefined
 }
 
 /**

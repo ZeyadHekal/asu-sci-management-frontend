@@ -8,13 +8,16 @@ import { z } from 'zod'
 export const staffDtoSchema = z.object({
   id: z.string(),
   name: z.string(),
-  email: z.string(),
+  username: z.string(),
   title: z.string(),
   department: z.string(),
   userType: z.string(),
+  userTypeId: z.string(),
   status: z.boolean(),
   lastLogin: z.string().datetime({ offset: true }).describe('Last login date or null if never logged in').nullable(),
-  privileges: z.array(z.string()),
+  privileges: z.array(z.string()).describe('All privileges (user type + user specific) - for compatibility'),
+  userTypePrivileges: z.array(z.string()).describe('Privileges inherited from user type (read-only)'),
+  userPrivileges: z.array(z.string()).describe('User-specific privileges (editable)'),
 })
 
 export type StaffDtoSchema = z.infer<typeof staffDtoSchema>

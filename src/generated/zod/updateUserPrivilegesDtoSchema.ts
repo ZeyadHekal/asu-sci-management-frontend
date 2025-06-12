@@ -10,7 +10,6 @@ export const updateUserPrivilegesDtoSchema = z.object({
     .array(
       z.enum([
         'MANAGE_SYSTEM',
-        'MANAGE_USERS',
         'MANAGE_STUDENTS',
         'MANAGE_LABS',
         'LAB_ASSISTANT',

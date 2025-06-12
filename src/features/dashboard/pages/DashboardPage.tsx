@@ -10,9 +10,12 @@ import {
 import ReactApexChart from "react-apexcharts";
 import StatAreaCard from "../components/StatAreaCard";
 import StatProgressCard from "../components/StatProgressCard";
+import { useAuthStore } from "../../../store/authStore";
 
 const DashboardPage = () => {
   const [isMounted, setIsMounted] = useState<boolean>(false);
+  const hasPrivilege = useAuthStore((state) => state.hasPrivilege);
+  const isStudent = !hasPrivilege("MANAGE_COURSES") && !hasPrivilege("TEACH_COURSE") && !hasPrivilege("ASSIST_IN_COURSE");
 
   useEffect(() => {
     setIsMounted(true);

@@ -1,136 +1,116 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { DataTable } from "mantine-datatable";
 import { LuSearch, LuFilter, LuCalendar, LuClock, LuUsers, LuGraduationCap } from "react-icons/lu";
 import { FaPlus } from "react-icons/fa";
 import Select from "react-select";
 import { EventDto } from "../../../generated/types/EventDto";
-import { useEventControllerGetPaginated } from "../../../generated/hooks/eventsHooks/useEventControllerGetPaginated";
-import EventDetailsModal from "./EventDetailsModal";
+import { useEventControllerGetCourseEvents } from "../../../generated/hooks/eventsHooks/useEventControllerGetCourseEvents";
+import { eventControllerExportCourseEvents } from "../../../generated/hooks/eventsHooks/useEventControllerExportCourseEvents";
+import GroupCreationModal from "./GroupCreationModal";
+import toast from "react-hot-toast";
 
 interface CourseEventsTabProps {
-  courseId: number;
+  courseId: string;
+  courseName: string;
+  hasEditAccess: boolean;
 }
 
-// Mock events data - would be fetched from API
-const mockEventsData: (EventDto & { eventGroups?: number })[] = [
-  {
-    id: "1",
-    name: "Midterm Exam",
-    duration: 120,
-    isExam: true,
-    isInLab: true,
-    examFiles: "midterm-files.zip",
-    degree: 30,
-    courseId: "1",
-    eventGroups: 3
-  },
-  {
-    id: "2", 
-    name: "Assignment 1",
-    duration: 60,
-    isExam: false,
-    isInLab: false,
-    examFiles: "",
-    degree: 0, // No marks assigned
-    courseId: "1",
-    eventGroups: 1
-  },
-  {
-    id: "3",
-    name: "Lab Quiz",
-    duration: 30,
-    isExam: true,
-    isInLab: true,
-    examFiles: "quiz-files.zip",
-    degree: 10,
-    courseId: "1",
-    eventGroups: 2
-  },
-  {
-    id: "4",
-    name: "Project Presentation",
-    duration: 90,
-    isExam: false,
-    isInLab: false,
-    examFiles: "",
-    degree: 0, // No marks assigned
-    courseId: "1",
-    eventGroups: 1
-  }
-];
-
-const CourseEventsTab = ({ courseId }: CourseEventsTabProps) => {
+const CourseEventsTab = ({ courseId, courseName, hasEditAccess }: CourseEventsTabProps) => {
   const navigate = useNavigate();
-  
-  // States for pagination
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const PAGE_SIZES = [10, 20, 30, 50];
-
-  // State for search
-  const [search, setSearch] = useState("");
-
-  // States for filters
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [hasMarksFilter, setHasMarksFilter] = useState<{value: string, label: string} | null>(null);
   const [eventTypeFilter, setEventTypeFilter] = useState<{value: string, label: string} | null>(null);
-
-  // States for filtered and paginated data
-  const [allEvents, setAllEvents] = useState(mockEventsData);
-  const [filteredEvents, setFilteredEvents] = useState<typeof mockEventsData>([]);
-  const [paginatedEvents, setPaginatedEvents] = useState<typeof mockEventsData>([]);
-
-  // States for modals
+  
+  // Modal states
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventDto | null>(null);
+
+  // Paginated events
+  const [paginatedEvents, setPaginatedEvents] = useState<any[]>([]);
+
+  // API hook for fetching events
+  const { 
+    data: eventsData, 
+    isLoading, 
+    error, 
+    refetch 
+  } = useEventControllerGetCourseEvents(courseId);
+
+  // Transform events data to include additional computed fields
+  const transformedEvents = useMemo(() => {
+    if (!eventsData?.data) return [];
+    
+    return eventsData.data.map(event => ({
+      ...event,
+      // Use new fields instead of deprecated ones
+      eventTypeDisplay: event.eventType || (event.isExam ? 'exam' : 'assignment'),
+      locationDisplay: event.locationType 
+        ? (event.locationType === 'lab_devices' ? 'Lab Devices' : 
+           event.locationType === 'online' ? 'Online' : 
+           event.locationType === 'lecture_hall' ? 'Lecture Hall' :
+           event.locationType === 'hybrid' ? 'Hybrid' : String(event.locationType).replace('_', ' '))
+        : (event.isInLab ? 'Lab Devices' : 'Online'),
+      customLocationDisplay: event.customLocation || '',
+      hasMarksDisplay: event.hasMarks || (event.degree && event.degree > 0),
+      totalMarksDisplay: event.totalMarks || event.degree || 0,
+      eventGroups: 0 // Will be added by backend later
+    }));
+  }, [eventsData]);
 
   // Filter options
   const hasMarksOptions = [
     { value: "all", label: "All Events" },
-    { value: "with-marks", label: "With Marks" },
-    { value: "without-marks", label: "Without Marks" }
+    { value: "yes", label: "With Marks" },
+    { value: "no", label: "No Marks" }
   ];
 
   const eventTypeOptions = [
     { value: "all", label: "All Types" },
     { value: "exam", label: "Exams" },
-    { value: "assignment", label: "Assignments" }
+    { value: "quiz", label: "Quizzes" },
+    { value: "assignment", label: "Assignments" },
+    { value: "lab_assignment", label: "Lab Assignments" },
+    { value: "project", label: "Projects" },
+    { value: "presentation", label: "Presentations" },
+    { value: "workshop", label: "Workshops" },
+    { value: "practice", label: "Practice" }
   ];
 
-  // Apply search and filters
-  useEffect(() => {
-    let results = [...allEvents];
-    
-    // Apply search
-    if (search.trim() !== "") {
-      const searchLower = search.toLowerCase();
-      results = results.filter(event =>
-        event.name.toLowerCase().includes(searchLower)
+  // Filtered events based on search and filters
+  const filteredEvents = useMemo(() => {
+    let filtered = transformedEvents;
+
+    // Apply search filter
+    if (search) {
+      filtered = filtered.filter(event => 
+        event.name.toLowerCase().includes(search.toLowerCase()) ||
+        event.description?.toLowerCase().includes(search.toLowerCase())
       );
     }
-    
+
     // Apply has marks filter
     if (hasMarksFilter && hasMarksFilter.value !== "all") {
-      if (hasMarksFilter.value === "with-marks") {
-        results = results.filter(event => event.degree > 0);
-      } else if (hasMarksFilter.value === "without-marks") {
-        results = results.filter(event => event.degree === 0);
+      if (hasMarksFilter.value === "yes") {
+        filtered = filtered.filter(event => event.hasMarksDisplay);
+      } else if (hasMarksFilter.value === "no") {
+        filtered = filtered.filter(event => !event.hasMarksDisplay);
       }
     }
-    
+
     // Apply event type filter
     if (eventTypeFilter && eventTypeFilter.value !== "all") {
-      if (eventTypeFilter.value === "exam") {
-        results = results.filter(event => event.isExam);
-      } else if (eventTypeFilter.value === "assignment") {
-        results = results.filter(event => !event.isExam);
-      }
+      filtered = filtered.filter(event => {
+        const eventType = event.eventType || (event.isExam ? 'exam' : 'assignment');
+        return eventType === eventTypeFilter.value;
+      });
     }
-    
-    setFilteredEvents(results);
-    setPage(1); // Reset to first page when filters change
-  }, [search, allEvents, hasMarksFilter, eventTypeFilter]);
+
+    return filtered;
+  }, [search, transformedEvents, hasMarksFilter, eventTypeFilter]);
 
   // Apply pagination
   useEffect(() => {
@@ -153,8 +133,12 @@ const CourseEventsTab = ({ courseId }: CourseEventsTabProps) => {
   // Handle edit event
   const handleEditEvent = (event: EventDto, e: React.MouseEvent) => {
     e.stopPropagation();
-    setSelectedEvent(event);
-    setIsEventModalOpen(true);
+    // Editing not supported in GroupCreationModal, redirect to event dashboard
+    navigate(`/courses/${courseId}/events/${event.id}`);
+  };
+
+  const handleModalSuccess = () => {
+    refetch(); // Refresh events data
   };
 
   // Reset filters
@@ -164,8 +148,63 @@ const CourseEventsTab = ({ courseId }: CourseEventsTabProps) => {
     setSearch("");
   };
 
+  // Export events
+  const handleExportEvents = async () => {
+    try {
+      const response = await eventControllerExportCourseEvents(courseId);
+      // Handle the response - could be a file download
+      toast.success("Events exported successfully!");
+    } catch (error) {
+      console.error("Failed to export events:", error);
+      toast.error("Failed to export events");
+    }
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-secondary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col items-center justify-center h-64">
+          <div className="text-red-500 text-lg font-semibold mb-2">Error loading events</div>
+          <div className="text-gray-600 mb-4">{error.message}</div>
+          <button 
+            onClick={() => refetch()}
+            className="px-4 py-2 bg-secondary text-white rounded-md hover:bg-secondary-dark"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="space-y-6">
+      {/* Header with Add Event Button */}
+      {hasEditAccess && (
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-semibold">Course Events</h3>
+          <button 
+            onClick={handleCreateEvent}
+            className="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-md text-sm hover:bg-secondary-dark transition-colors"
+          >
+            <FaPlus size={14} />
+            Create Event
+          </button>
+        </div>
+      )}
+
       {/* Search and Actions Bar */}
       <div className="flex flex-col md:flex-row gap-4 justify-between">
         <div className="flex items-center gap-3">
@@ -203,13 +242,9 @@ const CourseEventsTab = ({ courseId }: CourseEventsTabProps) => {
 
         <div className="flex gap-2">
           <button 
-            onClick={handleCreateEvent}
-            className="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-md text-sm"
+            onClick={handleExportEvents}
+            className="px-4 py-2 border border-secondary text-secondary rounded-md text-sm hover:bg-secondary hover:text-white transition-colors"
           >
-            <FaPlus size={14} />
-            Create Event
-          </button>
-          <button className="px-4 py-2 border border-secondary text-secondary rounded-md text-sm">
             Export List
           </button>
         </div>
@@ -217,40 +252,42 @@ const CourseEventsTab = ({ courseId }: CourseEventsTabProps) => {
 
       {/* Filter Panel */}
       {isFilterOpen && (
-        <div className="bg-gray-50 p-4 rounded-md border">
-          <div className="flex flex-wrap gap-4 mb-4">
-            <div className="w-full md:w-[250px]">
-              <label className="text-sm font-medium mb-1 block">Has Marks</label>
+        <div className="bg-gray-50 p-4 rounded-lg border">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Has Marks</label>
               <Select
                 options={hasMarksOptions}
                 value={hasMarksFilter}
                 onChange={setHasMarksFilter}
+                className="react-select-container"
+                classNamePrefix="react-select"
                 placeholder="Filter by marks..."
                 isClearable
-                classNamePrefix="react-select"
               />
             </div>
             
-            <div className="w-full md:w-[250px]">
-              <label className="text-sm font-medium mb-1 block">Event Type</label>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Event Type</label>
               <Select
                 options={eventTypeOptions}
                 value={eventTypeFilter}
                 onChange={setEventTypeFilter}
+                className="react-select-container"
+                classNamePrefix="react-select"
                 placeholder="Filter by type..."
                 isClearable
-                classNamePrefix="react-select"
               />
             </div>
-          </div>
-          
-          <div className="flex justify-end">
-            <button 
-              onClick={handleResetFilters}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-secondary"
-            >
-              Reset Filters
-            </button>
+
+            <div className="flex items-end">
+              <button
+                onClick={handleResetFilters}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm hover:bg-gray-300 transition-colors"
+              >
+                Reset Filters
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -260,32 +297,80 @@ const CourseEventsTab = ({ courseId }: CourseEventsTabProps) => {
         <DataTable
           highlightOnHover
           withBorder
+          withColumnBorders
           className="table-hover cursor-pointer"
           records={paginatedEvents}
+          onRowClick={(row) => handleEventClick(row)}
           totalRecords={filteredEvents.length}
           recordsPerPage={pageSize}
           page={page}
-          onPageChange={(p) => setPage(p)}
-          recordsPerPageOptions={PAGE_SIZES}
-          onRecordsPerPageChange={setPageSize}
-          onRowClick={(row) => handleEventClick(row)}
+          onPageChange={setPage}
+          recordsPerPageOptions={[5, 10, 20, 50]}
+          onRecordsPerPageChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
           columns={[
             {
               accessor: "name",
               title: "Event Name",
-              render: (row) => (
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-full ${row.isExam ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
-                    {row.isExam ? <LuGraduationCap size={16} /> : <LuUsers size={16} />}
+              render: (row) => {
+                const eventType = row.eventType || (row.isExam ? 'exam' : 'assignment');
+                return (
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${
+                      eventType === 'exam' || eventType === 'quiz' 
+                        ? 'bg-red-100 text-red-600' 
+                        : 'bg-blue-100 text-blue-600'
+                    }`}>
+                      {eventType === 'exam' || eventType === 'quiz' ? (
+                        <LuGraduationCap size={16} />
+                      ) : (
+                        <LuClock size={16} />
+                      )}
+                    </div>
+                    <div>
+                      <span className="font-medium">{row.name}</span>
+                      <div className="text-xs text-gray-500 capitalize">
+                        {eventType.replace('_', ' ')}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">{row.name}</p>
-                    <p className="text-xs text-gray-500">
-                      {row.isExam ? "Exam" : "Assignment"} • {row.isInLab ? "In Lab" : "Online"}
-                    </p>
+                );
+              },
+            },
+            {
+              accessor: "eventType",
+              title: "Event Type",
+              render: (row) => {
+                const eventType = row.eventType || (row.isExam ? 'exam' : 'assignment');
+                return (
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${
+                    eventType === 'exam' || eventType === 'quiz' 
+                      ? 'bg-red-100 text-red-800' 
+                      : eventType === 'assignment' || eventType === 'lab_assignment'
+                      ? 'bg-blue-100 text-blue-800'
+                      : eventType === 'project'
+                      ? 'bg-purple-100 text-purple-800'
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {eventType.replace('_', ' ')}
+                  </span>
+                );
+              },
+            },
+            {
+              accessor: "location",
+              title: "Location",
+              render: (row) => {
+                const location = row.customLocation || row.locationDisplay;
+                return (
+                  <div className="flex items-center gap-2">
+                    <LuUsers size={14} className="text-gray-400" />
+                    <span className="text-sm">{location}</span>
                   </div>
-                </div>
-              ),
+                );
+              },
             },
             {
               accessor: "duration",
@@ -293,22 +378,26 @@ const CourseEventsTab = ({ courseId }: CourseEventsTabProps) => {
               render: (row) => (
                 <div className="flex items-center gap-2">
                   <LuClock size={14} className="text-gray-400" />
-                  <span>{row.duration} min</span>
+                  <span className="text-sm">{row.duration} min</span>
                 </div>
               ),
             },
             {
-              accessor: "degree",
+              accessor: "hasMarksDisplay",
               title: "Marks",
-              render: (row) => (
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  row.degree > 0 
-                    ? "bg-green-100 text-green-800" 
-                    : "bg-gray-100 text-gray-600"
-                }`}>
-                  {row.degree > 0 ? `${row.degree} marks` : "No marks"}
-                </span>
-              ),
+              render: (row) => {
+                const hasMarks = row.hasMarks || (row.degree && row.degree > 0);
+                const totalMarks = row.totalMarks || row.degree || 0;
+                return (
+                  <span className={`px-2 py-1 rounded-full text-xs ${
+                    hasMarks
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {hasMarks ? `${totalMarks} pts` : 'No Marks'}
+                  </span>
+                );
+              },
             },
             {
               accessor: "eventGroups",
@@ -316,20 +405,58 @@ const CourseEventsTab = ({ courseId }: CourseEventsTabProps) => {
               render: (row) => (
                 <div className="flex items-center gap-2">
                   <LuUsers size={14} className="text-gray-400" />
-                  <span>{row.eventGroups || 0}</span>
+                  <span className="text-sm">{row.eventGroups}</span>
                 </div>
               ),
+            },
+            {
+              accessor: "startDateTime",
+              title: "Start Time",
+              render: (row) => {
+                if (!row.startDateTime) {
+                  return (
+                    <div className="flex items-center gap-2">
+                      <LuCalendar size={14} className="text-gray-400" />
+                      <span className="text-sm text-gray-500">Not scheduled</span>
+                    </div>
+                  );
+                }
+                
+                const date = new Date(row.startDateTime);
+                const dateStr = date.toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric', 
+                  year: 'numeric' 
+                });
+                const timeStr = date.toLocaleTimeString('en-US', { 
+                  hour: '2-digit', 
+                  minute: '2-digit',
+                  hour12: true
+                });
+                
+                return (
+                  <div className="flex items-center gap-2">
+                    <LuCalendar size={14} className="text-gray-400" />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">{dateStr}</span>
+                      <span className="text-xs text-gray-500">{timeStr}</span>
+                    </div>
+                  </div>
+                );
+              },
             },
             {
               accessor: "actions",
               title: "Actions",
               render: (row) => (
-                <button
-                  onClick={(e) => handleEditEvent(row, e)}
-                  className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
-                >
-                  Edit
-                </button>
+                hasEditAccess && (
+                  <button
+                    onClick={(e) => handleEditEvent(row, e)}
+                    className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                  >
+                    Edit
+                  </button>
+                )
               ),
             },
           ]}
@@ -337,26 +464,39 @@ const CourseEventsTab = ({ courseId }: CourseEventsTabProps) => {
       </div>
 
       {/* Empty State */}
-      {filteredEvents.length === 0 && (
+      {filteredEvents.length === 0 && !isLoading && (
         <div className="text-center p-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
             <LuCalendar size={24} className="text-gray-400" />
           </div>
           <h3 className="text-lg font-semibold text-gray-700 mb-2">
-            No events found
+            {search || hasMarksFilter || eventTypeFilter ? "No events found" : "No events created yet"}
           </h3>
-          <p className="text-gray-500">
-            Try adjusting your search or filters, or create a new event.
+          <p className="text-gray-500 mb-4">
+            {search || hasMarksFilter || eventTypeFilter 
+              ? "Try adjusting your search or filters to find events." 
+              : "Create your first event to get started."
+            }
           </p>
+          {hasEditAccess && !search && !hasMarksFilter && !eventTypeFilter && (
+            <button
+              onClick={handleCreateEvent}
+              className="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-md text-sm mx-auto"
+            >
+              <FaPlus size={14} />
+              Create First Event
+            </button>
+          )}
         </div>
       )}
 
-      {/* Event Details Modal */}
-      <EventDetailsModal
+      {/* Group Creation Modal */}
+      <GroupCreationModal
         isOpen={isEventModalOpen}
         onClose={() => setIsEventModalOpen(false)}
-        event={selectedEvent}
         courseId={courseId}
+        courseName={courseName}
+        onEventCreated={handleModalSuccess}
       />
     </div>
   );

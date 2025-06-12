@@ -1,31 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DataTable } from "mantine-datatable";
 import { LuSearch, LuEye } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { useCourseControllerGetPaginated } from "../../../generated/hooks/coursesHooks/useCourseControllerGetPaginated";
+import { useCourseControllerGetMyCourses } from "../../../generated/hooks/coursesHooks/useCourseControllerGetMyCourses";
 import { CourseListDto } from "../../../generated/types/CourseListDto";
 
 const DoctorMyCoursesView = () => {
   const navigate = useNavigate();
-  const [page, setPage] = useState(0);
-  const PAGE_SIZES = [10, 20, 30, 50, 100];
-  const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
   const [search, setSearch] = useState("");
 
-  // TODO: This should be replaced with an API that fetches courses for the current doctor
-  // For now, using the general course API but should filter by doctor's courses
+  // Use the new endpoint to fetch courses where the current user is a doctor
   const { 
     data: coursesData, 
     isLoading, 
     error,
     refetch 
-  } = useCourseControllerGetPaginated({
-    page,
-    limit: pageSize,
-    search: search || undefined,
-    sortBy: "created_at",
-    sortOrder: "desc"
-  });
+  } = useCourseControllerGetMyCourses();
+
+  // Debug logging
+  useEffect(() => {
+    if (coursesData) {
+      console.log("My courses data:", coursesData.data);
+    }
+    if (error) {
+      console.error("Error fetching my courses:", error);
+    }
+  }, [coursesData, error]);
 
   const handleViewCourse = (courseId: string) => {
     navigate(`/my-courses/${courseId}`);
@@ -60,8 +60,15 @@ const DoctorMyCoursesView = () => {
     );
   }
 
-  const courses = coursesData?.data?.items || [];
-  const totalRecords = coursesData?.data?.total || 0;
+  const courses = coursesData?.data || [];
+  
+  // Filter courses based on search if needed
+  const filteredCourses = search 
+    ? courses.filter(course => 
+        course.name.toLowerCase().includes(search.toLowerCase()) ||
+        course.courseCode.toLowerCase().includes(search.toLowerCase())
+      )
+    : courses;
 
   return (
     <div className="panel mt-6">
@@ -85,12 +92,22 @@ const DoctorMyCoursesView = () => {
         </div>
       </div>
       
-      <div className="datatables">
+      {filteredCourses.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-64">
+          <LuEye size={48} className="text-gray-400 mb-4" />
+          <div className="text-gray-600 text-lg font-semibold mb-2">
+            {search ? "No courses found" : "No Courses Assigned"}
+          </div>
+          <div className="text-gray-500">
+            {search ? "Try adjusting your search criteria." : "You have not been assigned to teach any courses yet."}
+          </div>
+        </div>
+      ) : (
         <DataTable
           highlightOnHover
           withBorder
           className="table-hover whitespace-nowrap cursor-pointer"
-          records={courses}
+          records={filteredCourses}
           onRowClick={row => handleViewCourse(row.id)}
           columns={[
             { 
@@ -124,7 +141,7 @@ const DoctorMyCoursesView = () => {
             },
             {
               accessor: "numberOfStudents",
-              title: "Number of Students",
+              title: "Students Enrolled",
               render: (row) => (
                 <span className="font-medium">{row.numberOfStudents}</span>
               ),
@@ -137,32 +154,48 @@ const DoctorMyCoursesView = () => {
               ),
             },
             {
+              accessor: "assignedDoctors",
+              title: "Assigned Doctors",
+              render: (row) => (
+                <span className="text-sm text-gray-600">
+                  {row.assignedDoctors.join(", ")}
+                </span>
+              ),
+            },
+            {
+              accessor: "hasDefaultGroup",
+              title: "Default Group",
+              render: (row) => (
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  row.hasDefaultGroup 
+                    ? "bg-green-100 text-green-800" 
+                    : "bg-yellow-100 text-yellow-800"
+                }`}>
+                  {row.hasDefaultGroup ? "Created" : "Pending"}
+                </span>
+              )
+            },
+            {
               accessor: "actions",
               title: "Actions",
               render: (row) => (
-                <div className="flex items-center gap-2">
+                <div className="flex justify-center">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleViewCourse(row.id);
                     }}
-                    className="text-secondary hover:text-secondary-dark"
-                    title="View course"
+                    className="btn btn-sm bg-secondary text-white hover:bg-secondary-dark flex items-center gap-1"
                   >
-                    <LuEye size={18} />
+                    <LuEye size={14} />
+                    View
                   </button>
                 </div>
               ),
             },
           ]}
-          totalRecords={totalRecords}
-          recordsPerPage={pageSize}
-          page={page + 1} // DataTable uses 1-based pagination
-          onPageChange={(pageNumber) => setPage(pageNumber - 1)} // Convert back to 0-based
-          recordsPerPageOptions={PAGE_SIZES}
-          onRecordsPerPageChange={setPageSize}
         />
-      </div>
+      )}
     </div>
   );
 };

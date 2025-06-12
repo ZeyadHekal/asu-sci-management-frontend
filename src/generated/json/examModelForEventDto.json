@@ -1,0 +1,1 @@
+{"type":"object","properties":{"name":{"type":"string"},"description":{"type":"string"},"fileIds":{"description":"Array of uploaded file IDs","type":"array","items":{"type":"string"}}},"required":["name"],"x-readme-ref-name":"ExamModelForEventDto"}

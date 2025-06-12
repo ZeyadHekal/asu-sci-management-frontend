@@ -11,12 +11,22 @@ export const studentCourseListDtoSchema = z.object({
   courseGroupId: z.string(),
   groupNumber: z.number(),
   studentName: z.string(),
+  username: z.string(),
+  email: z.string(),
   courseName: z.string(),
   courseCode: z.string(),
   credits: z.number(),
   enrolledDate: z.string().datetime({ offset: true }),
   groupCapacity: z.number(),
   groupOrder: z.number(),
+  groupName: z.string(),
+  courseType: z.string().describe('Course type based on hasLab field'),
+  numberOfStudents: z.number().describe('Total number of enrolled students in course'),
+  groupStudentsCount: z.number().describe('Number of students in the same group'),
+  labName: z.string().describe('Lab name where the group is assigned'),
+  labRoom: z.string().describe('Lab room/location'),
+  assignedDoctors: z.array(z.string()).describe('List of assigned doctor names'),
+  requiredSoftware: z.array(z.string()).describe('List of required software names'),
 })
 
 export type StudentCourseListDtoSchema = z.infer<typeof studentCourseListDtoSchema>

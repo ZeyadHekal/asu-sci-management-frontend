@@ -4,9 +4,11 @@
  */
 
 export const createDeviceReportDtoStatusEnum = {
-  REPORTED: 'REPORTED',
+  PENDING_REVIEW: 'PENDING_REVIEW',
   IN_PROGRESS: 'IN_PROGRESS',
+  CONFIRMED: 'CONFIRMED',
   RESOLVED: 'RESOLVED',
+  REJECTED: 'REJECTED',
   CANCELLED: 'CANCELLED',
 } as const
 
@@ -20,7 +22,7 @@ export type CreateDeviceReportDto = {
   description: string
   /**
    * @description Report status
-   * @default "REPORTED"
+   * @default "PENDING_REVIEW"
    * @type string
    */
   status: CreateDeviceReportDtoStatusEnum
@@ -36,9 +38,9 @@ export type CreateDeviceReportDto = {
   deviceId: string
   /**
    * @description Software/App ID
-   * @type string
+   * @type string | undefined
    */
-  appId: string
+  appId?: string | undefined
   /**
    * @description Reporter ID
    * @type string | undefined

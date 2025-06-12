@@ -9,14 +9,17 @@ import type { QueryKey, QueryClient, UseSuspenseQueryOptions, UseSuspenseQueryRe
 import type {
   DeviceControllerGetDeviceReportsQueryResponse,
   DeviceControllerGetDeviceReportsPathParams,
+  DeviceControllerGetDeviceReportsQueryParams,
   DeviceControllerGetDeviceReports401,
   DeviceControllerGetDeviceReports403,
   DeviceControllerGetDeviceReports404,
 } from '../../types/devicesController/DeviceControllerGetDeviceReports.ts'
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query'
 
-export const deviceControllerGetDeviceReportsSuspenseQueryKey = (device_id: DeviceControllerGetDeviceReportsPathParams['device_id']) =>
-  [{ url: '/devices/:device_id/reports', params: { device_id: device_id } }] as const
+export const deviceControllerGetDeviceReportsSuspenseQueryKey = (
+  device_id: DeviceControllerGetDeviceReportsPathParams['device_id'],
+  params?: DeviceControllerGetDeviceReportsQueryParams,
+) => [{ url: '/devices/:device_id/reports', params: { device_id: device_id } }, ...(params ? [params] : [])] as const
 
 export type DeviceControllerGetDeviceReportsSuspenseQueryKey = ReturnType<typeof deviceControllerGetDeviceReportsSuspenseQueryKey>
 
@@ -27,6 +30,7 @@ export type DeviceControllerGetDeviceReportsSuspenseQueryKey = ReturnType<typeof
  */
 export async function deviceControllerGetDeviceReportsSuspense(
   device_id: DeviceControllerGetDeviceReportsPathParams['device_id'],
+  params?: DeviceControllerGetDeviceReportsQueryParams,
   config: Partial<RequestConfig> & { client?: typeof client } = {},
 ) {
   const { client: request = client, ...requestConfig } = config
@@ -35,15 +39,16 @@ export async function deviceControllerGetDeviceReportsSuspense(
     DeviceControllerGetDeviceReportsQueryResponse,
     ResponseErrorConfig<DeviceControllerGetDeviceReports401 | DeviceControllerGetDeviceReports403 | DeviceControllerGetDeviceReports404>,
     unknown
-  >({ method: 'GET', url: `/devices/${device_id}/reports`, ...requestConfig })
+  >({ method: 'GET', url: `/devices/${device_id}/reports`, params, ...requestConfig })
   return res
 }
 
 export function deviceControllerGetDeviceReportsSuspenseQueryOptions(
   device_id: DeviceControllerGetDeviceReportsPathParams['device_id'],
+  params?: DeviceControllerGetDeviceReportsQueryParams,
   config: Partial<RequestConfig> & { client?: typeof client } = {},
 ) {
-  const queryKey = deviceControllerGetDeviceReportsSuspenseQueryKey(device_id)
+  const queryKey = deviceControllerGetDeviceReportsSuspenseQueryKey(device_id, params)
   return queryOptions<
     ResponseConfig<DeviceControllerGetDeviceReportsQueryResponse>,
     ResponseErrorConfig<DeviceControllerGetDeviceReports401 | DeviceControllerGetDeviceReports403 | DeviceControllerGetDeviceReports404>,
@@ -54,7 +59,7 @@ export function deviceControllerGetDeviceReportsSuspenseQueryOptions(
     queryKey,
     queryFn: async ({ signal }) => {
       config.signal = signal
-      return deviceControllerGetDeviceReportsSuspense(device_id, config)
+      return deviceControllerGetDeviceReportsSuspense(device_id, params, config)
     },
   })
 }
@@ -69,6 +74,7 @@ export function useDeviceControllerGetDeviceReportsSuspense<
   TQueryKey extends QueryKey = DeviceControllerGetDeviceReportsSuspenseQueryKey,
 >(
   device_id: DeviceControllerGetDeviceReportsPathParams['device_id'],
+  params?: DeviceControllerGetDeviceReportsQueryParams,
   options: {
     query?: Partial<
       UseSuspenseQueryOptions<
@@ -82,11 +88,11 @@ export function useDeviceControllerGetDeviceReportsSuspense<
   } = {},
 ) {
   const { query: { client: queryClient, ...queryOptions } = {}, client: config = {} } = options ?? {}
-  const queryKey = queryOptions?.queryKey ?? deviceControllerGetDeviceReportsSuspenseQueryKey(device_id)
+  const queryKey = queryOptions?.queryKey ?? deviceControllerGetDeviceReportsSuspenseQueryKey(device_id, params)
 
   const query = useSuspenseQuery(
     {
-      ...(deviceControllerGetDeviceReportsSuspenseQueryOptions(device_id, config) as unknown as UseSuspenseQueryOptions),
+      ...(deviceControllerGetDeviceReportsSuspenseQueryOptions(device_id, params, config) as unknown as UseSuspenseQueryOptions),
       queryKey,
       ...(queryOptions as unknown as Omit<UseSuspenseQueryOptions, 'queryKey'>),
     },

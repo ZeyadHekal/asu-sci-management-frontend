@@ -1,0 +1,1 @@
+{"type":"object","properties":{"name":{"type":"string","description":"Material name"},"description":{"type":"string","description":"Material description"},"isHidden":{"type":"boolean","description":"Whether material is hidden from students"}},"x-readme-ref-name":"UpdateMaterialDto"}

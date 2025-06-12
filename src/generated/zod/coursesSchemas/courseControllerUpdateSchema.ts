@@ -3,7 +3,7 @@
  * Do not edit manually.
  */
 
-import { courseDtoSchema } from '../courseDtoSchema.ts'
+import { courseDetailDtoSchema } from '../courseDetailDtoSchema.ts'
 import { updateCourseDtoSchema } from '../updateCourseDtoSchema.ts'
 import { z } from 'zod'
 
@@ -16,7 +16,7 @@ export type CourseControllerUpdatePathParamsSchema = z.infer<typeof courseContro
 /**
  * @description Course updated successfully
  */
-export const courseControllerUpdate200Schema = z.lazy(() => courseDtoSchema)
+export const courseControllerUpdate200Schema = z.lazy(() => courseDetailDtoSchema)
 
 export type CourseControllerUpdate200Schema = z.infer<typeof courseControllerUpdate200Schema>
 

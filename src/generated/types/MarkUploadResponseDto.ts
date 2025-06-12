@@ -15,5 +15,5 @@ export type MarkUploadResponseDto = {
   /**
    * @type array
    */
-  errors: string[]
+  errors: unknown[][]
 }

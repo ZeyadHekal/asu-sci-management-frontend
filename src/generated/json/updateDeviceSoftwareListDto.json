@@ -1,0 +1,1 @@
+{"type":"object","properties":{"softwareIds":{"description":"Array of software IDs to install on the device","type":"array","items":{"type":"string"}}},"required":["softwareIds"],"x-readme-ref-name":"UpdateDeviceSoftwareListDto"}

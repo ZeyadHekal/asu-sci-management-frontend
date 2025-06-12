@@ -11,7 +11,11 @@ export type UpdateStaffDto = {
   /**
    * @type string | undefined
    */
-  email?: string | undefined
+  username?: string | undefined
+  /**
+   * @type string | undefined
+   */
+  password?: string | undefined
   /**
    * @type string | undefined
    */

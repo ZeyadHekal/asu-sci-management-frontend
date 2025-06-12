@@ -20,7 +20,7 @@ export type UserControllerUpdateStaffPathParams = {
 export type UserControllerUpdateStaff200 = StaffDto
 
 /**
- * @description Bad Request - Invalid data or email already in use
+ * @description Bad Request - Invalid data or username already in use
  */
 export type UserControllerUpdateStaff400 = unknown
 

@@ -27,7 +27,6 @@ const SoftwareDetailsModal = ({
     const [requiredMemory, setRequiredMemory] = useState("");
     const [requiredStorage, setRequiredStorage] = useState("");
     const [addedDate, setAddedDate] = useState("");
-    const [status, setStatus] = useState<"Active" | "Inactive">("Active");
 
     // Fetch software details when editing
     const { data: softwareData, isLoading: isLoadingSoftware } = useSoftwareControllerGetById(
@@ -73,7 +72,6 @@ const SoftwareDetailsModal = ({
         setRequiredMemory("");
         setRequiredStorage("");
         setAddedDate("");
-        setStatus("Active");
     };
 
     // Load software data when editing
@@ -85,7 +83,6 @@ const SoftwareDetailsModal = ({
             setRequiredStorage(software.requiredStorage);
             // Set default values for fields not in API
             setAddedDate(new Date().toISOString().split('T')[0]);
-            setStatus("Active");
         } else if (!softwareId && isOpen) {
             // Reset form for new software
             resetForm();
@@ -226,40 +223,6 @@ const SoftwareDetailsModal = ({
                         }}
                         disabled={isProcessing}
                     />
-                </div>
-
-                {/* Status - Display only, not sent to API for now */}
-                <div className="flex flex-col gap-1.5">
-                    <label
-                        htmlFor="status"
-                        className="font-semibold text-[#0E1726] text-sm"
-                    >
-                        Status
-                    </label>
-                    <div className="flex items-center gap-4">
-                        <label className="flex items-center cursor-pointer">
-                            <input
-                                type="radio"
-                                name="status"
-                                checked={status === "Active"}
-                                onChange={() => setStatus("Active")}
-                                className="form-radio"
-                                disabled={isProcessing}
-                            />
-                            <span className="text-sm ml-2">Active</span>
-                        </label>
-                        <label className="flex items-center cursor-pointer">
-                            <input
-                                type="radio"
-                                name="status"
-                                checked={status === "Inactive"}
-                                onChange={() => setStatus("Inactive")}
-                                className="form-radio"
-                                disabled={isProcessing}
-                            />
-                            <span className="text-sm ml-2">Inactive</span>
-                        </label>
-                    </div>
                 </div>
             </div>
 

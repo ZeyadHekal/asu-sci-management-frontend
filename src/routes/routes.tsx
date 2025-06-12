@@ -9,13 +9,14 @@ const AuthPage = lazy(() => import("../features/auth/pages/AuthPage"));
 const DefaultLayout = lazy(() => import("../features/layouts/Layout"));
 const NoAccessPage = lazy(() => import("../features/common/NoAccessPage"));
 const CoursesPage = lazy(() => import("../features/courses/pages/CoursesPage"));
-const MyCoursesPage = lazy(() => import("../features/courses/pages/MyCoursesPage"));
 const CourseDashboardPage = lazy(() => import("../features/courses/pages/CourseDashboardPage"));
-const MyCourseDashboardPage = lazy(() => import("../features/courses/pages/MyCourseDashboardPage"));
 const CourseGroupsPage = lazy(() => import("../features/courses/pages/CourseGroupsPage"));
 const CourseGroupDetailPage = lazy(() => import("../features/courses/pages/CourseGroupDetailPage"));
+const ViewGroupPage = lazy(() => import("../features/courses/pages/ViewGroupPage"));
 const EventDashboardPage = lazy(() => import("../features/courses/pages/EventDashboardPage"));
 const EventGroupDetailPage = lazy(() => import("../features/courses/pages/EventGroupDetailPage"));
+const EventGroupsPage = lazy(() => import("../features/courses/pages/EventGroupsPage"));
+const ExamModelsPage = lazy(() => import("../features/courses/pages/ExamModelsPage"));
 const AdminExamsPage = lazy(
   () => import("../features/admin_exams/pages/AdminExamsPage")
 );
@@ -35,12 +36,14 @@ const StudentExamsPage = lazy(
 const StudentGradesPage = lazy(
   () => import("../features/student_grades/pages/StudentGradesPage")
 );
+const ExamPage = lazy(() => import("../features/exam/pages/ExamPage"));
 const StaffRequestAccessPage = lazy(() => import("../features/staff/pages/StaffRequestAccessPage"));
 const StaffRequestsPage = lazy(() => import("../features/staff/pages/StaffRequestsPage"));
 const StaffManagementPage = lazy(() => import("../features/staff/pages/StaffManagementPage"));
 const UserTypesPage = lazy(() => import("../features/staff/pages/UserTypesPage"));
 const ReportsPage = lazy(() => import("../features/reports/pages/ReportsPage"));
 const AssistantDashboardPage = lazy(() => import("../features/labs/assistants/AssistantDashboardPage"));
+const SessionManagementPage = lazy(() => import("../features/labs/assistants/SessionManagementPage"));
 
 const router = createBrowserRouter([
   {
@@ -50,6 +53,16 @@ const router = createBrowserRouter([
   {
     path: "/staff/request-access",
     element: <StaffRequestAccessPage />,
+  },
+  {
+    path: "/exam",
+    element: (
+      <ProtectedRoute allowedPrivileges={["STUDY_COURSE"]}>
+        <SuspenseWrapper>
+          <ExamPage />
+        </SuspenseWrapper>
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/",
@@ -74,7 +87,7 @@ const router = createBrowserRouter([
       {
         path: "courses",
         element: (
-          <ProtectedRoute allowedPrivileges={["MANAGE_COURSES"]}>
+          <ProtectedRoute allowedPrivileges={["MANAGE_COURSES", "TEACH_COURSE", "ASSIST_IN_COURSE", "STUDY_COURSE"]}>
             <SuspenseWrapper>
               <CoursesPage />
             </SuspenseWrapper>
@@ -84,7 +97,7 @@ const router = createBrowserRouter([
       {
         path: "courses/:courseId",
         element: (
-          <ProtectedRoute allowedPrivileges={["MANAGE_COURSES"]}>
+          <ProtectedRoute allowedPrivileges={["MANAGE_COURSES", "TEACH_COURSE", "ASSIST_IN_COURSE", "STUDY_COURSE"]}>
             <SuspenseWrapper>
               <CourseDashboardPage />
             </SuspenseWrapper>
@@ -94,7 +107,7 @@ const router = createBrowserRouter([
       {
         path: "courses/:courseId/groups",
         element: (
-          <ProtectedRoute allowedPrivileges={["MANAGE_COURSES"]}>
+          <ProtectedRoute allowedPrivileges={["MANAGE_COURSES", "TEACH_COURSE"]}>
             <SuspenseWrapper>
               <CourseGroupsPage />
             </SuspenseWrapper>
@@ -104,9 +117,9 @@ const router = createBrowserRouter([
       {
         path: "courses/:courseId/groups/:groupId",
         element: (
-          <ProtectedRoute allowedPrivileges={["MANAGE_COURSES"]}>
+          <ProtectedRoute allowedPrivileges={["MANAGE_COURSES", "TEACH_COURSE", "ASSIST_IN_COURSE"]}>
             <SuspenseWrapper>
-              <CourseGroupDetailPage />
+              <ViewGroupPage />
             </SuspenseWrapper>
           </ProtectedRoute>
         ),
@@ -114,7 +127,7 @@ const router = createBrowserRouter([
       {
         path: "courses/:courseId/events/:eventId",
         element: (
-          <ProtectedRoute allowedPrivileges={["MANAGE_COURSES"]}>
+          <ProtectedRoute allowedPrivileges={["MANAGE_COURSES", "TEACH_COURSE"]}>
             <SuspenseWrapper>
               <EventDashboardPage />
             </SuspenseWrapper>
@@ -124,7 +137,7 @@ const router = createBrowserRouter([
       {
         path: "courses/:courseId/events/:eventId/groups/:groupId",
         element: (
-          <ProtectedRoute allowedPrivileges={["MANAGE_COURSES"]}>
+          <ProtectedRoute allowedPrivileges={["MANAGE_COURSES", "TEACH_COURSE", "ASSIST_IN_COURSE"]}>
             <SuspenseWrapper>
               <EventGroupDetailPage />
             </SuspenseWrapper>
@@ -132,21 +145,21 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "my-courses",
+        path: "courses/:courseId/events/:eventId/groups",
         element: (
-          <ProtectedRoute allowedPrivileges={["TEACH_COURSE", "ASSIST_IN_COURSE", "STUDY_COURSE"]}>
+          <ProtectedRoute allowedPrivileges={["MANAGE_COURSES", "TEACH_COURSE", "ASSIST_IN_COURSE"]}>
             <SuspenseWrapper>
-              <MyCoursesPage />
+              <EventGroupsPage />
             </SuspenseWrapper>
           </ProtectedRoute>
         ),
       },
       {
-        path: "my-courses/:courseId",
+        path: "courses/:courseId/events/:eventId/models",
         element: (
-          <ProtectedRoute allowedPrivileges={["TEACH_COURSE", "ASSIST_IN_COURSE", "STUDY_COURSE"]}>
+          <ProtectedRoute allowedPrivileges={["MANAGE_COURSES", "TEACH_COURSE"]}>
             <SuspenseWrapper>
-              <MyCourseDashboardPage />
+              <ExamModelsPage />
             </SuspenseWrapper>
           </ProtectedRoute>
         ),
@@ -164,7 +177,7 @@ const router = createBrowserRouter([
       {
         path: "grades",
         element: (
-          <ProtectedRoute allowedPrivileges={["CREATE_STUDENT"]}>
+          <ProtectedRoute allowedPrivileges={["STUDY_COURSE"]}>
             <SuspenseWrapper>
               <StudentGradesPage />
             </SuspenseWrapper>
@@ -232,19 +245,9 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "home",
-        element: (
-          <ProtectedRoute allowedPrivileges={["CREATE_STUDENT"]}>
-            <SuspenseWrapper>
-              <HomePage />
-            </SuspenseWrapper>
-          </ProtectedRoute>
-        ),
-      },
-      {
         path: "schedule",
         element: (
-          <ProtectedRoute allowedPrivileges={["CREATE_STUDENT"]}>
+          <ProtectedRoute allowedPrivileges={["CREATE_STUDENT", "STUDY_COURSE"]}>
             <SuspenseWrapper>
               <SchedulePage />
             </SuspenseWrapper>
@@ -252,9 +255,9 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "exams",
+        path: "student/exams",
         element: (
-          <ProtectedRoute allowedPrivileges={["CREATE_STUDENT"]}>
+          <ProtectedRoute allowedPrivileges={["STUDY_COURSE"]}>
             <SuspenseWrapper>
               <StudentExamsPage />
             </SuspenseWrapper>
@@ -294,7 +297,7 @@ const router = createBrowserRouter([
       {
         path: "reports",
         element: (
-          <ProtectedRoute allowedPrivileges={["REPORT_DEVICE"]}>
+          <ProtectedRoute allowedPrivileges={["REPORT_DEVICE", "STUDY_COURSE"]}>
             <SuspenseWrapper>
               <ReportsPage />
             </SuspenseWrapper>
@@ -307,6 +310,16 @@ const router = createBrowserRouter([
           <ProtectedRoute allowedPrivileges={["LAB_ASSISTANT"]}>
             <SuspenseWrapper>
               <AssistantDashboardPage />
+            </SuspenseWrapper>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "session-management",
+        element: (
+          <ProtectedRoute allowedPrivileges={["LAB_ASSISTANT", "ASSIST_IN_COURSE"]}>
+            <SuspenseWrapper>
+              <SessionManagementPage />
             </SuspenseWrapper>
           </ProtectedRoute>
         ),

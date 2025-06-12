@@ -1,0 +1,1 @@
+{"type":"object","properties":{"softwareId":{"type":"string"},"hasIssue":{"type":"boolean","description":"Whether the software has issues"},"issueDescription":{"type":"string","description":"Description of any issues"}},"required":["softwareId"],"x-readme-ref-name":"AddDeviceSoftwareDto"}

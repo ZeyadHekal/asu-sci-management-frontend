@@ -5,7 +5,6 @@
 
 export const privilegeAssignmentDtoCodeEnum = {
   MANAGE_SYSTEM: 'MANAGE_SYSTEM',
-  MANAGE_USERS: 'MANAGE_USERS',
   MANAGE_STUDENTS: 'MANAGE_STUDENTS',
   MANAGE_LABS: 'MANAGE_LABS',
   LAB_ASSISTANT: 'LAB_ASSISTANT',
@@ -37,13 +36,34 @@ export type PrivilegeAssignmentDto = {
    */
   requiresResource: boolean
   /**
-   * @type string
+   * @type string | undefined
    */
-  paramKey: string
+  paramKey?: string | undefined
+  /**
+   * @type string | undefined
+   */
+  entityName?: string | undefined
   /**
    * @type string
    */
-  entityName: string
+  name: string
+  /**
+   * @type string
+   */
+  key: string
+  /**
+   * @type string
+   */
+  description: string
+  /**
+   * @type string
+   */
+  category: string
+  /**
+   * @default true
+   * @type boolean
+   */
+  isActive: boolean
   /**
    * @type array | undefined
    */

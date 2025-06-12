@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import toast from "react-hot-toast"; // Assuming you have react-hot-toast for notifications
 import { useWebSocketStore } from "../../../services/websocketService";
 import { useExamStore } from "../../../store/examStore";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { useAuthControllerLogin } from "../../../generated/hooks/authenticationHooks/useAuthControllerLogin";
 import {
@@ -29,8 +30,10 @@ const AuthCard = () => {
   const navigate = useNavigate();
   const storeAuthData = useAuthStore((state) => state.storeAuthData);
   const setExamMode = useAuthStore((state) => state.setExamMode);
+  const logout = useAuthStore((state) => state.logout);
   const examStore = useExamStore();
-  const { connect: connectWebSocket } = useWebSocketStore();
+  const { connect: connectWebSocket, disconnect: disconnectWebSocket } = useWebSocketStore();
+  const queryClient = useQueryClient();
 
   const {
     mutate: login,
@@ -40,6 +43,14 @@ const AuthCard = () => {
     mutation: {
       onSuccess: (response) => {
         try {
+          // First, ensure we disconnect any existing WebSocket connection and clear all state
+          disconnectWebSocket();
+          logout(); // This clears auth store but keeps the logout from navigating
+          examStore.resetExamStore();
+          
+          // Clear all React Query cache to prevent stale data
+          queryClient.clear();
+          
           const decodedAccessToken = jwtDecode<DecodedAccessToken>(
             response.data.accessToken
           );
@@ -90,8 +101,10 @@ const AuthCard = () => {
             examModeActive
           );
 
-          // Initialize WebSocket connection
-          connectWebSocket();
+          // Initialize fresh WebSocket connection with new user credentials
+          setTimeout(() => {
+            connectWebSocket();
+          }, 100); // Small delay to ensure auth data is properly stored
 
           // Navigation based on exam mode and user type
           if (examModeActive && isStudent) {

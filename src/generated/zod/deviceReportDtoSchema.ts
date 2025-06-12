@@ -3,14 +3,15 @@
  * Do not edit manually.
  */
 
+import { reportMaintenanceHistoryDtoSchema } from './reportMaintenanceHistoryDtoSchema.ts'
 import { z } from 'zod'
 
 export const deviceReportDtoSchema = z.object({
   description: z.string().describe('Report description'),
-  status: z.enum(['REPORTED', 'IN_PROGRESS', 'RESOLVED', 'CANCELLED']).default('REPORTED').describe('Report status'),
+  status: z.enum(['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED']).default('PENDING_REVIEW').describe('Report status'),
   fixMessage: z.string().describe('Fix message').optional(),
   deviceId: z.string().describe('Device ID'),
-  appId: z.string().describe('Software/App ID'),
+  appId: z.string().describe('Software/App ID').optional(),
   reporterId: z.string().describe('Reporter ID').optional(),
   id: z.string().describe('Report ID'),
   created_at: z.string().datetime({ offset: true }).describe('Created at'),
@@ -18,6 +19,10 @@ export const deviceReportDtoSchema = z.object({
   deviceName: z.string().describe('Device name').optional(),
   softwareName: z.string().describe('Software name').optional(),
   reporterName: z.string().describe('Reporter name').optional(),
+  resolutionUpdates: z
+    .array(z.lazy(() => reportMaintenanceHistoryDtoSchema))
+    .describe('Resolution updates/maintenance history')
+    .optional(),
 })
 
 export type DeviceReportDtoSchema = z.infer<typeof deviceReportDtoSchema>

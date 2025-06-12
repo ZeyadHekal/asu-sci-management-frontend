@@ -19,7 +19,7 @@ export type StaffRequestDto = {
   /**
    * @type string
    */
-  email: string
+  username: string
   /**
    * @type string
    */

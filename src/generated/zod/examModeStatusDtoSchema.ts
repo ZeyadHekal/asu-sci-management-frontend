@@ -3,12 +3,13 @@
  * Do not edit manually.
  */
 
+import { examScheduleItemDtoSchema } from './examScheduleItemDtoSchema.ts'
 import { z } from 'zod'
 
 export const examModeStatusDtoSchema = z.object({
   isInExamMode: z.boolean(),
   examStartsIn: z.number().optional(),
-  examSchedules: z.array(z.string()),
+  examSchedules: z.array(z.lazy(() => examScheduleItemDtoSchema)).describe('Array of exam schedules for the student'),
 })
 
 export type ExamModeStatusDtoSchema = z.infer<typeof examModeStatusDtoSchema>

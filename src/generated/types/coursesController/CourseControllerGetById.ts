@@ -3,7 +3,7 @@
  * Do not edit manually.
  */
 
-import type { CourseDto } from '../CourseDto.ts'
+import type { CourseDetailDto } from '../CourseDetailDto.ts'
 
 export type CourseControllerGetByIdPathParams = {
   /**
@@ -16,7 +16,7 @@ export type CourseControllerGetByIdPathParams = {
 /**
  * @description Course retrieved successfully
  */
-export type CourseControllerGetById200 = CourseDto
+export type CourseControllerGetById200 = CourseDetailDto
 
 /**
  * @description Unauthorized

@@ -3,6 +3,8 @@
  * Do not edit manually.
  */
 
+import type { ExamModeStatusDto } from './ExamModeStatusDto.ts'
+
 export type UserInfoDto = {
   /**
    * @type string
@@ -26,7 +28,6 @@ export type UserInfoDto = {
   isStudent: boolean
   /**
    * @description Exam mode status for students
-   * @type object | undefined
    */
-  examModeStatus?: object | undefined
+  examModeStatus?: ExamModeStatusDto | undefined
 }

@@ -3,6 +3,7 @@
  * Do not edit manually.
  */
 
+import type { RejectStaffRequestDto } from '../RejectStaffRequestDto.ts'
 import type { StaffRequestDto } from '../StaffRequestDto.ts'
 
 export type StaffRequestControllerRejectPathParams = {
@@ -37,10 +38,13 @@ export type StaffRequestControllerReject403 = unknown
  */
 export type StaffRequestControllerReject404 = unknown
 
+export type StaffRequestControllerRejectMutationRequest = RejectStaffRequestDto
+
 export type StaffRequestControllerRejectMutationResponse = StaffRequestControllerReject200
 
 export type StaffRequestControllerRejectMutation = {
   Response: StaffRequestControllerReject200
+  Request: StaffRequestControllerRejectMutationRequest
   PathParams: StaffRequestControllerRejectPathParams
   Errors: StaffRequestControllerReject400 | StaffRequestControllerReject401 | StaffRequestControllerReject403 | StaffRequestControllerReject404
 }

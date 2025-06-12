@@ -7,14 +7,19 @@ import { z } from 'zod'
 
 export const updateEventDtoSchema = z.object({
   name: z.string().optional(),
+  description: z.string().optional(),
   duration: z.number().optional(),
-  isExam: z.boolean().optional(),
-  isInLab: z.boolean().optional(),
-  examFiles: z.string().optional(),
-  degree: z.number().optional(),
+  eventType: z.enum(['exam', 'quiz', 'assignment', 'lab_assignment', 'project', 'presentation', 'workshop', 'practice', 'seminar']).default('assignment'),
+  locationType: z.enum(['lab_devices', 'lecture_hall', 'online', 'hybrid']).default('online'),
+  customLocation: z.string().describe('Custom location when not using lab devices').optional(),
+  hasMarks: z.boolean().optional(),
+  totalMarks: z.number().optional(),
   autoStart: z.boolean().default(false),
   examModeStartMinutes: z.number().default(30),
-  description: z.string().optional(),
+  startDateTime: z.string().datetime({ offset: true }).describe('When the event should start').optional(),
+  requiresModels: z.boolean().default(false).describe('Whether this event requires exam models'),
+  allowRandomModelAssignment: z.boolean().default(false).describe('Allow random assignment of exam models to students'),
+  isExam: z.boolean().default(false).describe('Whether this event should be treated as an exam'),
   courseId: z.string().optional(),
 })
 

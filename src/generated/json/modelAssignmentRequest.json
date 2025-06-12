@@ -1,0 +1,1 @@
+{"type":"object","properties":{"examModelId":{"type":"string","description":"Exam model ID"},"studentIds":{"description":"Array of student IDs","type":"array","items":{"type":"string"}}},"required":["examModelId","studentIds"],"x-readme-ref-name":"ModelAssignmentRequest"}

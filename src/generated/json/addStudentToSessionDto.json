@@ -1,0 +1,1 @@
+{"type":"object","properties":{"studentId":{"type":"string","description":"Student ID to add to session"},"markAsPresent":{"type":"boolean","description":"Mark as present when adding"}},"required":["studentId"],"x-readme-ref-name":"AddStudentToSessionDto"}

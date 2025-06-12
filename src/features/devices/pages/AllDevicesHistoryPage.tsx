@@ -1,69 +1,38 @@
 import { useState, useEffect } from "react";
 import { DataTable } from "mantine-datatable";
-import { LuSearch, LuFilter, LuDownload } from "react-icons/lu";
+import { LuSearch, LuDownload, LuArrowLeft } from "react-icons/lu";
 import Select from "react-select";
 import { toast } from "react-hot-toast";
 import { formatDate } from "../../../utils/dateUtils";
 import { IoMdTime } from "react-icons/io";
 import { UpdateHistoryModal } from "../components";
-import { Link } from "react-router";
-import { useDeviceReportControllerGetAll } from "../../../generated/hooks/device-reportsHooks/useDeviceReportControllerGetAll";
+import { Link, useSearchParams } from "react-router";
+import { useDeviceReportWebSocket } from "../../../services/deviceReportWebSocketService";
+import { useWebSocket } from "../../../services/websocketService";
+import { useDeviceReportControllerGetPaginated } from "../../../generated/hooks/device-reportsHooks/useDeviceReportControllerGetPaginated";
+import { deviceReportControllerExportReportsXlsx } from "../../../generated/hooks/device-reportsHooks/useDeviceReportControllerExportReportsXlsx";
 import { useDeviceControllerGetAll } from "../../../generated/hooks/devicesHooks/useDeviceControllerGetAll";
 import { useLabControllerGetAll } from "../../../generated/hooks/labsHooks/useLabControllerGetAll";
-import { DeviceReportDto } from "../../../generated/types/DeviceReportDto";
+import { useUserControllerGetAllStaff } from "../../../generated/hooks/usersHooks/useUserControllerGetAllStaff";
+import { useMaintenanceHistoryControllerGetPaginated } from "../../../generated/hooks/device-maintenance-historyHooks/useMaintenanceHistoryControllerGetPaginated";
+import { maintenanceHistoryControllerExportMaintenanceXlsx } from "../../../generated/hooks/device-maintenance-historyHooks/useMaintenanceHistoryControllerExportMaintenanceXlsx";
+import { DeviceReportListDto } from "../../../generated/types/DeviceReportListDto";
+import { MaintenanceHistoryListDto } from "../../../generated/types/MaintenanceHistoryListDto";
+import { ReportStatus, getReportStatusBadge, getReportStatusLabel } from "../../../global/constants/reportStatus";
 
-// Mock report statuses
+// Report statuses from the API
 const availableReportStatuses = [
     { value: "all", label: "All Statuses" },
-    { value: "REPORTED", label: "Reported" },
-    { value: "IN_PROGRESS", label: "In Progress" },
-    { value: "RESOLVED", label: "Resolved" },
-    { value: "CANCELLED", label: "Cancelled" }
+    { value: ReportStatus.REPORTED, label: getReportStatusLabel(ReportStatus.REPORTED) },
+    { value: ReportStatus.PENDING_REVIEW, label: getReportStatusLabel(ReportStatus.PENDING_REVIEW) },
+    { value: ReportStatus.IN_PROGRESS, label: getReportStatusLabel(ReportStatus.IN_PROGRESS) },
+    { value: ReportStatus.RESOLVED, label: getReportStatusLabel(ReportStatus.RESOLVED) },
+    { value: ReportStatus.REJECTED, label: getReportStatusLabel(ReportStatus.REJECTED) },
+    { value: ReportStatus.CANCELLED, label: getReportStatusLabel(ReportStatus.CANCELLED) }
 ];
-
-// Mock assistants - should be fetched from API
-const availableAssistants = [
-    { value: 1, label: "Ahmed Mahmoud" },
-    { value: 2, label: "Sara Ali" },
-    { value: 3, label: "Omar Mohamed" },
-    { value: 4, label: "Fatima Ibrahim" },
-    { value: 5, label: "Khalid Hassan" }
-];
-
-// Add TypeScript interfaces for the data
-interface ReportData {
-    id: number;
-    date: string;
-    device: string;
-    deviceId: number;
-    lab: string;
-    problemType: string;
-    reportedBy: string;
-    status: string;
-    urgency: string;
-    description: string;
-    resolution?: string;
-    assignedTo: { id: number; name: string; };
-    updates: { id: number; date: string; status: string; resolution?: string }[];
-    rejectionReason?: string;
-}
-
-interface MaintenanceData {
-    id: number;
-    date: string;
-    device: string;
-    lab: string;
-    type: string;
-    status: string;
-    issue: string | null;
-    resolution: string | null;
-    performedBy: { id: number; name: string; };
-    findings?: string;
-    action?: string;
-    involvedPersonnel: string[];
-}
 
 const AllDevicesHistoryPage = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [activeTab, setActiveTab] = useState<"reports" | "maintenance">("reports");
     const [page, setPage] = useState(1);
     const PAGE_SIZES = [10, 20, 30, 50];
@@ -71,32 +40,72 @@ const AllDevicesHistoryPage = () => {
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
 
-    // Filter states
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const [deviceFilter, setDeviceFilter] = useState<{ value: number; label: string } | null>(null);
+    // Filter states (always visible now)
+    const [deviceFilter, setDeviceFilter] = useState<{ value: string; label: string } | null>(null);
     const [labFilter, setLabFilter] = useState<{ value: string; label: string } | null>(null);
     const [statusFilter, setStatusFilter] = useState<{ value: string; label: string } | null>(null);
-    const [assistantFilter, setAssistantFilter] = useState<{ value: number; label: string } | null>(null);
+    const [assistantFilter, setAssistantFilter] = useState<{ value: string; label: string } | null>(null);
     const [dateFromFilter, setDateFromFilter] = useState("");
     const [dateToFilter, setDateToFilter] = useState("");
 
-    // Data states
-    const [filteredReports, setFilteredReports] = useState<DeviceReportDto[]>([]);
-    const [filteredMaintenance, setFilteredMaintenance] = useState<MaintenanceData[]>([]);
-    const [paginatedReports, setPaginatedReports] = useState<DeviceReportDto[]>([]);
-    const [paginatedMaintenance, setPaginatedMaintenance] = useState<MaintenanceData[]>([]);
-
     // Modal states
     const [isUpdateHistoryModalOpen, setIsUpdateHistoryModalOpen] = useState(false);
-    const [selectedReportForHistory, setSelectedReportForHistory] = useState<any>(null);
+    const [selectedReportForHistory, setSelectedReportForHistory] = useState<DeviceReportListDto | null>(null);
 
-    // Fetch data using kubb generated hooks
-    const { data: reportsData, isLoading: reportsLoading } = useDeviceReportControllerGetAll();
+    // Initialize WebSocket connections
+    const { connect: connectWebSocket, status: webSocketStatus } = useWebSocket();
+    const { connect: connectDeviceReportWS, registerReportUpdateHandler } = useDeviceReportWebSocket();
+
+    // Handle tab URL parameters
+    useEffect(() => {
+        const tabFromUrl = searchParams.get('tab');
+        
+        if (tabFromUrl && ['reports', 'maintenance'].includes(tabFromUrl)) {
+            setActiveTab(tabFromUrl as "reports" | "maintenance");
+        } else if (!tabFromUrl) {
+            // Set default tab and update URL
+            setSearchParams({ tab: 'reports' });
+        }
+    }, [searchParams, setSearchParams]);
+
+    // Function to handle tab change with URL update
+    const handleTabChange = (tabId: "reports" | "maintenance") => {
+        setActiveTab(tabId);
+        setSearchParams({ tab: tabId });
+    };
+
+    // Fetch reports data using kubb generated hooks with backend filtering
+    const { data: reportsData, isLoading: reportsLoading, refetch: refetchReports } = useDeviceReportControllerGetPaginated({
+        page: page - 1, // Convert to 0-based pagination for backend
+        limit: pageSize,
+        ...(deviceFilter && { deviceId: deviceFilter.value }),
+        ...(labFilter && { labId: labFilter.value }),
+        ...(statusFilter && statusFilter.value !== "all" && { status: statusFilter.value as any }),
+        ...(assistantFilter && { reporterId: assistantFilter.value }),
+        ...(debouncedSearch && { search: debouncedSearch }),
+        ...(dateFromFilter && { dateFrom: dateFromFilter }),
+        ...(dateToFilter && { dateTo: dateToFilter }),
+    });
+    
     const { data: devicesData } = useDeviceControllerGetAll();
     const { data: labsData } = useLabControllerGetAll();
+    const { data: staffData } = useUserControllerGetAllStaff();
+    
+    // Fetch maintenance history with pagination (0-based) - using backend filtering
+    const { data: maintenanceData, isLoading: maintenanceLoading, refetch: refetchMaintenance } = useMaintenanceHistoryControllerGetPaginated({
+        page: page - 1, // Convert to 0-based pagination for backend
+        limit: pageSize,
+        ...(deviceFilter && { deviceId: deviceFilter.value }),
+        ...(labFilter && { labId: labFilter.value }),
+        ...(statusFilter && statusFilter.value !== "all" && { status: statusFilter.value as any }),
+        ...(debouncedSearch && { search: debouncedSearch }),
+        ...(dateFromFilter && { dateFrom: dateFromFilter }),
+        ...(dateToFilter && { dateTo: dateToFilter }),
+    });
 
     // Process fetched data
-    const reports = reportsData?.data ? (Array.isArray(reportsData.data) ? reportsData.data : [reportsData.data]) : [];
+    const reports = reportsData?.data && (reportsData.data as any)?.items ? (reportsData.data as any).items as DeviceReportListDto[] : [];
+    const maintenanceRecords = maintenanceData?.data && (maintenanceData.data as any)?.items ? (maintenanceData.data as any).items as MaintenanceHistoryListDto[] : [];
     
     // Create device options from API data
     const allDevices = devicesData?.data 
@@ -114,174 +123,97 @@ const AllDevicesHistoryPage = () => {
         }))
         : [];
 
-    // Mock maintenance data - should be replaced with actual API call when available
-    const mockMaintenanceHistory: MaintenanceData[] = [
-        {
-            id: 1,
-            date: "2024-03-15T14:30:00",
-            device: "Dell PC 01",
-            lab: "Lab B2-215",
-            type: "Scheduled Maintenance",
-            status: "Completed",
-            issue: null,
-            resolution: "Routine system check and updates",
-            performedBy: { id: 1, name: "Ahmed Mahmoud" },
-            findings: "System running optimally",
-            action: "Applied security updates",
-            involvedPersonnel: ["Ahmed Mahmoud", "Sara Ali"]
-        },
-        {
-            id: 2,
-            date: "2024-03-14T10:15:00",
-            device: "Dell PC 03",
-            lab: "Lab B2-215",
-            type: "Hardware Repair",
-            status: "Completed",
-            issue: "Faulty RAM module",
-            resolution: "Replaced defective RAM module",
-            performedBy: { id: 3, name: "Omar Mohamed" },
-            findings: "One RAM module was causing system instability",
-            action: "Replaced 8GB RAM module with new one",
-            involvedPersonnel: ["Omar Mohamed"]
-        }
-    ];
+    // Create staff/assistants options from API data
+    const availableAssistants = staffData?.data 
+        ? (Array.isArray(staffData.data) ? staffData.data : [staffData.data]).map(staff => ({ 
+            value: staff.id, 
+            label: staff.name
+        }))
+        : [];
 
-    // Filter reports data
+    // Initialize WebSocket connections
     useEffect(() => {
-        let filtered = [...reports];
+        // Connect to main WebSocket
+        connectWebSocket();
+        
+        // Connect to device report specific WebSocket
+        connectDeviceReportWS();
+    }, [connectWebSocket, connectDeviceReportWS]);
 
-        // Apply device filter
-        if (deviceFilter) {
-            filtered = filtered.filter(item => item.deviceId === deviceFilter.value);
-        }
-
-        // Apply lab filter
-        if (labFilter) {
-            filtered = filtered.filter(item => item.lab === labFilter.value);
-        }
-
-        // Apply status filter
-        if (statusFilter) {
-            filtered = filtered.filter(item => item.status === statusFilter.value);
-        }
-
-        // Apply assistant filter
-        if (assistantFilter) {
-            filtered = filtered.filter(item => item.assignedTo.id === assistantFilter.value);
-        }
-
-        // Apply search
-        if (search) {
-            filtered = filtered.filter(item =>
-                item.device.toLowerCase().includes(search.toLowerCase()) ||
-                item.problemType.toLowerCase().includes(search.toLowerCase()) ||
-                item.reportedBy.toLowerCase().includes(search.toLowerCase()) ||
-                (item.resolution && item.resolution.toLowerCase().includes(search.toLowerCase()))
-            );
-        }
-
-        // Apply date range
-        filtered = filtered.filter(item => {
-            const itemDate = new Date(item.date).toISOString().split('T')[0];
-            return itemDate >= dateFromFilter && itemDate <= dateToFilter;
-        });
-
-        setFilteredReports(filtered);
-        setPage(1);
-    }, [search, deviceFilter, labFilter, statusFilter, assistantFilter, dateFromFilter, dateToFilter, reports]);
-
-    // Filter maintenance data
+    // Set up WebSocket event handlers for real-time updates
     useEffect(() => {
-        let filtered = [...mockMaintenanceHistory];
-
-        // Apply device filter
-        if (deviceFilter) {
-            // For maintenance data, we need to match by device name since deviceId doesn't exist
-            filtered = filtered.filter(item => {
-                const deviceNumber = parseInt(item.device.split(' ').pop() || '0', 10);
-                return deviceNumber === deviceFilter.value;
+        if (webSocketStatus === 'connected') {
+            // Register handler for all device report updates
+            const unsubscribe = registerReportUpdateHandler('*', (message) => {
+                // Refetch data when reports or maintenance records are updated
+                if (message.type === 'device_report:created' || 
+                    message.type === 'device_report:updated' || 
+                    message.type === 'device_report:status_changed') {
+                    refetchReports();
+                }
+                
+                if (message.type === 'maintenance_history:created' || 
+                    message.type === 'maintenance_history:updated') {
+                    refetchMaintenance();
+                }
             });
+
+            return unsubscribe;
         }
+    }, [webSocketStatus, registerReportUpdateHandler, refetchReports, refetchMaintenance]);
 
-        // Apply lab filter
-        if (labFilter) {
-            filtered = filtered.filter(item => item.lab === labFilter.value);
-        }
-
-        // Apply assistant filter
-        if (assistantFilter) {
-            filtered = filtered.filter(item => item.performedBy.id === assistantFilter.value);
-        }
-
-        // Apply search - safely check for undefined properties
-        if (search) {
-            filtered = filtered.filter(item =>
-                item.device.toLowerCase().includes(search.toLowerCase()) ||
-                item.type.toLowerCase().includes(search.toLowerCase()) ||
-                (item.findings ? item.findings.toLowerCase().includes(search.toLowerCase()) : false) ||
-                (item.action ? item.action.toLowerCase().includes(search.toLowerCase()) : false)
-            );
-        }
-
-        // Apply date range
-        filtered = filtered.filter(item => {
-            const itemDate = new Date(item.date).toISOString().split('T')[0];
-            return itemDate >= dateFromFilter && itemDate <= dateToFilter;
-        });
-
-        setFilteredMaintenance(filtered);
-        setPage(1);
-    }, [search, deviceFilter, labFilter, assistantFilter, dateFromFilter, dateToFilter, mockMaintenanceHistory]);
-
-    // Handle pagination for reports
+    // Debounce search input
     useEffect(() => {
-        if (activeTab === "reports") {
-            const from = (page - 1) * pageSize;
-            const to = from + pageSize;
-            setPaginatedReports(filteredReports.slice(from, to));
-        }
-    }, [page, pageSize, filteredReports, activeTab]);
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+        }, 300);
 
-    // Handle pagination for maintenance
-    useEffect(() => {
-        if (activeTab === "maintenance") {
-            const from = (page - 1) * pageSize;
-            const to = from + pageSize;
-            setPaginatedMaintenance(filteredMaintenance.slice(from, to));
-        }
-    }, [page, pageSize, filteredMaintenance, activeTab]);
+        return () => clearTimeout(timer);
+    }, [search]);
 
-    // Reset page when changing tabs
-    useEffect(() => {
-        setPage(1);
-    }, [activeTab]);
-
-    // Format date nicely
     const formatDateAndTime = (dateString: string) => {
         const date = new Date(dateString);
-        return new Intl.DateTimeFormat('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        }).format(date);
+        const formattedDate = date.toLocaleDateString();
+        const formattedTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return `${formattedDate} ${formattedTime}`;
     };
 
-    // Handle export
-    const handleExportData = () => {
-        const exportData = activeTab === "reports" ? filteredReports : filteredMaintenance;
-        const dataStr = JSON.stringify(exportData, null, 2);
-        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+    const handleExportData = async () => {
+        try {
+            // Build the filter parameters based on current filters
+            const filterParams = {
+                ...(deviceFilter && { deviceId: deviceFilter.value }),
+                ...(labFilter && { labId: labFilter.value }),
+                ...(statusFilter && statusFilter.value !== "all" && { status: statusFilter.value as any }),
+                ...(assistantFilter && { reporterId: assistantFilter.value }),
+                ...(debouncedSearch && { search: debouncedSearch }),
+                ...(dateFromFilter && { dateFrom: dateFromFilter }),
+                ...(dateToFilter && { dateTo: dateToFilter }),
+            };
 
-        const exportFileDefaultName = `${activeTab}-history-${new Date().toISOString().split('T')[0]}.json`;
+            // Call the appropriate export function based on active tab with binary response type
+            const response = activeTab === "reports" 
+                ? await deviceReportControllerExportReportsXlsx(filterParams, { responseType: 'blob' })
+                : await maintenanceHistoryControllerExportMaintenanceXlsx(filterParams, { responseType: 'blob' });
 
-        const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', dataUri);
-        linkElement.setAttribute('download', exportFileDefaultName);
-        linkElement.click();
-
-        toast.success(`Successfully exported ${activeTab} history data`);
+            // Create a blob from the response data (already a blob)
+            const blob = response.data as Blob;
+            const url = window.URL.createObjectURL(blob);
+            
+            // Create a temporary link and trigger download
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = activeTab === "reports" ? 'device-reports.xlsx' : 'maintenance-history.xlsx';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            
+            toast.success("Data exported successfully");
+        } catch (error) {
+            console.error('Export error:', error);
+            toast.error("Failed to export data");
+        }
     };
 
     // Clear all filters
@@ -296,7 +228,7 @@ const AllDevicesHistoryPage = () => {
     };
 
     // Add handler for viewing update history
-    const handleViewUpdateHistory = (report: DeviceReportDto) => {
+    const handleViewUpdateHistory = (report: DeviceReportListDto) => {
         setSelectedReportForHistory(report);
         setIsUpdateHistoryModalOpen(true);
     };
@@ -305,7 +237,12 @@ const AllDevicesHistoryPage = () => {
         <div className="panel mt-6">
             <div className="mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4">
-                    <h2 className="text-2xl font-semibold text-secondary">Device History Logs</h2>
+                    <div className="flex items-center gap-2">
+                        <Link to="/devices" className="text-secondary hover:text-secondary-dark">
+                            <LuArrowLeft size={18} />
+                        </Link>
+                        <h2 className="text-2xl font-semibold text-secondary">Device History Logs</h2>
+                    </div>
 
                     <div className="flex items-center gap-4 mt-4 sm:mt-0">
                         <button
@@ -317,13 +254,7 @@ const AllDevicesHistoryPage = () => {
                             <span>Export</span>
                         </button>
 
-                        <button
-                            className={`h-9 px-3 rounded-md flex items-center gap-1 ${isFilterOpen ? "bg-secondary text-white" : "bg-gray-100 text-secondary hover:bg-gray-200"}`}
-                            onClick={() => setIsFilterOpen(!isFilterOpen)}
-                        >
-                            <LuFilter size={16} />
-                            <span>Filters</span>
-                        </button>
+
                     </div>
                 </div>
 
@@ -336,7 +267,7 @@ const AllDevicesHistoryPage = () => {
                                     ? "border-b-2 border-secondary text-secondary"
                                     : "border-transparent hover:text-gray-600 hover:border-gray-300"
                                     }`}
-                                onClick={() => setActiveTab("reports")}
+                                onClick={() => handleTabChange("reports")}
                             >
                                 Reports History
                             </button>
@@ -347,7 +278,7 @@ const AllDevicesHistoryPage = () => {
                                     ? "border-b-2 border-secondary text-secondary"
                                     : "border-transparent hover:text-gray-600 hover:border-gray-300"
                                     }`}
-                                onClick={() => setActiveTab("maintenance")}
+                                onClick={() => handleTabChange("maintenance")}
                             >
                                 Maintenance History
                             </button>
@@ -357,8 +288,7 @@ const AllDevicesHistoryPage = () => {
             </div>
 
             {/* Filter panel */}
-            {isFilterOpen && (
-                <div className="mb-6 p-4 bg-gray-50 border rounded-md">
+            <div className="mb-6 p-4 bg-gray-50 border rounded-md">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div>
                             <label className="block text-sm text-gray-600 mb-1">Device</label>
@@ -395,82 +325,74 @@ const AllDevicesHistoryPage = () => {
                             </div>
                         )}
                         <div>
-                            <label className="block text-sm text-gray-600 mb-1">
-                                {activeTab === "reports" ? "Assigned To" : "Performed By"}
-                            </label>
+                            <label className="block text-sm text-gray-600 mb-1">{activeTab === "reports" ? "Reporter" : "Technician"}</label>
                             <Select
                                 options={availableAssistants}
                                 isClearable
-                                placeholder="Filter by lab assistant"
+                                placeholder={`Filter by ${activeTab === "reports" ? "reporter" : "technician"}`}
                                 value={assistantFilter}
                                 onChange={(option) => setAssistantFilter(option)}
                                 className="text-sm"
                             />
                         </div>
-                        <div className="md:col-span-1">
+                        <div>
                             <label className="block text-sm text-gray-600 mb-1">Date From</label>
                             <input
                                 type="date"
                                 value={dateFromFilter}
                                 onChange={(e) => setDateFromFilter(e.target.value)}
-                                className="w-full h-[38px] px-3 py-2 rounded-md border border-[#E0E6ED] text-xs font-medium tracking-wider text-gray-500 outline-none focus:border-secondary transition-colors duration-200"
+                                className="w-full p-2 border border-gray-300 rounded-md text-sm"
                             />
                         </div>
-                        <div className="md:col-span-1">
+                        <div>
                             <label className="block text-sm text-gray-600 mb-1">Date To</label>
                             <input
                                 type="date"
                                 value={dateToFilter}
                                 onChange={(e) => setDateToFilter(e.target.value)}
-                                className="w-full h-[38px] px-3 py-2 rounded-md border border-[#E0E6ED] text-xs font-medium tracking-wider text-gray-500 outline-none focus:border-secondary transition-colors duration-200"
+                                className="w-full p-2 border border-gray-300 rounded-md text-sm"
                             />
                         </div>
                     </div>
 
-                    <div className="relative flex items-center mb-4">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                            <LuSearch size={18} className="text-gray-500" />
+                    <div className="flex items-center gap-4">
+                        <div className="relative flex-1">
+                            <LuSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                            <input
+                                type="text"
+                                placeholder="Search by device, description, or person..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm"
+                            />
                         </div>
-                        <input
-                            type="text"
-                            placeholder={activeTab === "reports" ? "Search reports..." : "Search maintenance records..."}
-                            className="h-10 pl-10 pr-4 w-full rounded-md border border-[#E0E6ED] text-xs font-medium tracking-wider text-gray-500 outline-none focus:border-secondary transition-colors duration-200"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
-
-                    {/* Filter operations */}
-                    <div className="flex justify-end">
                         <button
                             onClick={clearFilters}
-                            className="text-sm text-secondary hover:text-secondary-dark"
+                            className="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                         >
-                            Clear all filters
+                            Clear All
                         </button>
                     </div>
                 </div>
-            )}
 
-            {/* Reports Tab Content */}
             {activeTab === "reports" && (
                 <div className="datatables">
-                    <DataTable
+                    <DataTable<DeviceReportListDto>
                         highlightOnHover
                         withBorder
                         className="table-hover whitespace-nowrap"
-                        records={paginatedReports}
+                        records={reports}
                         columns={[
                             {
-                                accessor: "date",
+                                accessor: "created_at",
                                 title: "Report Date",
                                 sortable: true,
                                 render: (row) => (
-                                    <span>{formatDateAndTime(row.date)}</span>
+                                    <span>{formatDateAndTime(row.created_at.toString())}</span>
                                 )
                             },
                             {
-                                accessor: "device",
+                                accessor: "deviceName",
                                 title: "Device",
                                 sortable: true,
                                 render: (row) => (
@@ -478,45 +400,16 @@ const AllDevicesHistoryPage = () => {
                                         to={`/devices/${row.deviceId}/history`} 
                                         className="text-secondary hover:text-secondary-dark hover:underline"
                                     >
-                                        {row.device}
+                                        {row.deviceName || `Device ${row.deviceId}`}
                                     </Link>
                                 ),
                             },
                             {
-                                accessor: "lab",
-                                title: "Lab",
-                                sortable: true,
-                            },
-                            {
-                                accessor: "reportedBy",
+                                accessor: "reporterName",
                                 title: "Reported By",
                                 sortable: true,
-                            },
-                            {
-                                accessor: "problemType",
-                                title: "Problem Type",
-                                sortable: true,
-                            },
-                            {
-                                accessor: "description",
-                                title: "Description",
                                 render: (row) => (
-                                    <div className="max-w-[200px] truncate" title={row.description}>
-                                        {row.description}
-                                    </div>
-                                )
-                            },
-                            {
-                                accessor: "assignedTo",
-                                title: "Assigned To",
-                                sortable: true,
-                                render: (row) => (
-                                    <div className="flex items-center">
-                                        <div className="w-7 h-7 bg-secondary text-white rounded-full flex items-center justify-center text-xs font-medium mr-2">
-                                            {row.assignedTo.name.split(' ').map(n => n[0]).join('')}
-                                        </div>
-                                        <span>{row.assignedTo.name}</span>
-                                    </div>
+                                    <span>{row.reporterName || "Unknown"}</span>
                                 )
                             },
                             {
@@ -524,139 +417,107 @@ const AllDevicesHistoryPage = () => {
                                 title: "Status",
                                 sortable: true,
                                 render: (row) => (
-                                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${row.status === "resolved"
-                                        ? "bg-green-100 text-green-800"
-                                        : row.status === "in_progress"
-                                            ? "bg-blue-100 text-blue-800"
-                                            : row.status === "pending"
-                                                ? "bg-yellow-100 text-yellow-800"
-                                                : "bg-red-100 text-red-800"
-                                        }`}>
-                                        {row.status === "pending" ? "Pending" :
-                                            row.status === "in_progress" ? "In Progress" :
-                                                "Resolved"}
+                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getReportStatusBadge(row.status)}`}>
+                                        {getReportStatusLabel(row.status)}
                                     </span>
                                 )
                             },
                             {
-                                accessor: "resolution",
-                                title: "Resolution",
+                                accessor: "description",
+                                title: "Problem Description",
+                                sortable: true,
                                 render: (row) => (
-                                    <div className="max-w-[200px] truncate" title={row.resolution || "Not resolved yet"}>
-                                        {row.resolution || "—"}
+                                    <div className="max-w-xs">
+                                        <p className="truncate" title={row.description}>
+                                            {row.description}
+                                        </p>
                                     </div>
                                 )
                             },
                             {
-                                accessor: "updates",
+                                accessor: "resolutionUpdates",
                                 title: "Updates",
                                 render: (row) => (
-                                    <div
-                                        className={`${(row.updates && row.updates.length > 0) || row.status === "rejected" ? "cursor-pointer hover:bg-gray-50" : ""}`}
-                                        onClick={() => {
-                                            if ((row.updates && row.updates.length > 0) || row.status === "rejected") {
-                                                handleViewUpdateHistory(row);
-                                            }
-                                        }}
-                                    >
-                                        {row.status === "rejected" ? (
-                                            <span className="text-red-500 flex items-center">
-                                                <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
-                                                    Rejected
-                                                </span>
-                                                <span className="ml-2 text-xs italic" title={row.rejectionReason}>
-                                                    {row.rejectionReason || "No reason provided"}
-                                                </span>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                            (row.resolutionUpdates?.length || 0) > 0 
+                                                ? "bg-blue-100 text-blue-800" 
+                                                : "bg-gray-100 text-gray-600"
+                                        }`}>
+                                            {row.resolutionUpdates?.length || 0} update{(row.resolutionUpdates?.length || 0) !== 1 ? 's' : ''}
+                                        </span>
+                                        {(row.resolutionUpdates?.length || 0) > 0 && (
+                                            <span className="text-xs text-gray-500">
+                                                Latest: {row.resolutionUpdates?.[row.resolutionUpdates.length - 1]?.status || 'Unknown'}
                                             </span>
-                                        ) : row.updates && row.updates.length > 0 ? (
-                                            <div className="flex flex-col gap-1">
-                                                {row.updates.slice(0, 2).map((update, index) => (
-                                                    <div key={update.id} className="flex items-center text-xs">
-                                                        <IoMdTime className="mr-1" size={12} />
-                                                        <span className="mr-1">{update.date}:</span>
-                                                        <span className={`px-1 py-0.5 rounded-full text-xs font-semibold ${update.status === "Passed" || update.status === "Resolved"
-                                                            ? "bg-green-100 text-green-800"
-                                                            : update.status === "In Progress"
-                                                                ? "bg-blue-100 text-blue-800"
-                                                                : update.status === "Pending"
-                                                                    ? "bg-yellow-100 text-yellow-800"
-                                                                    : "bg-amber-100 text-amber-800"
-                                                            }`}>
-                                                            {update.status}
-                                                        </span>
-                                                        {update.resolution && (
-                                                            <span className="ml-1 text-xs text-gray-600 truncate max-w-[100px]" title={update.resolution}>
-                                                                - {update.resolution}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                                {row.updates.length > 2 && (
-                                                    <div className="text-xs text-blue-600 font-medium">
-                                                        +{row.updates.length - 2} more...
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <span className="text-gray-400">No updates yet</span>
                                         )}
                                     </div>
                                 )
                             },
+                            {
+                                accessor: "actions",
+                                title: "Actions",
+                                render: (row) => (
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handleViewUpdateHistory(row)}
+                                            className="text-gray-500 hover:text-secondary"
+                                            title="View update history"
+                                        >
+                                            <IoMdTime size={18} />
+                                        </button>
+                                    </div>
+                                ),
+                            },
                         ]}
-                        totalRecords={filteredReports.length}
+                        totalRecords={(reportsData?.data as any)?.totalItems || 0}
                         recordsPerPage={pageSize}
-                        onRecordsPerPageChange={setPageSize}
                         page={page}
                         onPageChange={(p) => setPage(p)}
                         recordsPerPageOptions={PAGE_SIZES}
-                        noRecordsText="No reports found"
+                        onRecordsPerPageChange={setPageSize}
+                        emptyState={
+                            <div className="text-center py-6">
+                                <p className="text-gray-500">
+                                    {reportsLoading ? "Loading reports..." : "No reports found"}
+                                </p>
+                            </div>
+                        }
                     />
                 </div>
             )}
 
-            {/* Maintenance Tab Content */}
             {activeTab === "maintenance" && (
                 <div className="datatables">
-                    <DataTable
+                    <DataTable<MaintenanceHistoryListDto>
                         highlightOnHover
                         withBorder
                         className="table-hover whitespace-nowrap"
-                        records={paginatedMaintenance}
+                        records={maintenanceRecords}
                         columns={[
                             {
-                                accessor: "date",
+                                accessor: "created_at",
                                 title: "Date",
                                 sortable: true,
                                 render: (row) => (
-                                    <span>{formatDateAndTime(row.date)}</span>
+                                    <span>{formatDateAndTime(row.created_at.toString())}</span>
                                 )
                             },
                             {
-                                accessor: "device",
+                                accessor: "deviceName",
                                 title: "Device",
                                 sortable: true,
-                                render: (row) => {
-                                    // Extract device ID from name (e.g., "Dell PC 01" -> 1)
-                                    const deviceId = parseInt(row.device.split(' ').pop() || '0', 10);
-                                    
-                                    return (
-                                        <Link 
-                                            to={`/devices/${deviceId}/history`} 
-                                            className="text-secondary hover:text-secondary-dark hover:underline"
-                                        >
-                                            {row.device}
-                                        </Link>
-                                    );
-                                },
+                                render: (row) => (
+                                    <Link 
+                                        to={`/devices/${row.deviceId}/history`} 
+                                        className="text-secondary hover:text-secondary-dark hover:underline"
+                                    >
+                                        {row.deviceName || `Device ${row.deviceId}`}
+                                    </Link>
+                                ),
                             },
                             {
-                                accessor: "lab",
-                                title: "Lab",
-                                sortable: true,
-                            },
-                            {
-                                accessor: "type",
+                                accessor: "maintenanceType",
                                 title: "Type",
                                 sortable: true,
                             },
@@ -665,62 +526,65 @@ const AllDevicesHistoryPage = () => {
                                 title: "Status",
                                 sortable: true,
                                 render: (row) => (
-                                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${row.status === "Passed" || row.status === "Resolved"
-                                        ? "bg-green-100 text-green-800"
-                                        : row.status === "In Progress"
-                                            ? "bg-blue-100 text-blue-800"
-                                            : row.status === "Pending"
-                                                ? "bg-yellow-100 text-yellow-800"
-                                                : "bg-amber-100 text-amber-800"
-                                        }`}>
+                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                        row.status === "COMPLETED" ? "bg-green-100 text-green-800" :
+                                        row.status === "IN_PROGRESS" ? "bg-blue-100 text-blue-800" :
+                                        row.status === "SCHEDULED" ? "bg-yellow-100 text-yellow-800" :
+                                        "bg-red-100 text-red-800"
+                                    }`}>
                                         {row.status}
                                     </span>
-                                ),
-                            },
-                            {
-                                accessor: "issue",
-                                title: "Issue",
-                                render: (row) => (
-                                    <div className="max-w-[200px] truncate" title={row.issue || "No issues reported"}>
-                                        {row.issue || "-"}
-                                    </div>
                                 )
                             },
                             {
-                                accessor: "resolution",
-                                title: "Resolution",
-                                render: (row) => (
-                                    <div className="max-w-[200px] truncate" title={row.resolution || "No resolution needed"}>
-                                        {row.resolution || "-"}
-                                    </div>
-                                )
-                            },
-                            {
-                                accessor: "performedBy",
-                                title: "Performed By",
+                                accessor: "description",
+                                title: "Description",
                                 sortable: true,
                                 render: (row) => (
-                                    <div className="flex items-center">
-                                        <div className="w-7 h-7 bg-secondary text-white rounded-full flex items-center justify-center text-xs font-medium mr-2">
-                                            {row.performedBy.name.split(' ').map(n => n[0]).join('')}
-                                        </div>
-                                        <span>{row.performedBy.name}</span>
+                                    <div className="max-w-xs">
+                                        <p className="truncate" title={row.description}>
+                                            {row.description}
+                                        </p>
                                     </div>
                                 )
                             },
                             {
                                 accessor: "involvedPersonnel",
                                 title: "Involved Personnel",
-                                render: (row) => row.involvedPersonnel.join(", "),
+                                sortable: true,
+                                render: (row) => (
+                                    <div className="max-w-xs">
+                                        <p className="truncate" title={row.involvedPersonnel?.join(", ") || "No personnel listed"}>
+                                            {row.involvedPersonnel?.join(", ") || "No personnel listed"}
+                                        </p>
+                                    </div>
+                                )
+                            },
+                            {
+                                accessor: "resolutionNotes",
+                                title: "Resolution Notes",
+                                render: (row) => (
+                                    <div className="max-w-xs">
+                                        <p className="truncate" title={row.resolutionNotes || "No notes"}>
+                                            {row.resolutionNotes || "No notes"}
+                                        </p>
+                                    </div>
+                                )
                             },
                         ]}
-                        totalRecords={filteredMaintenance.length}
+                        totalRecords={(maintenanceData?.data as any)?.totalItems || 0}
                         recordsPerPage={pageSize}
-                        onRecordsPerPageChange={setPageSize}
                         page={page}
                         onPageChange={(p) => setPage(p)}
                         recordsPerPageOptions={PAGE_SIZES}
-                        noRecordsText="No maintenance records found"
+                        onRecordsPerPageChange={setPageSize}
+                        emptyState={
+                            <div className="text-center py-6">
+                                <p className="text-gray-500">
+                                    {maintenanceLoading ? "Loading maintenance records..." : "No maintenance records found"}
+                                </p>
+                            </div>
+                        }
                     />
                 </div>
             )}
@@ -729,9 +593,17 @@ const AllDevicesHistoryPage = () => {
             <UpdateHistoryModal
                 isOpen={isUpdateHistoryModalOpen}
                 onClose={() => setIsUpdateHistoryModalOpen(false)}
-                updates={selectedReportForHistory?.updates || []}
+                updates={selectedReportForHistory?.resolutionUpdates?.map((update, index) => ({
+                    id: index + 1,
+                    date: update.created_at ? new Date(update.created_at.toString()).toLocaleDateString() : new Date().toLocaleDateString(),
+                    status: update.status === 'COMPLETED' ? 'Resolved' : update.status === 'IN_PROGRESS' ? 'In Progress' : update.status,
+                    type: update.maintenanceType.replace('_', ' '),
+                    issue: update.description,
+                    resolution: update.resolutionNotes || undefined,
+                    involvedPersonnel: update.involvedPersonnel || []
+                })) || []}
                 reportDescription={selectedReportForHistory?.description || ""}
-                reportDate={selectedReportForHistory?.date || ""}
+                reportDate={selectedReportForHistory?.created_at ? new Date(selectedReportForHistory.created_at.toString()).toLocaleDateString() : ""}
             />
         </div>
     );

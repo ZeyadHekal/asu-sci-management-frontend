@@ -27,6 +27,14 @@ export type StudentCourseListDto = {
   /**
    * @type string
    */
+  username: string
+  /**
+   * @type string
+   */
+  email: string
+  /**
+   * @type string
+   */
   courseName: string
   /**
    * @type string
@@ -48,4 +56,43 @@ export type StudentCourseListDto = {
    * @type number
    */
   groupOrder: number
+  /**
+   * @type string
+   */
+  groupName: string
+  /**
+   * @description Course type based on hasLab field
+   * @type string
+   */
+  courseType: string
+  /**
+   * @description Total number of enrolled students in course
+   * @type number
+   */
+  numberOfStudents: number
+  /**
+   * @description Number of students in the same group
+   * @type number
+   */
+  groupStudentsCount: number
+  /**
+   * @description Lab name where the group is assigned
+   * @type string
+   */
+  labName: string
+  /**
+   * @description Lab room/location
+   * @type string
+   */
+  labRoom: string
+  /**
+   * @description List of assigned doctor names
+   * @type array
+   */
+  assignedDoctors: string[]
+  /**
+   * @description List of required software names
+   * @type array
+   */
+  requiredSoftware: string[]
 }

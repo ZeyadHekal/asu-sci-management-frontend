@@ -3,6 +3,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { useExamStore } from '../../../store/examStore';
 import { useExamWebSocket, useStudentExamModeStatus, useStudentScheduleIds } from '../../../services/examWebSocketService';
 import { useExamMode } from '../../../hooks/useExamMode';
+import { useEventControllerGetStudentExams } from '../../../generated/hooks/eventsHooks/useEventControllerGetStudentExams';
 import { ExamModeIndicator } from '../components/ExamModeIndicator';
 import { FileSubmission } from '../components/FileSubmission';
 import { ExamModelViewer } from '../components/ExamModelViewer';
@@ -33,6 +34,7 @@ const StudentExamsPage = () => {
   const { examModeStatus, isLoading: statusLoading, refetch: refetchStatus } = useStudentExamModeStatus();
   const { scheduleIds, isLoading: scheduleIdsLoading } = useStudentScheduleIds();
   const { examModeStatus: realtimeExamStatus } = useExamMode(); // Use the new hook for real-time updates
+  const { data: studentExams, isLoading: examsLoading, refetch: refetchExams } = useEventControllerGetStudentExams();
   const [exams, setExams] = useState<StudentExam[]>([]);
   const [todayExams, setTodayExams] = useState<StudentExam[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,57 +42,43 @@ const StudentExamsPage = () => {
   const [selectedExamForPreparation, setSelectedExamForPreparation] = useState<StudentExam | null>(null);
   const [activeExamScheduleId, setActiveExamScheduleId] = useState<string | null>(null);
 
-  // Mock exam data - replace with actual API calls
-  const mockExams: StudentExam[] = [
-    {
-      id: 'exam-1',
-      name: 'Midterm Exam',
-      courseName: 'Operating Systems',
-      courseCode: 'CS258',
-      date: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
-      duration: 120,
-      location: 'Computer Lab A',
-      status: 'upcoming',
-      hasAccess: false,
-      groupId: 'group-1',
-      scheduleId: 'schedule-1',
-      examStatus: 'scheduled'
-    },
-    {
-      id: 'exam-2',
-      name: 'Final Exam',
-      courseName: 'Data Structures',
-      courseCode: 'CS201',
-      date: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-      duration: 180,
-      location: 'Computer Lab B',
-      status: 'upcoming',
-      hasAccess: false,
-      groupId: 'group-2',
-      scheduleId: 'schedule-2',
-      examStatus: 'scheduled'
-    }
-  ];
-
   useEffect(() => {
-    // Initialize exam data
-    setExams(mockExams);
+    // Initialize exam data from API
+    if (studentExams?.data) {
+      const transformedExams: StudentExam[] = studentExams.data.map(exam => ({
+        id: exam.id,
+        name: exam.name,
+        courseName: exam.courseName,
+        courseCode: exam.courseCode,
+        date: new Date(exam.dateTime),
+        duration: exam.duration,
+        location: exam.location,
+        status: exam.status as StudentExam['status'],
+        hasAccess: exam.hasAccess,
+        examFiles: exam.examFiles,
+        groupId: exam.groupId,
+        scheduleId: exam.scheduleId,
+        examStatus: exam.status as 'scheduled' | 'exam_mode_active' | 'started' | 'ended' | 'cancelled'
+      }));
+
+      setExams(transformedExams);
+      
+      // Filter today's exams
+      const today = new Date();
+      const todaysExams = transformedExams.filter(exam => {
+        const examDate = new Date(exam.date);
+        return examDate.toDateString() === today.toDateString();
+      });
+      setTodayExams(todaysExams);
+    }
     
-    // Filter today's exams
-    const today = new Date();
-    const todaysExams = mockExams.filter(exam => {
-      const examDate = new Date(exam.date);
-      return examDate.toDateString() === today.toDateString();
-    });
-    setTodayExams(todaysExams);
-    
-    setLoading(false);
-  }, []);
+    setLoading(examsLoading);
+  }, [studentExams, examsLoading]);
 
   // Update exams based on real-time exam mode status
   useEffect(() => {
     if (realtimeExamStatus?.examSchedules) {
-      // Convert the detailed exam schedules to exam objects
+      // Convert the exam schedule objects to exam objects
       const apiExams = realtimeExamStatus.examSchedules.map((schedule, index) => ({
         id: schedule.eventScheduleId,
         name: schedule.eventName,
@@ -102,7 +90,7 @@ const StudentExamsPage = () => {
         status: getExamStatusFromApiStatus(schedule.status),
         hasAccess: schedule.status === 'started',
         scheduleId: schedule.eventScheduleId,
-        examStatus: schedule.status,
+        examStatus: schedule.status as 'scheduled' | 'exam_mode_active' | 'started' | 'ended' | 'cancelled',
         groupId: `group-${index + 1}`
       }));
       
@@ -125,6 +113,8 @@ const StudentExamsPage = () => {
         const activeExam = apiExams.find(exam => exam.examStatus === 'started' || exam.examStatus === 'exam_mode_active');
         if (activeExam) {
           setActiveExamScheduleId(activeExam.scheduleId!);
+        } else if (apiExams.length > 0) {
+          setActiveExamScheduleId(apiExams[0].scheduleId!);
         }
       }
     }
@@ -230,11 +220,6 @@ const StudentExamsPage = () => {
               Exam Mode Active
             </div>
           )}
-          <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-            examWS.wsStatus === 'connected' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-          }`}>
-            {examWS.wsStatus === 'connected' ? 'Connected' : 'Disconnected'}
-          </div>
         </div>
       </div>
 
@@ -246,7 +231,7 @@ const StudentExamsPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ExamModelViewer 
             scheduleId={activeExamScheduleId}
-            examStatus={realtimeExamStatus?.examSchedules.find(s => s.eventScheduleId === activeExamScheduleId)?.status || 'scheduled'}
+            examStatus={(realtimeExamStatus?.examSchedules.find(s => s.eventScheduleId === activeExamScheduleId)?.status as 'scheduled' | 'exam_mode_active' | 'started' | 'ended' | 'cancelled') || 'scheduled'}
           />
           <FileSubmission 
             scheduleId={activeExamScheduleId}

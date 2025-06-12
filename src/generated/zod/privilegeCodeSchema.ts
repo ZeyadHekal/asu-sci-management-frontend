@@ -7,7 +7,6 @@ import { z } from 'zod'
 
 export const privilegeCodeSchema = z.enum([
   'MANAGE_SYSTEM',
-  'MANAGE_USERS',
   'MANAGE_STUDENTS',
   'MANAGE_LABS',
   'LAB_ASSISTANT',

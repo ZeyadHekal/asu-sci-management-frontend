@@ -12,8 +12,9 @@ import AddEditStudentModal from "../components/AddEditStudentModal";
 import StudentCoursesModal from "../components/StudentCoursesModal";
 import Avatar from "../../../ui/avatar/Avatar";
 import { useUserControllerGetPaginatedStudents } from "../../../generated/hooks/usersHooks/useUserControllerGetPaginatedStudents";
-import { useUserControllerCreateStudent } from "../../../generated/hooks/usersHooks/useUserControllerCreateStudent";
+import { useUserControllerDeleteStudent } from "../../../generated/hooks/usersHooks/useUserControllerDeleteStudent";
 import React from "react";
+import toast from "react-hot-toast";
 
 // Available programs data for filtering
 const availablePrograms = [
@@ -48,15 +49,14 @@ const StudentsPage = () => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState<StudentDto | null>(null);
     const [isEditing, setIsEditing] = useState(false);
-    const [newlyAddedStudent, setNewlyAddedStudent] = useState<any>(null);
 
     // Student data with pagination
     const { data: studentsData, isLoading, refetch } = useUserControllerGetPaginatedStudents(
         {
             page: page - 1,
             limit: pageSize,
-            // Filter query parameters that match the API
-            sortBy: search ? "name" : undefined
+            // Add search parameters if the API supports it
+            ...(search && { search }),
         },
         {
             query: {
@@ -66,32 +66,33 @@ const StudentsPage = () => {
         }
     );
 
+    // Delete student mutation
+    const deleteStudentMutation = useUserControllerDeleteStudent();
+
     // Apply client-side filtering when API doesn't support it
     const filteredStudents = React.useMemo(() => {
-        if (!studentsData?.data) return [];
+        if (!studentsData?.data?.items) return [];
         
-        // Handle different possible shapes of the response
         let students: StudentDto[] = [];
         
-        // If items is an array, use it directly
+        // Handle different possible shapes of the response
         if (Array.isArray(studentsData.data.items)) {
             students = studentsData.data.items;
-        } 
-        // If items is a single object, wrap it in an array
-        else if (studentsData.data.items && typeof studentsData.data.items === 'object') {
+        } else if (studentsData.data.items && typeof studentsData.data.items === 'object') {
             students = [studentsData.data.items as StudentDto];
         }
         
         let filtered = [...students];
         
-        // Apply search filter client-side
+        // Apply search filter client-side if not handled by API
         if (search) {
             const searchLower = search.toLowerCase();
             filtered = filtered.filter(
                 student =>
                     student.name.toLowerCase().includes(searchLower) ||
                     student.seatNo.toString().includes(searchLower) ||
-                    student.program.toLowerCase().includes(searchLower)
+                    student.program.toLowerCase().includes(searchLower) ||
+                    student.username.toLowerCase().includes(searchLower)
             );
         }
         
@@ -112,76 +113,17 @@ const StudentsPage = () => {
         return filtered;
     }, [studentsData, search, programFilter, levelFilter]);
 
-    // Total count of records after filtering
+    // Total count of records from API or filtered count
     const totalRecords = React.useMemo(() => {
-        return filteredStudents.length;
-    }, [filteredStudents]);
+        return studentsData?.data?.total || filteredStudents.length;
+    }, [studentsData, filteredStudents]);
 
-    // Create student mutation
-    const createStudentMutation = useUserControllerCreateStudent();
-
-    const handleStudentFormSubmit = async (data: any) => {
-        try {
-            // Store the submitted student data
-            setNewlyAddedStudent(data);
-            
-            // In a real app, you would create the student using the API
-            // For now, we'll just mock it with the local state
-            const formData = new FormData();
-            formData.append('name', data.name);
-            formData.append('username', data.username);
-            formData.append('password', data.password);
-            formData.append('seatNo', data.seatNo.toString());
-            formData.append('level', data.level.toString());
-            formData.append('program', data.program);
-            if (data.photo) {
-                formData.append('photo', data.photo);
-            }
-            
-            // Close the add modal first
-            setIsAddEditModalOpen(false);
-            
-            // Call API to create student or use mock data
-            // Ideally would use: await createStudentMutation.mutateAsync({ data: formData })
-            
-            // Use mock data for now
-            const createdStudent: StudentDto = {
-                id: Date.now().toString(), // Mock ID
-                name: data.name,
-                username: data.username,
-                seatNo: data.seatNo,
-                level: data.level,
-                program: data.program,
-                photo: data.photo ? URL.createObjectURL(data.photo) : null,
-            };
-            
-            // Set the selected student and refetch data 
-            setSelectedStudent(createdStudent);
-            
-            // Refetch students to get updated data
-            await refetch();
-            
-            // Open the courses modal
-            setTimeout(() => {
-                setIsCoursesModalOpen(true);
-            }, 0);
-        } catch (error) {
-            console.error("Error creating student:", error);
-        }
-    };
-
-    const handleCloseAddEditModal = () => {
+    const handleStudentFormSubmit = async () => {
+        // Refresh the students data
+        await refetch();
         setIsAddEditModalOpen(false);
-        
-        // Only reset these if not coming from a successful student creation
-        // which is handled by handleStudentFormSubmit
-        if (isEditing || !newlyAddedStudent) {
-            setSelectedStudent(null);
-            setIsEditing(false);
-        }
-        
-        // Reset newlyAddedStudent in all cases
-        setNewlyAddedStudent(null);
+        setSelectedStudent(null);
+        setIsEditing(false);
     };
 
     const handleAddStudent = () => {
@@ -201,15 +143,20 @@ const StudentsPage = () => {
         setIsDeleteModalOpen(true);
     };
 
-    const confirmDeleteStudent = () => {
-        if (selectedStudent) {
-            // Handle student deletion
-            // In a real application, you would send a delete request to your API
-            // Then refetch the data
-            refetch();
+    const confirmDeleteStudent = async () => {
+        if (!selectedStudent) return;
+
+        try {
+            await deleteStudentMutation.mutateAsync({ id: selectedStudent.id });
+            toast.success("Student deleted successfully");
+            await refetch();
+        } catch (error: any) {
+            console.error("Error deleting student:", error);
+            toast.error(error?.response?.data?.message || "Failed to delete student");
+        } finally {
+            setIsDeleteModalOpen(false);
+            setSelectedStudent(null);
         }
-        setIsDeleteModalOpen(false);
-        setSelectedStudent(null);
     };
 
     const handleManageCourses = (student: StudentDto) => {
@@ -221,6 +168,11 @@ const StudentsPage = () => {
         setProgramFilter(null);
         setLevelFilter(null);
     };
+
+    // Reset to first page when filters change
+    React.useEffect(() => {
+        setPage(1);
+    }, [search, programFilter, levelFilter]);
 
     return (
         <div className="panel mt-6">
@@ -333,6 +285,11 @@ const StudentsPage = () => {
                             ),
                         },
                         {
+                            accessor: "username",
+                            title: "Username",
+                            sortable: true,
+                        },
+                        {
                             accessor: "level",
                             title: "Level",
                             sortable: true,
@@ -394,7 +351,11 @@ const StudentsPage = () => {
             {/* Add/Edit Student Modal */}
             <AddEditStudentModal
                 isOpen={isAddEditModalOpen}
-                onClose={handleCloseAddEditModal}
+                onClose={() => {
+                    setIsAddEditModalOpen(false);
+                    setSelectedStudent(null);
+                    setIsEditing(false);
+                }}
                 student={selectedStudent}
                 isEditing={isEditing}
                 onSubmitSuccess={handleStudentFormSubmit}

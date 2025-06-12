@@ -91,7 +91,7 @@ const SidebarScrollPanel = () => {
                 to={menu.to}
                 className={({ isActive }) =>
                   `flex items-center rounded-md p-2.5 text-white hover:bg-white/10 hover:text-white transition-all duration-300 ${
-                    isActive ? 'bg-white text-secondary shadow font-semibold' : ''
+                    isActive ? 'bg-white/20 text-white shadow font-semibold' : ''
                   }`
                 }
               >

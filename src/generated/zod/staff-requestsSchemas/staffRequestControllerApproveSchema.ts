@@ -3,6 +3,7 @@
  * Do not edit manually.
  */
 
+import { approveStaffRequestDtoSchema } from '../approveStaffRequestDtoSchema.ts'
 import { staffRequestDtoSchema } from '../staffRequestDtoSchema.ts'
 import { z } from 'zod'
 
@@ -46,6 +47,10 @@ export type StaffRequestControllerApprove403Schema = z.infer<typeof staffRequest
 export const staffRequestControllerApprove404Schema = z.unknown()
 
 export type StaffRequestControllerApprove404Schema = z.infer<typeof staffRequestControllerApprove404Schema>
+
+export const staffRequestControllerApproveMutationRequestSchema = z.lazy(() => approveStaffRequestDtoSchema)
+
+export type StaffRequestControllerApproveMutationRequestSchema = z.infer<typeof staffRequestControllerApproveMutationRequestSchema>
 
 export const staffRequestControllerApproveMutationResponseSchema = z.lazy(() => staffRequestControllerApprove200Schema)
 

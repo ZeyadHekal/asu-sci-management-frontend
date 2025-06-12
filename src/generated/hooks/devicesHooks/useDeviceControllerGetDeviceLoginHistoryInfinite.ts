@@ -9,14 +9,17 @@ import type { InfiniteData, QueryKey, QueryClient, InfiniteQueryObserverOptions,
 import type {
   DeviceControllerGetDeviceLoginHistoryQueryResponse,
   DeviceControllerGetDeviceLoginHistoryPathParams,
+  DeviceControllerGetDeviceLoginHistoryQueryParams,
   DeviceControllerGetDeviceLoginHistory401,
   DeviceControllerGetDeviceLoginHistory403,
   DeviceControllerGetDeviceLoginHistory404,
 } from '../../types/devicesController/DeviceControllerGetDeviceLoginHistory.ts'
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query'
 
-export const deviceControllerGetDeviceLoginHistoryInfiniteQueryKey = (device_id: DeviceControllerGetDeviceLoginHistoryPathParams['device_id']) =>
-  [{ url: '/devices/:device_id/login-history', params: { device_id: device_id } }] as const
+export const deviceControllerGetDeviceLoginHistoryInfiniteQueryKey = (
+  device_id: DeviceControllerGetDeviceLoginHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceLoginHistoryQueryParams,
+) => [{ url: '/devices/:device_id/login-history', params: { device_id: device_id } }, ...(params ? [params] : [])] as const
 
 export type DeviceControllerGetDeviceLoginHistoryInfiniteQueryKey = ReturnType<typeof deviceControllerGetDeviceLoginHistoryInfiniteQueryKey>
 
@@ -27,6 +30,7 @@ export type DeviceControllerGetDeviceLoginHistoryInfiniteQueryKey = ReturnType<t
  */
 export async function deviceControllerGetDeviceLoginHistoryInfinite(
   device_id: DeviceControllerGetDeviceLoginHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceLoginHistoryQueryParams,
   config: Partial<RequestConfig> & { client?: typeof client } = {},
 ) {
   const { client: request = client, ...requestConfig } = config
@@ -35,26 +39,32 @@ export async function deviceControllerGetDeviceLoginHistoryInfinite(
     DeviceControllerGetDeviceLoginHistoryQueryResponse,
     ResponseErrorConfig<DeviceControllerGetDeviceLoginHistory401 | DeviceControllerGetDeviceLoginHistory403 | DeviceControllerGetDeviceLoginHistory404>,
     unknown
-  >({ method: 'GET', url: `/devices/${device_id}/login-history`, ...requestConfig })
+  >({ method: 'GET', url: `/devices/${device_id}/login-history`, params, ...requestConfig })
   return res
 }
 
 export function deviceControllerGetDeviceLoginHistoryInfiniteQueryOptions(
   device_id: DeviceControllerGetDeviceLoginHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceLoginHistoryQueryParams,
   config: Partial<RequestConfig> & { client?: typeof client } = {},
 ) {
-  const queryKey = deviceControllerGetDeviceLoginHistoryInfiniteQueryKey(device_id)
+  const queryKey = deviceControllerGetDeviceLoginHistoryInfiniteQueryKey(device_id, params)
   return infiniteQueryOptions<
     ResponseConfig<DeviceControllerGetDeviceLoginHistoryQueryResponse>,
     ResponseErrorConfig<DeviceControllerGetDeviceLoginHistory401 | DeviceControllerGetDeviceLoginHistory403 | DeviceControllerGetDeviceLoginHistory404>,
     ResponseConfig<DeviceControllerGetDeviceLoginHistoryQueryResponse>,
-    typeof queryKey
+    typeof queryKey,
+    number
   >({
     enabled: !!device_id,
     queryKey,
-    queryFn: async ({ signal }) => {
+    queryFn: async ({ signal, pageParam }) => {
       config.signal = signal
-      return deviceControllerGetDeviceLoginHistoryInfinite(device_id, config)
+
+      if (params) {
+        params['limit'] = pageParam as unknown as DeviceControllerGetDeviceLoginHistoryQueryParams['limit']
+      }
+      return deviceControllerGetDeviceLoginHistoryInfinite(device_id, params, config)
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage['page'],
@@ -73,6 +83,7 @@ export function useDeviceControllerGetDeviceLoginHistoryInfinite<
   TQueryKey extends QueryKey = DeviceControllerGetDeviceLoginHistoryInfiniteQueryKey,
 >(
   device_id: DeviceControllerGetDeviceLoginHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceLoginHistoryQueryParams,
   options: {
     query?: Partial<
       InfiniteQueryObserverOptions<
@@ -87,11 +98,11 @@ export function useDeviceControllerGetDeviceLoginHistoryInfinite<
   } = {},
 ) {
   const { query: { client: queryClient, ...queryOptions } = {}, client: config = {} } = options ?? {}
-  const queryKey = queryOptions?.queryKey ?? deviceControllerGetDeviceLoginHistoryInfiniteQueryKey(device_id)
+  const queryKey = queryOptions?.queryKey ?? deviceControllerGetDeviceLoginHistoryInfiniteQueryKey(device_id, params)
 
   const query = useInfiniteQuery(
     {
-      ...(deviceControllerGetDeviceLoginHistoryInfiniteQueryOptions(device_id, config) as unknown as InfiniteQueryObserverOptions),
+      ...(deviceControllerGetDeviceLoginHistoryInfiniteQueryOptions(device_id, params, config) as unknown as InfiniteQueryObserverOptions),
       queryKey,
       ...(queryOptions as unknown as Omit<InfiniteQueryObserverOptions, 'queryKey'>),
     },

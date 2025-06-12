@@ -8,7 +8,7 @@ import { z } from 'zod'
 export const markUploadResponseDtoSchema = z.object({
   message: z.string(),
   processedStudents: z.number(),
-  errors: z.array(z.string()),
+  errors: z.array(z.array(z.unknown())),
 })
 
 export type MarkUploadResponseDtoSchema = z.infer<typeof markUploadResponseDtoSchema>

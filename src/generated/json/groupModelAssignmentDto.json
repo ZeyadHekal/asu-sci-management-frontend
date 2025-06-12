@@ -1,0 +1,1 @@
+{"type":"object","properties":{"groupIndex":{"type":"number","description":"Index of the group (0-based)"},"assignedModelNames":{"description":"Array of model names assigned to this group","type":"array","items":{"type":"string"}}},"required":["groupIndex","assignedModelNames"],"x-readme-ref-name":"GroupModelAssignmentDto"}

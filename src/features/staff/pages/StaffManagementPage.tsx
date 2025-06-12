@@ -20,7 +20,7 @@ import {
   useUserControllerCreateStaff,
   useUserControllerUpdateStaff,
   useUserControllerDeleteStaff,
-  useUserTypeControllerFindAllWithPrivileges,
+  useUserTypeControllerFindAllForStaffAssignment,
   usePrivilegeControllerGetAllPrivileges,
   usePrivilegeControllerAssignPrivilegeToUser,
   usePrivilegeControllerUnassignPrivilegeFromUser,
@@ -32,9 +32,19 @@ import {
   type PrivilegeCodeSchema,
 } from "../../../generated";
 
+// Strong password validation
+const strongPasswordSchema = z.string()
+    .min(8, "Password must be at least 8 characters long")
+    .max(128, "Password must not exceed 128 characters")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character");
+
 // Validation schemas
 const staffSchema = createStaffDtoSchema.extend({
   userTypeId: z.string().min(1, "User type is required"),
+  password: strongPasswordSchema,
   confirmPassword: z.string().min(1, "Confirm password is required"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -43,6 +53,23 @@ const staffSchema = createStaffDtoSchema.extend({
 
 const updateStaffFormSchema = updateStaffDtoSchema.extend({
   userTypeId: z.string().optional(),
+  password: z.string().optional(),
+  confirmPassword: z.string().optional(),
+}).refine((data) => {
+  // If password is provided, it must meet strength requirements
+  if (data.password && data.password.length > 0) {
+    try {
+      strongPasswordSchema.parse(data.password);
+    } catch (e) {
+      return false;
+    }
+    // If password is provided, confirmation is required
+    return data.password === data.confirmPassword;
+  }
+  return true;
+}, {
+  message: "If password is provided, it must meet strength requirements and passwords must match",
+  path: ["confirmPassword"],
 });
 
 type StaffFormValues = z.infer<typeof staffSchema>;
@@ -76,11 +103,7 @@ const StaffManagementPage = () => {
         status: statusFilter?.value === "active" ? true : statusFilter?.value === "inactive" ? false : undefined,
     });
 
-    const { data: userTypesData, isLoading: isLoadingUserTypes } = useUserTypeControllerFindAllWithPrivileges({
-        page: 0,
-        limit: 100, // Get all user types
-        search: "", // Required parameter
-    });
+    const { data: userTypesData, isLoading: isLoadingUserTypes } = useUserTypeControllerFindAllForStaffAssignment();
 
     // Fetch all available privileges for permissions modal
     const { data: privilegesData } = usePrivilegeControllerGetAllPrivileges();
@@ -164,9 +187,15 @@ const StaffManagementPage = () => {
 
     // Computed values
     const staff = Array.isArray(staffData?.data?.items) ? staffData.data.items : [];
-    const userTypes = Array.isArray(userTypesData?.data?.items) ? userTypesData.data.items : [];
+    const userTypes = Array.isArray(userTypesData?.data) ? userTypesData.data : [];
     const allPrivileges = Array.isArray(privilegesData?.data) ? privilegesData.data : [];
     const totalRecords = staffData?.data?.total || 0;
+
+    // Helper function to get user type name from userTypeId
+    const getUserTypeName = (userTypeId: string, fallbackName?: string): string => {
+        const userType = userTypes.find(type => type.id === userTypeId);
+        return userType?.name || fallbackName || "Unknown";
+    };
 
     // Filter options - get unique values from all staff for better filtering
     const departmentOptions = Array.from(new Set(staff.map(s => s.department).filter(Boolean)))
@@ -193,7 +222,6 @@ const StaffManagementPage = () => {
         reset({
             name: "",
             username: "",
-            email: "",
             password: "",
             confirmPassword: "",
             title: "",
@@ -208,18 +236,20 @@ const StaffManagementPage = () => {
         setSelectedStaff(staff);
         reset({
             name: staff.name,
-            username: "", // Username not returned in staff data
-            email: staff.email,
+            username: staff.username,
             title: staff.title,
             department: staff.department,
-            userTypeId: userTypes.find(type => type.name === staff.userType)?.id || "",
+            userTypeId: staff.userTypeId, // Use the userTypeId directly instead of finding by name
+            password: "",
+            confirmPassword: "",
         });
         setIsStaffModalOpen(true);
     };
 
     const handleEditPermissions = (staff: StaffDtoSchema) => {
         setSelectedStaff(staff);
-        setSelectedPrivileges(staff.privileges);
+        // Only set user-specific privileges for editing
+        setSelectedPrivileges(staff.userPrivileges || []);
         setIsPermissionsModalOpen(true);
     };
 
@@ -237,14 +267,26 @@ const StaffManagementPage = () => {
     const onSubmitStaff = async (data: StaffFormValues) => {
         try {
             if (isEditing && selectedStaff) {
+                const updateData: any = {
+                    name: data.name,
+                    username: data.username,
+                    title: data.title,
+                    department: data.department,
+                };
+                
+                // Only include password if it's provided
+                if (data.password && data.password.trim() !== "") {
+                    updateData.password = data.password;
+                }
+
+                // Only include userTypeId if it's provided
+                if (data.userTypeId && data.userTypeId.trim() !== "") {
+                    updateData.userTypeId = data.userTypeId;
+                }
+
                 updateStaffMutation.mutate({
                     id: selectedStaff.id,
-                    data: {
-                        name: data.name,
-                        email: data.email,
-                        title: data.title,
-                        department: data.department,
-                    },
+                    data: updateData,
                 });
             } else {
                 createStaffMutation.mutate({
@@ -253,7 +295,6 @@ const StaffManagementPage = () => {
                         name: data.name,
                         username: data.username,
                         password: data.password,
-                        email: data.email,
                         title: data.title,
                         department: data.department,
                     },
@@ -268,14 +309,15 @@ const StaffManagementPage = () => {
         if (!selectedStaff) return;
 
         try {
-            const currentPrivileges = selectedStaff.privileges;
+            // Compare against user-specific privileges only
+            const currentUserPrivileges = selectedStaff.userPrivileges || [];
             const newPrivileges = selectedPrivileges;
 
             // Find privileges to assign (new ones)
-            const privilegesToAssign = newPrivileges.filter(p => !currentPrivileges.includes(p));
+            const privilegesToAssign = newPrivileges.filter(p => !currentUserPrivileges.includes(p));
             
             // Find privileges to unassign (removed ones)
-            const privilegesToUnassign = currentPrivileges.filter(p => !newPrivileges.includes(p));
+            const privilegesToUnassign = currentUserPrivileges.filter(p => !newPrivileges.includes(p));
 
             // Assign new privileges
             for (const privilege of privilegesToAssign) {
@@ -441,8 +483,8 @@ const StaffManagementPage = () => {
                             sortable: true,
                         },
                         {
-                            accessor: "email",
-                            title: "Email",
+                            accessor: "username",
+                            title: "Username",
                             sortable: true,
                         },
                         {
@@ -459,6 +501,11 @@ const StaffManagementPage = () => {
                             accessor: "userType",
                             title: "User Type",
                             sortable: true,
+                            render: (row: StaffDtoSchema) => (
+                                <span className="text-gray-900">
+                                    {getUserTypeName(row.userTypeId, row.userType)}
+                                </span>
+                            ),
                         },
                         {
                             accessor: "status",
@@ -486,15 +533,48 @@ const StaffManagementPage = () => {
                             accessor: "privileges",
                             title: "Privileges",
                             render: (row: StaffDtoSchema) => (
-                                <div className="flex flex-wrap gap-1">
-                                    {row.privileges.map((privilege) => (
-                                        <span
-                                            key={privilege}
-                                            className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs"
-                                        >
-                                            {privilege}
-                                        </span>
-                                    ))}
+                                <div className="space-y-2">
+                                    {/* User Type Privileges (inherited) */}
+                                    {row.userTypePrivileges && row.userTypePrivileges.length > 0 && (
+                                        <div>
+                                            <div className="text-xs text-gray-500 mb-1">From User Type:</div>
+                                            <div className="flex flex-wrap gap-1">
+                                                {row.userTypePrivileges.map((privilege) => (
+                                                    <span
+                                                        key={privilege}
+                                                        className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
+                                                        title="Inherited from user type"
+                                                    >
+                                                        {privilege}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    {/* User-Specific Privileges */}
+                                    {row.userPrivileges && row.userPrivileges.length > 0 && (
+                                        <div>
+                                            <div className="text-xs text-gray-500 mb-1">User-Specific:</div>
+                                            <div className="flex flex-wrap gap-1">
+                                                {row.userPrivileges.map((privilege) => (
+                                                    <span
+                                                        key={privilege}
+                                                        className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs"
+                                                        title="User-specific privilege"
+                                                    >
+                                                        {privilege}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    {/* Show message if no privileges */}
+                                    {(!row.userTypePrivileges || row.userTypePrivileges.length === 0) && 
+                                     (!row.userPrivileges || row.userPrivileges.length === 0) && (
+                                        <span className="text-xs text-gray-400">No privileges assigned</span>
+                                    )}
                                 </div>
                             ),
                         },
@@ -580,20 +660,24 @@ const StaffManagementPage = () => {
                         </div>
                     )}
 
-                    <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                            Email Address
-                        </label>
-                        <input
-                            id="email"
-                            type="email"
-                            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
-                            {...register("email")}
-                        />
-                        {errors.email && (
-                            <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
-                        )}
-                    </div>
+                    {isEditing && (
+                        <div>
+                            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                                Username
+                            </label>
+                            <input
+                                id="username"
+                                type="text"
+                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
+                                {...register("username")}
+                            />
+                            {errors.username && (
+                                <p className="mt-1 text-xs text-red-600">{errors.username.message}</p>
+                            )}
+                        </div>
+                    )}
+
+
 
                     {!isEditing && (
                         <>
@@ -621,6 +705,42 @@ const StaffManagementPage = () => {
                                     type="password"
                                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
                                     {...register("confirmPassword")}
+                                />
+                                {errors.confirmPassword && (
+                                    <p className="mt-1 text-xs text-red-600">{errors.confirmPassword.message}</p>
+                                )}
+                            </div>
+                        </>
+                    )}
+
+                    {isEditing && (
+                        <>
+                            <div>
+                                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                                    New Password <span className="text-gray-500">(leave blank to keep current)</span>
+                                </label>
+                                <input
+                                    id="password"
+                                    type="password"
+                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
+                                    {...register("password")}
+                                    placeholder="Leave blank to keep current password"
+                                />
+                                {errors.password && (
+                                    <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                                    Confirm New Password
+                                </label>
+                                <input
+                                    id="confirmPassword"
+                                    type="password"
+                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
+                                    {...register("confirmPassword")}
+                                    placeholder="Confirm new password"
                                 />
                                 {errors.confirmPassword && (
                                     <p className="mt-1 text-xs text-red-600">{errors.confirmPassword.message}</p>
@@ -719,20 +839,49 @@ const StaffManagementPage = () => {
                     setSelectedPrivileges([]);
                 }}
                 title="Edit Staff Permissions"
-                size="md"
+                size="lg"
             >
-                <div className="space-y-4">
+                <div className="space-y-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-700">
                             Staff Member
                         </label>
                         <p className="mt-1 text-sm text-gray-900">{selectedStaff?.name}</p>
+                        <p className="text-xs text-gray-500">User Type: {selectedStaff?.userType}</p>
                     </div>
 
+                    {/* User Type Privileges (Read-only) */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Privileges from User Type (Read-only)
+                        </label>
+                        {selectedStaff?.userTypePrivileges && selectedStaff.userTypePrivileges.length > 0 ? (
+                            <div className="flex flex-wrap gap-2 p-3 bg-blue-50 rounded-md border">
+                                {selectedStaff.userTypePrivileges.map((privilege) => (
+                                    <span
+                                        key={privilege}
+                                        className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
+                                        title="Inherited from user type - cannot be edited here"
+                                    >
+                                        {privilegeOptions.find(p => p.value === privilege)?.label || privilege}
+                                    </span>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-gray-500 p-3 bg-gray-50 rounded-md border">
+                                No privileges inherited from user type
+                            </p>
+                        )}
+                    </div>
+
+                    {/* User-Specific Privileges (Editable) */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700">
-                            Privileges
+                            Additional User-Specific Privileges
                         </label>
+                        <p className="text-xs text-gray-500 mb-2">
+                            These privileges are specific to this user and can be managed independently of their user type.
+                        </p>
                         <Select
                             isMulti
                             options={privilegeOptions}
@@ -744,8 +893,31 @@ const StaffManagementPage = () => {
                                 setSelectedPrivileges(selected ? selected.map(option => option.value) : []);
                             }}
                             className="mt-1"
-                            placeholder="Select privileges..."
+                            placeholder="Select additional privileges..."
                         />
+                    </div>
+
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                        <div className="flex">
+                            <div className="flex-shrink-0">
+                                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <div className="ml-3">
+                                <h3 className="text-sm font-medium text-yellow-800">
+                                    Note
+                                </h3>
+                                <div className="mt-2 text-sm text-yellow-700">
+                                    <p>
+                                        • User type privileges are inherited and cannot be modified here. To change them, edit the user type or assign a different user type.
+                                    </p>
+                                    <p>
+                                        • User-specific privileges are added on top of user type privileges.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="flex justify-end gap-3 mt-6">

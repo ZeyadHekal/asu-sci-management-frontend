@@ -46,4 +46,14 @@ export type DeviceListDto = {
    * @type string
    */
   labName: string
+  /**
+   * @description Total number of reports for this device
+   * @type number
+   */
+  totalReports: number
+  /**
+   * @description Number of non-closed (open) reports for this device
+   * @type number
+   */
+  openReports: number
 }

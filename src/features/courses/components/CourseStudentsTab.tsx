@@ -1,15 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { DataTable } from "mantine-datatable";
 import { LuSearch, LuClipboardCheck, LuFilter } from "react-icons/lu";
 import { IoStatsChart } from "react-icons/io5";
 import Select from "react-select";
 import StudentAttendanceModal from "./StudentAttendanceModal";
 import StudentGradesModal from "./StudentGradesModal";
+import { useStudentCourseControllerGetCourseStudents } from "../../../generated/hooks/student-coursesHooks/useStudentCourseControllerGetCourseStudents";
 
 interface CourseStudent {
   id: number;
   name: string;
   studentId: string;
+  username: string;
   email: string;
   attendanceRate: number;
   totalGrade: number;
@@ -19,7 +21,7 @@ interface CourseStudent {
 }
 
 interface CourseStudentsTabProps {
-  courseId: number;
+  courseId: string;
 }
 
 const CourseStudentsTab = ({ courseId }: CourseStudentsTabProps) => {
@@ -36,237 +38,92 @@ const CourseStudentsTab = ({ courseId }: CourseStudentsTabProps) => {
   const [departmentFilter, setDepartmentFilter] = useState<{value: string, label: string} | null>(null);
   const [groupFilter, setGroupFilter] = useState<{value: string, label: string} | null>(null);
 
-  // Mock students data - would be fetched from API
-  const [allStudents, setAllStudents] = useState<CourseStudent[]>([
-    {
-      id: 1,
-      name: "Ahmed Mohamed",
-      studentId: "20201234",
-      email: "ahmed.mohamed@example.com",
-      attendanceRate: 95,
-      totalGrade: 80,
-      groupId: 1,
-      groupName: "Group A",
-      department: "Computer Science",
-    },
-    {
-      id: 2,
-      name: "Sara Ahmed",
-      studentId: "20205678",
-      email: "sara.ahmed@example.com",
-      attendanceRate: 90,
-      totalGrade: 79,
-      groupId: 1,
-      groupName: "Group A",
-      department: "Mathematics",
-    },
-    {
-      id: 3,
-      name: "Mohamed Ibrahim",
-      studentId: "20209012",
-      email: "mohamed.ibrahim@example.com",
-      attendanceRate: 85,
-      totalGrade: 71,
-      groupId: 1,
-      groupName: "Group A",
-      department: "Computer Science",
-    },
-    {
-      id: 4,
-      name: "Fatma Ali",
-      studentId: "20203456",
-      email: "fatma.ali@example.com",
-      attendanceRate: 100,
-      totalGrade: 87,
-      groupId: 1,
-      groupName: "Group A",
-      department: "Computer Science",
-    },
-    {
-      id: 5,
-      name: "Ali Hassan",
-      studentId: "20207890",
-      email: "ali.hassan@example.com",
-      attendanceRate: 80,
-      totalGrade: 75,
-      groupId: 2,
-      groupName: "Group B",
-      department: "Statistics",
-    },
-    {
-      id: 6,
-      name: "Nour Khaled",
-      studentId: "20208901",
-      email: "nour.khaled@example.com",
-      attendanceRate: 95,
-      totalGrade: 79,
-      groupId: 2,
-      groupName: "Group B",
-      department: "Mathematics",
-    },
-    {
-      id: 7,
-      name: "Khaled Mahmoud",
-      studentId: "20202345",
-      email: "khaled.mahmoud@example.com",
-      attendanceRate: 90,
-      totalGrade: 73,
-      groupId: 2,
-      groupName: "Group B",
-      department: "Computer Science",
-    },
-    {
-      id: 8,
-      name: "Amal Samir",
-      studentId: "20206789",
-      email: "amal.samir@example.com",
-      attendanceRate: 100,
-      totalGrade: 84,
-      groupId: 2,
-      groupName: "Group B",
-      department: "Physics",
-    },
-    {
-      id: 9,
-      name: "Hassan Omar",
-      studentId: "20204321",
-      email: "hassan.omar@example.com",
-      attendanceRate: 88,
-      totalGrade: 78,
-      groupId: 3,
-      groupName: "Group C",
-      department: "Computer Science",
-    },
-    {
-      id: 10,
-      name: "Mariam Adel",
-      studentId: "20208765",
-      email: "mariam.adel@example.com",
-      attendanceRate: 92,
-      totalGrade: 82,
-      groupId: 3,
-      groupName: "Group C",
-      department: "Statistics",
-    },
-    {
-      id: 11,
-      name: "Omar Youssef",
-      studentId: "20201357",
-      email: "omar.youssef@example.com",
-      attendanceRate: 87,
-      totalGrade: 76,
-      groupId: 3,
-      groupName: "Group C",
-      department: "Mathematics",
-    },
-    {
-      id: 12,
-      name: "Laila Mostafa",
-      studentId: "20207531",
-      email: "laila.mostafa@example.com",
-      attendanceRate: 93,
-      totalGrade: 81,
-      groupId: 3,
-      groupName: "Group C",
-      department: "Computer Science",
-    },
-    {
-      id: 13,
-      name: "Mahmoud Karim",
-      studentId: "20208642",
-      email: "mahmoud.karim@example.com",
-      attendanceRate: 86,
-      totalGrade: 77,
-      groupId: 4,
-      groupName: "Group D",
-      department: "Physics",
-    },
-    {
-      id: 14,
-      name: "Heba Samy",
-      studentId: "20203579",
-      email: "heba.samy@example.com",
-      attendanceRate: 94,
-      totalGrade: 83,
-      groupId: 4,
-      groupName: "Group D",
-      department: "Mathematics",
-    },
-    {
-      id: 15,
-      name: "Mostafa Adel",
-      studentId: "20209753",
-      email: "mostafa.adel@example.com",
-      attendanceRate: 89,
-      totalGrade: 80,
-      groupId: 4,
-      groupName: "Group D",
-      department: "Computer Science",
-    },
-  ]);
+  // States for modals
+  const [selectedStudent, setSelectedStudent] = useState<CourseStudent | null>(null);
+  const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
+  const [isGradesModalOpen, setIsGradesModalOpen] = useState(false);
+
+  // Fetch students for this course using the generated hook
+  const { 
+    data: studentsData, 
+    isLoading, 
+    error,
+    refetch 
+  } = useStudentCourseControllerGetCourseStudents(courseId, {
+    query: {
+      enabled: !!courseId
+    }
+  });
+
+  const allStudents = studentsData?.data || [];
+
+  // Transform API data to CourseStudent interface
+  const transformedStudents: CourseStudent[] = useMemo(() => {
+    return allStudents.map((student, index) => ({
+      id: index + 1, // Mock ID since API doesn't provide it
+      name: student.studentName,
+      studentId: student.studentId,
+      username: student.username || 'N/A',
+      email: student.email || `${student.username}@example.com`, // Use real email or fallback to username
+      attendanceRate: Math.floor(Math.random() * 21) + 80, // Mock attendance rate (80-100%)
+      totalGrade: Math.floor(Math.random() * 31) + 70, // Mock total grade (70-100)
+      groupId: student.groupOrder,
+      groupName: student.groupName || `Group ${student.groupOrder}`,
+      department: ["Computer Science", "Mathematics", "Physics", "Statistics"][Math.floor(Math.random() * 4)], // Mock department
+    }));
+  }, [allStudents]);
 
   // States for filtered and paginated data
   const [filteredStudents, setFilteredStudents] = useState<CourseStudent[]>([]);
-  const [paginatedStudents, setPaginatedStudents] = useState<CourseStudent[]>(
-    []
+  const [paginatedStudents, setPaginatedStudents] = useState<CourseStudent[]>([]);
+
+  // Filter options
+  const departmentOptions = useMemo(
+    () => [
+      { value: "all", label: "All Departments" },
+      ...Array.from(new Set(transformedStudents.map(s => s.department)))
+        .map(dept => ({ value: dept, label: dept }))
+    ],
+    [transformedStudents]
   );
 
-  // States for modals
-  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
-  const [gradesModalOpen, setGradesModalOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<CourseStudent | null>(
-    null
+  const groupOptions = useMemo(
+    () => [
+      { value: "all", label: "All Groups" },
+      ...Array.from(new Set(transformedStudents.map(s => s.groupName)))
+        .map(group => ({ value: group, label: group }))
+    ],
+    [transformedStudents]
   );
-
-  // Get unique departments for filter
-  const departmentOptions = [
-    { value: "all", label: "All Departments" },
-    ...Array.from(new Set(allStudents.map(student => student.department)))
-      .map(dept => ({ value: dept, label: dept }))
-  ];
-  
-  // Get unique groups for filter
-  const groupOptions = [
-    { value: "all", label: "All Groups" },
-    ...Array.from(new Set(allStudents.map(student => student.groupName).filter(Boolean)))
-      .map(group => ({ value: group as string, label: group as string }))
-  ];
 
   // Apply search and filters
   useEffect(() => {
-    let results = [...allStudents];
+    let results = [...transformedStudents];
     
     // Apply search
     if (search.trim() !== "") {
       const searchLower = search.toLowerCase();
-      results = results.filter(
-        (student) =>
-          student.name.toLowerCase().includes(searchLower) ||
-          student.studentId.includes(search) ||
-          student.email.toLowerCase().includes(searchLower) ||
-          student.department.toLowerCase().includes(searchLower) ||
-          (student.groupName &&
-            student.groupName.toLowerCase().includes(searchLower))
+      results = results.filter(student =>
+        student.name.toLowerCase().includes(searchLower) ||
+        student.studentId.toLowerCase().includes(searchLower) ||
+        student.username.toLowerCase().includes(searchLower) ||
+        student.email.toLowerCase().includes(searchLower)
       );
     }
     
     // Apply department filter
     if (departmentFilter && departmentFilter.value !== "all") {
-      results = results.filter(student => 
-        student.department === departmentFilter.value
-      );
+      results = results.filter(student => student.department === departmentFilter.value);
     }
     
     // Apply group filter
     if (groupFilter && groupFilter.value !== "all") {
-      results = results.filter(student => 
-        student.groupName === groupFilter.value
-      );
+      results = results.filter(student => student.groupName === groupFilter.value);
     }
     
     setFilteredStudents(results);
     setPage(1); // Reset to first page when filters change
-  }, [search, allStudents, departmentFilter, groupFilter]);
+  }, [search, transformedStudents, departmentFilter, groupFilter]);
 
   // Apply pagination
   useEffect(() => {
@@ -278,13 +135,13 @@ const CourseStudentsTab = ({ courseId }: CourseStudentsTabProps) => {
   // Handle attendance button click
   const handleAttendanceClick = (student: CourseStudent) => {
     setSelectedStudent(student);
-    setAttendanceModalOpen(true);
+    setIsAttendanceModalOpen(true);
   };
 
   // Handle grades button click
   const handleGradesClick = (student: CourseStudent) => {
     setSelectedStudent(student);
-    setGradesModalOpen(true);
+    setIsGradesModalOpen(true);
   };
 
   // Reset filters
@@ -293,6 +150,35 @@ const CourseStudentsTab = ({ courseId }: CourseStudentsTabProps) => {
     setGroupFilter(null);
     setSearch("");
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-secondary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col items-center justify-center h-64">
+          <div className="text-red-500 text-lg font-semibold mb-2">Error loading students</div>
+          <div className="text-gray-600 mb-4">{error.message}</div>
+          <button 
+            onClick={() => refetch()}
+            className="px-4 py-2 bg-secondary text-white rounded-md hover:bg-secondary-dark"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -414,7 +300,7 @@ const CourseStudentsTab = ({ courseId }: CourseStudentsTabProps) => {
                   </div>
                   <div>
                     <p className="font-medium">{row.name}</p>
-                    <p className="text-xs text-gray-500">{row.email}</p>
+                    <p className="text-xs text-gray-500">@{row.username}</p>
                   </div>
                 </div>
               ),
@@ -435,7 +321,7 @@ const CourseStudentsTab = ({ courseId }: CourseStudentsTabProps) => {
                     row.groupName ? "text-secondary font-medium" : "text-gray-400"
                   }
                 >
-                  {row.groupName || "Not Assigned"}
+                  {row.groupName || "No Group"}
                 </span>
               ),
             },
@@ -486,14 +372,14 @@ const CourseStudentsTab = ({ courseId }: CourseStudentsTabProps) => {
 
       {/* Modals */}
       <StudentAttendanceModal
-        isOpen={attendanceModalOpen}
-        onClose={() => setAttendanceModalOpen(false)}
+        isOpen={isAttendanceModalOpen}
+        onClose={() => setIsAttendanceModalOpen(false)}
         student={selectedStudent}
       />
 
       <StudentGradesModal
-        isOpen={gradesModalOpen}
-        onClose={() => setGradesModalOpen(false)}
+        isOpen={isGradesModalOpen}
+        onClose={() => setIsGradesModalOpen(false)}
         student={selectedStudent}
       />
     </div>

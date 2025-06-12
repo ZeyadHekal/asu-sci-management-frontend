@@ -10,14 +10,14 @@ import CourseContentTab from "../components/CourseContentTab";
 import AssistantGroupsTab from "../components/AssistantGroupsTab";
 import StudentGroupDetailsTab from "../components/StudentGroupDetailsTab";
 import { useAuthStore } from "../../../store/authStore";
-import { useCourseControllerGetById, CourseDto } from "../../../generated";
+import { useCourseControllerGetById, CourseDetailDto } from "../../../generated";
 
 interface TabDefinition {
     id: string;
     label: string;
     requiredPrivilege?: string;
-    conditionalVisibility?: (course: CourseDto) => boolean;
-    userTypes: ("doctor" | "assistant" | "student")[];
+    conditionalVisibility?: (course: CourseDetailDto) => boolean;
+    userTypes: ("professor" | "assistant" | "student")[];
 }
 
 const MyCourseDashboardPage = () => {
@@ -39,61 +39,51 @@ const MyCourseDashboardPage = () => {
 
     const course = courseData?.data;
 
-    // Determine user type based on privileges
-    const getUserType = (): "doctor" | "assistant" | "student" => {
-        if (hasPrivilege("TEACH_COURSE")) return "doctor";
-        if (hasPrivilege("ASSIST_IN_COURSE")) return "assistant";
-        return "student";
-    };
-
-    const userType = getUserType();
-
-    // Define available tabs based on user type
+    // Define available tabs based on privileges, not user types
     const tabs: TabDefinition[] = [
-        // Tabs visible to all user types
+        // Content tab - visible to all users
         { 
             id: "content", 
             label: "Course Content", 
-            userTypes: ["doctor", "assistant", "student"] 
+            userTypes: ["professor", "assistant", "student"] 
         },
         
-        // Doctor-only tabs (also visible to assistants)
+        // Students tab - for users who can manage courses or teach courses
         { 
             id: "students", 
             label: "Students", 
-            userTypes: ["doctor"],
-            requiredPrivilege: "TEACH_COURSE" 
+            userTypes: ["professor", "assistant", "student"],
+            conditionalVisibility: () => hasPrivilege("MANAGE_COURSES") || hasPrivilege("TEACH_COURSE")
         },
+        
+        // Events tab - for users who can manage courses or teach courses
         { 
             id: "events", 
             label: "Events", 
-            userTypes: ["doctor"],
-            requiredPrivilege: "TEACH_COURSE" 
+            userTypes: ["professor", "assistant", "student"],
+            conditionalVisibility: () => hasPrivilege("MANAGE_COURSES") || hasPrivilege("TEACH_COURSE")
         },
         
-        // Assistant-specific tabs (also visible to doctors)
+        // Assistant-specific tabs - for users who can assist in courses in lab courses
         { 
             id: "my-groups", 
             label: "My Groups", 
-            userTypes: ["assistant", "doctor"],
-            conditionalVisibility: (course) => course.hasLab,
+            userTypes: ["professor", "assistant", "student"],
+            conditionalVisibility: (course) => course.hasLab && hasPrivilege("ASSIST_IN_COURSE") && !hasPrivilege("TEACH_COURSE"),
         },
         
-        // Student-only tabs
+        // Student-only tabs - for users without teaching or assisting privileges in lab courses
         { 
             id: "my-group", 
             label: "My Group", 
-            userTypes: ["student"],
-            conditionalVisibility: (course) => course.hasLab,
+            userTypes: ["professor", "assistant", "student"],
+            conditionalVisibility: (course) => course.hasLab && !hasPrivilege("TEACH_COURSE") && !hasPrivilege("ASSIST_IN_COURSE"),
         },
     ];
 
-    // Get visible tabs based on user type and permissions
-    const getVisibleTabs = (course: CourseDto) => {
+    // Get visible tabs based on privileges only
+    const getVisibleTabs = (course: CourseDetailDto) => {
         return tabs.filter(tab => {
-            // Check if tab is allowed for current user type
-            if (!tab.userTypes.includes(userType)) return false;
-            
             // Check privilege requirements
             if (tab.requiredPrivilege && !hasPrivilege(tab.requiredPrivilege)) return false;
             
@@ -179,12 +169,10 @@ const MyCourseDashboardPage = () => {
                     {/* User type indicator */}
                     <div className="flex items-center gap-2">
                         <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            userType === "doctor" ? "bg-red-100 text-red-800" :
-                            userType === "assistant" ? "bg-blue-100 text-blue-800" :
+                            course.hasLab ? (course.hasLab ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800") :
                             "bg-green-100 text-green-800"
                         }`}>
-                            {userType === "doctor" ? "Doctor" : 
-                             userType === "assistant" ? "Assistant" : "Student"}
+                            {course.hasLab ? "Lab Course" : "Theory Course"}
                         </div>
                     </div>
                 </div>
@@ -255,25 +243,29 @@ const MyCourseDashboardPage = () => {
             </div>
 
             {/* Tab Content */}
-            <div className="p-1">
+                        <div className="p-1">
                 {activeTab === "content" && (
-                    <CourseContentTab courseId={parseInt(courseId!)} userType={userType} />
+                    <CourseContentTab courseId={courseId!} />
                 )}
 
                 {activeTab === "students" && (
-                    <CourseStudentsTab courseId={parseInt(courseId!)} />
+                    <CourseStudentsTab courseId={courseId!} />
                 )}
-
+                
                 {activeTab === "events" && (
-                    <CourseEventsTab courseId={parseInt(courseId!)} />
+                    <CourseEventsTab 
+                      courseId={courseId!} 
+                      courseName={courseData?.data?.name || ''} 
+                      hasEditAccess={hasPrivilege("MANAGE_COURSES") || hasPrivilege("TEACH_COURSE")}
+                    />
                 )}
 
                 {activeTab === "my-groups" && (
-                    <AssistantGroupsTab courseId={parseInt(courseId!)} />
+                    <AssistantGroupsTab courseId={courseId!} />
                 )}
 
                 {activeTab === "my-group" && (
-                    <StudentGroupDetailsTab courseId={parseInt(courseId!)} />
+                    <StudentGroupDetailsTab courseId={courseId!} />
                 )}
             </div>
         </div>

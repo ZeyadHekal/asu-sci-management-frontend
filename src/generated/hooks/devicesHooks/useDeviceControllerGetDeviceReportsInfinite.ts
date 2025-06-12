@@ -9,14 +9,17 @@ import type { InfiniteData, QueryKey, QueryClient, InfiniteQueryObserverOptions,
 import type {
   DeviceControllerGetDeviceReportsQueryResponse,
   DeviceControllerGetDeviceReportsPathParams,
+  DeviceControllerGetDeviceReportsQueryParams,
   DeviceControllerGetDeviceReports401,
   DeviceControllerGetDeviceReports403,
   DeviceControllerGetDeviceReports404,
 } from '../../types/devicesController/DeviceControllerGetDeviceReports.ts'
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query'
 
-export const deviceControllerGetDeviceReportsInfiniteQueryKey = (device_id: DeviceControllerGetDeviceReportsPathParams['device_id']) =>
-  [{ url: '/devices/:device_id/reports', params: { device_id: device_id } }] as const
+export const deviceControllerGetDeviceReportsInfiniteQueryKey = (
+  device_id: DeviceControllerGetDeviceReportsPathParams['device_id'],
+  params?: DeviceControllerGetDeviceReportsQueryParams,
+) => [{ url: '/devices/:device_id/reports', params: { device_id: device_id } }, ...(params ? [params] : [])] as const
 
 export type DeviceControllerGetDeviceReportsInfiniteQueryKey = ReturnType<typeof deviceControllerGetDeviceReportsInfiniteQueryKey>
 
@@ -27,6 +30,7 @@ export type DeviceControllerGetDeviceReportsInfiniteQueryKey = ReturnType<typeof
  */
 export async function deviceControllerGetDeviceReportsInfinite(
   device_id: DeviceControllerGetDeviceReportsPathParams['device_id'],
+  params?: DeviceControllerGetDeviceReportsQueryParams,
   config: Partial<RequestConfig> & { client?: typeof client } = {},
 ) {
   const { client: request = client, ...requestConfig } = config
@@ -35,26 +39,32 @@ export async function deviceControllerGetDeviceReportsInfinite(
     DeviceControllerGetDeviceReportsQueryResponse,
     ResponseErrorConfig<DeviceControllerGetDeviceReports401 | DeviceControllerGetDeviceReports403 | DeviceControllerGetDeviceReports404>,
     unknown
-  >({ method: 'GET', url: `/devices/${device_id}/reports`, ...requestConfig })
+  >({ method: 'GET', url: `/devices/${device_id}/reports`, params, ...requestConfig })
   return res
 }
 
 export function deviceControllerGetDeviceReportsInfiniteQueryOptions(
   device_id: DeviceControllerGetDeviceReportsPathParams['device_id'],
+  params?: DeviceControllerGetDeviceReportsQueryParams,
   config: Partial<RequestConfig> & { client?: typeof client } = {},
 ) {
-  const queryKey = deviceControllerGetDeviceReportsInfiniteQueryKey(device_id)
+  const queryKey = deviceControllerGetDeviceReportsInfiniteQueryKey(device_id, params)
   return infiniteQueryOptions<
     ResponseConfig<DeviceControllerGetDeviceReportsQueryResponse>,
     ResponseErrorConfig<DeviceControllerGetDeviceReports401 | DeviceControllerGetDeviceReports403 | DeviceControllerGetDeviceReports404>,
     ResponseConfig<DeviceControllerGetDeviceReportsQueryResponse>,
-    typeof queryKey
+    typeof queryKey,
+    number
   >({
     enabled: !!device_id,
     queryKey,
-    queryFn: async ({ signal }) => {
+    queryFn: async ({ signal, pageParam }) => {
       config.signal = signal
-      return deviceControllerGetDeviceReportsInfinite(device_id, config)
+
+      if (params) {
+        params['limit'] = pageParam as unknown as DeviceControllerGetDeviceReportsQueryParams['limit']
+      }
+      return deviceControllerGetDeviceReportsInfinite(device_id, params, config)
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage['page'],
@@ -73,6 +83,7 @@ export function useDeviceControllerGetDeviceReportsInfinite<
   TQueryKey extends QueryKey = DeviceControllerGetDeviceReportsInfiniteQueryKey,
 >(
   device_id: DeviceControllerGetDeviceReportsPathParams['device_id'],
+  params?: DeviceControllerGetDeviceReportsQueryParams,
   options: {
     query?: Partial<
       InfiniteQueryObserverOptions<
@@ -87,11 +98,11 @@ export function useDeviceControllerGetDeviceReportsInfinite<
   } = {},
 ) {
   const { query: { client: queryClient, ...queryOptions } = {}, client: config = {} } = options ?? {}
-  const queryKey = queryOptions?.queryKey ?? deviceControllerGetDeviceReportsInfiniteQueryKey(device_id)
+  const queryKey = queryOptions?.queryKey ?? deviceControllerGetDeviceReportsInfiniteQueryKey(device_id, params)
 
   const query = useInfiniteQuery(
     {
-      ...(deviceControllerGetDeviceReportsInfiniteQueryOptions(device_id, config) as unknown as InfiniteQueryObserverOptions),
+      ...(deviceControllerGetDeviceReportsInfiniteQueryOptions(device_id, params, config) as unknown as InfiniteQueryObserverOptions),
       queryKey,
       ...(queryOptions as unknown as Omit<InfiniteQueryObserverOptions, 'queryKey'>),
     },

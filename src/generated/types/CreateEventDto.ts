@@ -3,31 +3,65 @@
  * Do not edit manually.
  */
 
+export const createEventDtoEventTypeEnum = {
+  exam: 'exam',
+  quiz: 'quiz',
+  assignment: 'assignment',
+  lab_assignment: 'lab_assignment',
+  project: 'project',
+  presentation: 'presentation',
+  workshop: 'workshop',
+  practice: 'practice',
+  seminar: 'seminar',
+} as const
+
+export type CreateEventDtoEventTypeEnum = (typeof createEventDtoEventTypeEnum)[keyof typeof createEventDtoEventTypeEnum]
+
+export const createEventDtoLocationTypeEnum = {
+  lab_devices: 'lab_devices',
+  lecture_hall: 'lecture_hall',
+  online: 'online',
+  hybrid: 'hybrid',
+} as const
+
+export type CreateEventDtoLocationTypeEnum = (typeof createEventDtoLocationTypeEnum)[keyof typeof createEventDtoLocationTypeEnum]
+
 export type CreateEventDto = {
   /**
    * @type string
    */
   name: string
   /**
+   * @type string | undefined
+   */
+  description?: string | undefined
+  /**
    * @type number
    */
   duration: number
   /**
-   * @type boolean
+   * @default "assignment"
+   * @type string
    */
-  isExam: boolean
+  eventType: CreateEventDtoEventTypeEnum
   /**
-   * @type boolean
+   * @default "online"
+   * @type string
    */
-  isInLab: boolean
+  locationType: CreateEventDtoLocationTypeEnum
   /**
+   * @description Custom location when not using lab devices
    * @type string | undefined
    */
-  examFiles?: string | undefined
+  customLocation?: string | undefined
   /**
-   * @type number
+   * @type boolean
    */
-  degree: number
+  hasMarks: boolean
+  /**
+   * @type number | undefined
+   */
+  totalMarks?: number | undefined
   /**
    * @default false
    * @type boolean
@@ -39,9 +73,28 @@ export type CreateEventDto = {
    */
   examModeStartMinutes: number
   /**
-   * @type string | undefined
+   * @description When the event should start
+   * @type string | undefined, date-time
    */
-  description?: string | undefined
+  startDateTime?: Date | undefined
+  /**
+   * @description Whether this event requires exam models
+   * @default false
+   * @type boolean
+   */
+  requiresModels: boolean
+  /**
+   * @description Allow random assignment of exam models to students
+   * @default false
+   * @type boolean
+   */
+  allowRandomModelAssignment: boolean
+  /**
+   * @description Whether this event should be treated as an exam
+   * @default false
+   * @type boolean
+   */
+  isExam: boolean
   /**
    * @type string
    */

@@ -9,14 +9,17 @@ import type { QueryKey, QueryClient, QueryObserverOptions, UseQueryResult } from
 import type {
   DeviceControllerGetDeviceLoginHistoryQueryResponse,
   DeviceControllerGetDeviceLoginHistoryPathParams,
+  DeviceControllerGetDeviceLoginHistoryQueryParams,
   DeviceControllerGetDeviceLoginHistory401,
   DeviceControllerGetDeviceLoginHistory403,
   DeviceControllerGetDeviceLoginHistory404,
 } from '../../types/devicesController/DeviceControllerGetDeviceLoginHistory.ts'
 import { queryOptions, useQuery } from '@tanstack/react-query'
 
-export const deviceControllerGetDeviceLoginHistoryQueryKey = (device_id: DeviceControllerGetDeviceLoginHistoryPathParams['device_id']) =>
-  [{ url: '/devices/:device_id/login-history', params: { device_id: device_id } }] as const
+export const deviceControllerGetDeviceLoginHistoryQueryKey = (
+  device_id: DeviceControllerGetDeviceLoginHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceLoginHistoryQueryParams,
+) => [{ url: '/devices/:device_id/login-history', params: { device_id: device_id } }, ...(params ? [params] : [])] as const
 
 export type DeviceControllerGetDeviceLoginHistoryQueryKey = ReturnType<typeof deviceControllerGetDeviceLoginHistoryQueryKey>
 
@@ -27,6 +30,7 @@ export type DeviceControllerGetDeviceLoginHistoryQueryKey = ReturnType<typeof de
  */
 export async function deviceControllerGetDeviceLoginHistory(
   device_id: DeviceControllerGetDeviceLoginHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceLoginHistoryQueryParams,
   config: Partial<RequestConfig> & { client?: typeof client } = {},
 ) {
   const { client: request = client, ...requestConfig } = config
@@ -35,15 +39,16 @@ export async function deviceControllerGetDeviceLoginHistory(
     DeviceControllerGetDeviceLoginHistoryQueryResponse,
     ResponseErrorConfig<DeviceControllerGetDeviceLoginHistory401 | DeviceControllerGetDeviceLoginHistory403 | DeviceControllerGetDeviceLoginHistory404>,
     unknown
-  >({ method: 'GET', url: `/devices/${device_id}/login-history`, ...requestConfig })
+  >({ method: 'GET', url: `/devices/${device_id}/login-history`, params, ...requestConfig })
   return res
 }
 
 export function deviceControllerGetDeviceLoginHistoryQueryOptions(
   device_id: DeviceControllerGetDeviceLoginHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceLoginHistoryQueryParams,
   config: Partial<RequestConfig> & { client?: typeof client } = {},
 ) {
-  const queryKey = deviceControllerGetDeviceLoginHistoryQueryKey(device_id)
+  const queryKey = deviceControllerGetDeviceLoginHistoryQueryKey(device_id, params)
   return queryOptions<
     ResponseConfig<DeviceControllerGetDeviceLoginHistoryQueryResponse>,
     ResponseErrorConfig<DeviceControllerGetDeviceLoginHistory401 | DeviceControllerGetDeviceLoginHistory403 | DeviceControllerGetDeviceLoginHistory404>,
@@ -54,7 +59,7 @@ export function deviceControllerGetDeviceLoginHistoryQueryOptions(
     queryKey,
     queryFn: async ({ signal }) => {
       config.signal = signal
-      return deviceControllerGetDeviceLoginHistory(device_id, config)
+      return deviceControllerGetDeviceLoginHistory(device_id, params, config)
     },
   })
 }
@@ -70,6 +75,7 @@ export function useDeviceControllerGetDeviceLoginHistory<
   TQueryKey extends QueryKey = DeviceControllerGetDeviceLoginHistoryQueryKey,
 >(
   device_id: DeviceControllerGetDeviceLoginHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceLoginHistoryQueryParams,
   options: {
     query?: Partial<
       QueryObserverOptions<
@@ -84,11 +90,11 @@ export function useDeviceControllerGetDeviceLoginHistory<
   } = {},
 ) {
   const { query: { client: queryClient, ...queryOptions } = {}, client: config = {} } = options ?? {}
-  const queryKey = queryOptions?.queryKey ?? deviceControllerGetDeviceLoginHistoryQueryKey(device_id)
+  const queryKey = queryOptions?.queryKey ?? deviceControllerGetDeviceLoginHistoryQueryKey(device_id, params)
 
   const query = useQuery(
     {
-      ...(deviceControllerGetDeviceLoginHistoryQueryOptions(device_id, config) as unknown as QueryObserverOptions),
+      ...(deviceControllerGetDeviceLoginHistoryQueryOptions(device_id, params, config) as unknown as QueryObserverOptions),
       queryKey,
       ...(queryOptions as unknown as Omit<QueryObserverOptions, 'queryKey'>),
     },

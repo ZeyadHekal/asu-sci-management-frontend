@@ -11,7 +11,7 @@ export type CreateStaffRequestDto = {
   /**
    * @type string
    */
-  email: string
+  username: string
   /**
    * @type string
    */

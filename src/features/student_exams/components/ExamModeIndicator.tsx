@@ -81,7 +81,7 @@ export const ExamModeIndicator = () => {
             <FiCheckCircle className="w-6 h-6 text-green-600 mt-0.5" />
             <div>
               <h3 className="text-lg font-semibold text-gray-900">No Active Exams</h3>
-              <p className="text-gray-600">You are not currently in exam mode</p>
+              
             </div>
           </div>
         </div>

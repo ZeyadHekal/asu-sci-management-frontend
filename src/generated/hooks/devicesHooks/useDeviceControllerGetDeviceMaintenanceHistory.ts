@@ -9,14 +9,17 @@ import type { QueryKey, QueryClient, QueryObserverOptions, UseQueryResult } from
 import type {
   DeviceControllerGetDeviceMaintenanceHistoryQueryResponse,
   DeviceControllerGetDeviceMaintenanceHistoryPathParams,
+  DeviceControllerGetDeviceMaintenanceHistoryQueryParams,
   DeviceControllerGetDeviceMaintenanceHistory401,
   DeviceControllerGetDeviceMaintenanceHistory403,
   DeviceControllerGetDeviceMaintenanceHistory404,
 } from '../../types/devicesController/DeviceControllerGetDeviceMaintenanceHistory.ts'
 import { queryOptions, useQuery } from '@tanstack/react-query'
 
-export const deviceControllerGetDeviceMaintenanceHistoryQueryKey = (device_id: DeviceControllerGetDeviceMaintenanceHistoryPathParams['device_id']) =>
-  [{ url: '/devices/:device_id/maintenance-history', params: { device_id: device_id } }] as const
+export const deviceControllerGetDeviceMaintenanceHistoryQueryKey = (
+  device_id: DeviceControllerGetDeviceMaintenanceHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceMaintenanceHistoryQueryParams,
+) => [{ url: '/devices/:device_id/maintenance-history', params: { device_id: device_id } }, ...(params ? [params] : [])] as const
 
 export type DeviceControllerGetDeviceMaintenanceHistoryQueryKey = ReturnType<typeof deviceControllerGetDeviceMaintenanceHistoryQueryKey>
 
@@ -27,6 +30,7 @@ export type DeviceControllerGetDeviceMaintenanceHistoryQueryKey = ReturnType<typ
  */
 export async function deviceControllerGetDeviceMaintenanceHistory(
   device_id: DeviceControllerGetDeviceMaintenanceHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceMaintenanceHistoryQueryParams,
   config: Partial<RequestConfig> & { client?: typeof client } = {},
 ) {
   const { client: request = client, ...requestConfig } = config
@@ -37,15 +41,16 @@ export async function deviceControllerGetDeviceMaintenanceHistory(
       DeviceControllerGetDeviceMaintenanceHistory401 | DeviceControllerGetDeviceMaintenanceHistory403 | DeviceControllerGetDeviceMaintenanceHistory404
     >,
     unknown
-  >({ method: 'GET', url: `/devices/${device_id}/maintenance-history`, ...requestConfig })
+  >({ method: 'GET', url: `/devices/${device_id}/maintenance-history`, params, ...requestConfig })
   return res
 }
 
 export function deviceControllerGetDeviceMaintenanceHistoryQueryOptions(
   device_id: DeviceControllerGetDeviceMaintenanceHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceMaintenanceHistoryQueryParams,
   config: Partial<RequestConfig> & { client?: typeof client } = {},
 ) {
-  const queryKey = deviceControllerGetDeviceMaintenanceHistoryQueryKey(device_id)
+  const queryKey = deviceControllerGetDeviceMaintenanceHistoryQueryKey(device_id, params)
   return queryOptions<
     ResponseConfig<DeviceControllerGetDeviceMaintenanceHistoryQueryResponse>,
     ResponseErrorConfig<
@@ -58,7 +63,7 @@ export function deviceControllerGetDeviceMaintenanceHistoryQueryOptions(
     queryKey,
     queryFn: async ({ signal }) => {
       config.signal = signal
-      return deviceControllerGetDeviceMaintenanceHistory(device_id, config)
+      return deviceControllerGetDeviceMaintenanceHistory(device_id, params, config)
     },
   })
 }
@@ -74,6 +79,7 @@ export function useDeviceControllerGetDeviceMaintenanceHistory<
   TQueryKey extends QueryKey = DeviceControllerGetDeviceMaintenanceHistoryQueryKey,
 >(
   device_id: DeviceControllerGetDeviceMaintenanceHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceMaintenanceHistoryQueryParams,
   options: {
     query?: Partial<
       QueryObserverOptions<
@@ -90,11 +96,11 @@ export function useDeviceControllerGetDeviceMaintenanceHistory<
   } = {},
 ) {
   const { query: { client: queryClient, ...queryOptions } = {}, client: config = {} } = options ?? {}
-  const queryKey = queryOptions?.queryKey ?? deviceControllerGetDeviceMaintenanceHistoryQueryKey(device_id)
+  const queryKey = queryOptions?.queryKey ?? deviceControllerGetDeviceMaintenanceHistoryQueryKey(device_id, params)
 
   const query = useQuery(
     {
-      ...(deviceControllerGetDeviceMaintenanceHistoryQueryOptions(device_id, config) as unknown as QueryObserverOptions),
+      ...(deviceControllerGetDeviceMaintenanceHistoryQueryOptions(device_id, params, config) as unknown as QueryObserverOptions),
       queryKey,
       ...(queryOptions as unknown as Omit<QueryObserverOptions, 'queryKey'>),
     },

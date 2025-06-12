@@ -8,7 +8,6 @@ import { z } from 'zod'
 export const privilegeAssignmentDtoSchema = z.object({
   code: z.enum([
     'MANAGE_SYSTEM',
-    'MANAGE_USERS',
     'MANAGE_STUDENTS',
     'MANAGE_LABS',
     'LAB_ASSISTANT',
@@ -22,8 +21,13 @@ export const privilegeAssignmentDtoSchema = z.object({
   friendlyName: z.string(),
   group: z.string(),
   requiresResource: z.boolean(),
-  paramKey: z.string(),
-  entityName: z.string(),
+  paramKey: z.string().optional(),
+  entityName: z.string().optional(),
+  name: z.string(),
+  key: z.string(),
+  description: z.string(),
+  category: z.string(),
+  isActive: z.boolean().default(true),
   resourceIds: z.array(z.string()).optional(),
 })
 

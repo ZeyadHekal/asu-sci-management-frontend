@@ -9,14 +9,17 @@ import type { InfiniteData, QueryKey, QueryClient, InfiniteQueryObserverOptions,
 import type {
   DeviceControllerGetDeviceMaintenanceHistoryQueryResponse,
   DeviceControllerGetDeviceMaintenanceHistoryPathParams,
+  DeviceControllerGetDeviceMaintenanceHistoryQueryParams,
   DeviceControllerGetDeviceMaintenanceHistory401,
   DeviceControllerGetDeviceMaintenanceHistory403,
   DeviceControllerGetDeviceMaintenanceHistory404,
 } from '../../types/devicesController/DeviceControllerGetDeviceMaintenanceHistory.ts'
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query'
 
-export const deviceControllerGetDeviceMaintenanceHistoryInfiniteQueryKey = (device_id: DeviceControllerGetDeviceMaintenanceHistoryPathParams['device_id']) =>
-  [{ url: '/devices/:device_id/maintenance-history', params: { device_id: device_id } }] as const
+export const deviceControllerGetDeviceMaintenanceHistoryInfiniteQueryKey = (
+  device_id: DeviceControllerGetDeviceMaintenanceHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceMaintenanceHistoryQueryParams,
+) => [{ url: '/devices/:device_id/maintenance-history', params: { device_id: device_id } }, ...(params ? [params] : [])] as const
 
 export type DeviceControllerGetDeviceMaintenanceHistoryInfiniteQueryKey = ReturnType<typeof deviceControllerGetDeviceMaintenanceHistoryInfiniteQueryKey>
 
@@ -27,6 +30,7 @@ export type DeviceControllerGetDeviceMaintenanceHistoryInfiniteQueryKey = Return
  */
 export async function deviceControllerGetDeviceMaintenanceHistoryInfinite(
   device_id: DeviceControllerGetDeviceMaintenanceHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceMaintenanceHistoryQueryParams,
   config: Partial<RequestConfig> & { client?: typeof client } = {},
 ) {
   const { client: request = client, ...requestConfig } = config
@@ -37,28 +41,34 @@ export async function deviceControllerGetDeviceMaintenanceHistoryInfinite(
       DeviceControllerGetDeviceMaintenanceHistory401 | DeviceControllerGetDeviceMaintenanceHistory403 | DeviceControllerGetDeviceMaintenanceHistory404
     >,
     unknown
-  >({ method: 'GET', url: `/devices/${device_id}/maintenance-history`, ...requestConfig })
+  >({ method: 'GET', url: `/devices/${device_id}/maintenance-history`, params, ...requestConfig })
   return res
 }
 
 export function deviceControllerGetDeviceMaintenanceHistoryInfiniteQueryOptions(
   device_id: DeviceControllerGetDeviceMaintenanceHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceMaintenanceHistoryQueryParams,
   config: Partial<RequestConfig> & { client?: typeof client } = {},
 ) {
-  const queryKey = deviceControllerGetDeviceMaintenanceHistoryInfiniteQueryKey(device_id)
+  const queryKey = deviceControllerGetDeviceMaintenanceHistoryInfiniteQueryKey(device_id, params)
   return infiniteQueryOptions<
     ResponseConfig<DeviceControllerGetDeviceMaintenanceHistoryQueryResponse>,
     ResponseErrorConfig<
       DeviceControllerGetDeviceMaintenanceHistory401 | DeviceControllerGetDeviceMaintenanceHistory403 | DeviceControllerGetDeviceMaintenanceHistory404
     >,
     ResponseConfig<DeviceControllerGetDeviceMaintenanceHistoryQueryResponse>,
-    typeof queryKey
+    typeof queryKey,
+    number
   >({
     enabled: !!device_id,
     queryKey,
-    queryFn: async ({ signal }) => {
+    queryFn: async ({ signal, pageParam }) => {
       config.signal = signal
-      return deviceControllerGetDeviceMaintenanceHistoryInfinite(device_id, config)
+
+      if (params) {
+        params['limit'] = pageParam as unknown as DeviceControllerGetDeviceMaintenanceHistoryQueryParams['limit']
+      }
+      return deviceControllerGetDeviceMaintenanceHistoryInfinite(device_id, params, config)
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage['page'],
@@ -77,6 +87,7 @@ export function useDeviceControllerGetDeviceMaintenanceHistoryInfinite<
   TQueryKey extends QueryKey = DeviceControllerGetDeviceMaintenanceHistoryInfiniteQueryKey,
 >(
   device_id: DeviceControllerGetDeviceMaintenanceHistoryPathParams['device_id'],
+  params?: DeviceControllerGetDeviceMaintenanceHistoryQueryParams,
   options: {
     query?: Partial<
       InfiniteQueryObserverOptions<
@@ -93,11 +104,11 @@ export function useDeviceControllerGetDeviceMaintenanceHistoryInfinite<
   } = {},
 ) {
   const { query: { client: queryClient, ...queryOptions } = {}, client: config = {} } = options ?? {}
-  const queryKey = queryOptions?.queryKey ?? deviceControllerGetDeviceMaintenanceHistoryInfiniteQueryKey(device_id)
+  const queryKey = queryOptions?.queryKey ?? deviceControllerGetDeviceMaintenanceHistoryInfiniteQueryKey(device_id, params)
 
   const query = useInfiniteQuery(
     {
-      ...(deviceControllerGetDeviceMaintenanceHistoryInfiniteQueryOptions(device_id, config) as unknown as InfiniteQueryObserverOptions),
+      ...(deviceControllerGetDeviceMaintenanceHistoryInfiniteQueryOptions(device_id, params, config) as unknown as InfiniteQueryObserverOptions),
       queryKey,
       ...(queryOptions as unknown as Omit<InfiniteQueryObserverOptions, 'queryKey'>),
     },

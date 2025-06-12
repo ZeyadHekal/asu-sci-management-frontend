@@ -7,6 +7,7 @@ import client from '../../../global/api/apiClient'
 import type { RequestConfig, ResponseConfig, ResponseErrorConfig } from '../../../global/api/apiClient'
 import type { UseMutationOptions, QueryClient } from '@tanstack/react-query'
 import type {
+  StaffRequestControllerRejectMutationRequest,
   StaffRequestControllerRejectMutationResponse,
   StaffRequestControllerRejectPathParams,
   StaffRequestControllerReject400,
@@ -27,15 +28,16 @@ export type StaffRequestControllerRejectMutationKey = ReturnType<typeof staffReq
  */
 export async function staffRequestControllerReject(
   id: StaffRequestControllerRejectPathParams['id'],
-  config: Partial<RequestConfig> & { client?: typeof client } = {},
+  data: StaffRequestControllerRejectMutationRequest,
+  config: Partial<RequestConfig<StaffRequestControllerRejectMutationRequest>> & { client?: typeof client } = {},
 ) {
   const { client: request = client, ...requestConfig } = config
 
   const res = await request<
     StaffRequestControllerRejectMutationResponse,
     ResponseErrorConfig<StaffRequestControllerReject400 | StaffRequestControllerReject401 | StaffRequestControllerReject403 | StaffRequestControllerReject404>,
-    unknown
-  >({ method: 'PUT', url: `/staff-requests/${id}/reject`, ...requestConfig })
+    StaffRequestControllerRejectMutationRequest
+  >({ method: 'PUT', url: `/staff-requests/${id}/reject`, data, ...requestConfig })
   return res
 }
 
@@ -51,10 +53,10 @@ export function useStaffRequestControllerReject<TContext>(
       ResponseErrorConfig<
         StaffRequestControllerReject400 | StaffRequestControllerReject401 | StaffRequestControllerReject403 | StaffRequestControllerReject404
       >,
-      { id: StaffRequestControllerRejectPathParams['id'] },
+      { id: StaffRequestControllerRejectPathParams['id']; data: StaffRequestControllerRejectMutationRequest },
       TContext
     > & { client?: QueryClient }
-    client?: Partial<RequestConfig> & { client?: typeof client }
+    client?: Partial<RequestConfig<StaffRequestControllerRejectMutationRequest>> & { client?: typeof client }
   } = {},
 ) {
   const { mutation: { client: queryClient, ...mutationOptions } = {}, client: config = {} } = options ?? {}
@@ -63,12 +65,12 @@ export function useStaffRequestControllerReject<TContext>(
   return useMutation<
     ResponseConfig<StaffRequestControllerRejectMutationResponse>,
     ResponseErrorConfig<StaffRequestControllerReject400 | StaffRequestControllerReject401 | StaffRequestControllerReject403 | StaffRequestControllerReject404>,
-    { id: StaffRequestControllerRejectPathParams['id'] },
+    { id: StaffRequestControllerRejectPathParams['id']; data: StaffRequestControllerRejectMutationRequest },
     TContext
   >(
     {
-      mutationFn: async ({ id }) => {
-        return staffRequestControllerReject(id, config)
+      mutationFn: async ({ id, data }) => {
+        return staffRequestControllerReject(id, data, config)
       },
       mutationKey,
       ...mutationOptions,

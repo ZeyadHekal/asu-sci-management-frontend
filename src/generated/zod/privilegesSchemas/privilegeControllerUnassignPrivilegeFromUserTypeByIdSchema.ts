@@ -9,7 +9,6 @@ export const privilegeControllerUnassignPrivilegeFromUserTypeByIdPathParamsSchem
   userTypeId: z.string(),
   privilegeCode: z.enum([
     'MANAGE_SYSTEM',
-    'MANAGE_USERS',
     'MANAGE_STUDENTS',
     'MANAGE_LABS',
     'LAB_ASSISTANT',

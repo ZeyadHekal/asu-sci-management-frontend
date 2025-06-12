@@ -11,6 +11,76 @@ export type DeviceControllerGetDeviceReportsPathParams = {
   device_id: string
 }
 
+export const deviceControllerGetDeviceReportsQueryParamsSortOrderEnum = {
+  asc: 'asc',
+  desc: 'desc',
+} as const
+
+export type DeviceControllerGetDeviceReportsQueryParamsSortOrderEnum =
+  (typeof deviceControllerGetDeviceReportsQueryParamsSortOrderEnum)[keyof typeof deviceControllerGetDeviceReportsQueryParamsSortOrderEnum]
+
+export type DeviceControllerGetDeviceReportsQueryParams = {
+  /**
+   * @default 10
+   * @type number | undefined
+   */
+  limit?: number | undefined
+  /**
+   * @default 0
+   * @type number | undefined
+   */
+  page?: number | undefined
+  /**
+   * @default "created_at"
+   * @type string | undefined
+   */
+  sortBy?: string | undefined
+  /**
+   * @default "desc"
+   * @type string | undefined
+   */
+  sortOrder?: DeviceControllerGetDeviceReportsQueryParamsSortOrderEnum | undefined
+  /**
+   * @type array | undefined
+   */
+  ids?: string[] | undefined
+  /**
+   * @description Filter by device name
+   * @type string | undefined
+   */
+  deviceName?: string | undefined
+  /**
+   * @description Filter by software name
+   * @type string | undefined
+   */
+  software?: string | undefined
+  /**
+   * @description Filter by lab ID
+   * @type string | undefined
+   */
+  labId?: string | undefined
+  /**
+   * @description Filter by device status
+   * @type string | undefined
+   */
+  status?: string | undefined
+  /**
+   * @description Filter by lab assistant ID
+   * @type string | undefined
+   */
+  assistantId?: string | undefined
+  /**
+   * @description Filter by specification category
+   * @type string | undefined
+   */
+  specCategory?: string | undefined
+  /**
+   * @description Filter by specification value
+   * @type string | undefined
+   */
+  specValue?: string | undefined
+}
+
 /**
  * @description Device reports retrieved successfully
  */
@@ -36,5 +106,6 @@ export type DeviceControllerGetDeviceReportsQueryResponse = DeviceControllerGetD
 export type DeviceControllerGetDeviceReportsQuery = {
   Response: DeviceControllerGetDeviceReports200
   PathParams: DeviceControllerGetDeviceReportsPathParams
+  QueryParams: DeviceControllerGetDeviceReportsQueryParams
   Errors: DeviceControllerGetDeviceReports401 | DeviceControllerGetDeviceReports403 | DeviceControllerGetDeviceReports404
 }

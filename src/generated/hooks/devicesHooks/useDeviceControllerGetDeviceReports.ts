@@ -9,14 +9,17 @@ import type { QueryKey, QueryClient, QueryObserverOptions, UseQueryResult } from
 import type {
   DeviceControllerGetDeviceReportsQueryResponse,
   DeviceControllerGetDeviceReportsPathParams,
+  DeviceControllerGetDeviceReportsQueryParams,
   DeviceControllerGetDeviceReports401,
   DeviceControllerGetDeviceReports403,
   DeviceControllerGetDeviceReports404,
 } from '../../types/devicesController/DeviceControllerGetDeviceReports.ts'
 import { queryOptions, useQuery } from '@tanstack/react-query'
 
-export const deviceControllerGetDeviceReportsQueryKey = (device_id: DeviceControllerGetDeviceReportsPathParams['device_id']) =>
-  [{ url: '/devices/:device_id/reports', params: { device_id: device_id } }] as const
+export const deviceControllerGetDeviceReportsQueryKey = (
+  device_id: DeviceControllerGetDeviceReportsPathParams['device_id'],
+  params?: DeviceControllerGetDeviceReportsQueryParams,
+) => [{ url: '/devices/:device_id/reports', params: { device_id: device_id } }, ...(params ? [params] : [])] as const
 
 export type DeviceControllerGetDeviceReportsQueryKey = ReturnType<typeof deviceControllerGetDeviceReportsQueryKey>
 
@@ -27,6 +30,7 @@ export type DeviceControllerGetDeviceReportsQueryKey = ReturnType<typeof deviceC
  */
 export async function deviceControllerGetDeviceReports(
   device_id: DeviceControllerGetDeviceReportsPathParams['device_id'],
+  params?: DeviceControllerGetDeviceReportsQueryParams,
   config: Partial<RequestConfig> & { client?: typeof client } = {},
 ) {
   const { client: request = client, ...requestConfig } = config
@@ -35,15 +39,16 @@ export async function deviceControllerGetDeviceReports(
     DeviceControllerGetDeviceReportsQueryResponse,
     ResponseErrorConfig<DeviceControllerGetDeviceReports401 | DeviceControllerGetDeviceReports403 | DeviceControllerGetDeviceReports404>,
     unknown
-  >({ method: 'GET', url: `/devices/${device_id}/reports`, ...requestConfig })
+  >({ method: 'GET', url: `/devices/${device_id}/reports`, params, ...requestConfig })
   return res
 }
 
 export function deviceControllerGetDeviceReportsQueryOptions(
   device_id: DeviceControllerGetDeviceReportsPathParams['device_id'],
+  params?: DeviceControllerGetDeviceReportsQueryParams,
   config: Partial<RequestConfig> & { client?: typeof client } = {},
 ) {
-  const queryKey = deviceControllerGetDeviceReportsQueryKey(device_id)
+  const queryKey = deviceControllerGetDeviceReportsQueryKey(device_id, params)
   return queryOptions<
     ResponseConfig<DeviceControllerGetDeviceReportsQueryResponse>,
     ResponseErrorConfig<DeviceControllerGetDeviceReports401 | DeviceControllerGetDeviceReports403 | DeviceControllerGetDeviceReports404>,
@@ -54,7 +59,7 @@ export function deviceControllerGetDeviceReportsQueryOptions(
     queryKey,
     queryFn: async ({ signal }) => {
       config.signal = signal
-      return deviceControllerGetDeviceReports(device_id, config)
+      return deviceControllerGetDeviceReports(device_id, params, config)
     },
   })
 }
@@ -70,6 +75,7 @@ export function useDeviceControllerGetDeviceReports<
   TQueryKey extends QueryKey = DeviceControllerGetDeviceReportsQueryKey,
 >(
   device_id: DeviceControllerGetDeviceReportsPathParams['device_id'],
+  params?: DeviceControllerGetDeviceReportsQueryParams,
   options: {
     query?: Partial<
       QueryObserverOptions<
@@ -84,11 +90,11 @@ export function useDeviceControllerGetDeviceReports<
   } = {},
 ) {
   const { query: { client: queryClient, ...queryOptions } = {}, client: config = {} } = options ?? {}
-  const queryKey = queryOptions?.queryKey ?? deviceControllerGetDeviceReportsQueryKey(device_id)
+  const queryKey = queryOptions?.queryKey ?? deviceControllerGetDeviceReportsQueryKey(device_id, params)
 
   const query = useQuery(
     {
-      ...(deviceControllerGetDeviceReportsQueryOptions(device_id, config) as unknown as QueryObserverOptions),
+      ...(deviceControllerGetDeviceReportsQueryOptions(device_id, params, config) as unknown as QueryObserverOptions),
       queryKey,
       ...(queryOptions as unknown as Omit<QueryObserverOptions, 'queryKey'>),
     },

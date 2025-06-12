@@ -10,16 +10,11 @@ import {
   PiUserCircleGear,
   PiWarning,
   PiBellRinging,
+  PiPlay,
 } from "react-icons/pi";
 import { useAuthStore } from "../../store/authStore";
 import { useState, useEffect } from "react";
-
-// Placeholder for the API call to get unresolved reports count
-const getUnresolvedReportsCount = () => {
-  // This would be an API call in a real application
-  // For now, return a mock value
-  return 3;
-};
+import { useDeviceReportControllerGetMyUnresolvedReportsCount } from "../../generated/hooks/device-reportsHooks/useDeviceReportControllerGetMyUnresolvedReportsCount";
 
 // Placeholder for getting the number of new grades
 const getNewGradesCount = () => {
@@ -49,21 +44,13 @@ interface MenuItem {
 
 // All possible links in the application
 const allLinks: MenuItem[] = [
-  // Admin Links
   {
     icon: <PiBooks size={20} />,
     label: "Courses",
     to: "/courses",
     subMenu: [],
-    privilege: "MANAGE_COURSES",
-  },
-  // My Courses - for users involved in courses (doctor, assistant, student)
-  {
-    icon: <PiBooks size={20} />,
-    label: "My Courses",
-    to: "/my-courses",
-    subMenu: [],
     conditionalVisibility: (privileges) => 
+      privileges.includes("MANAGE_COURSES") ||
       privileges.includes("TEACH_COURSE") || 
       privileges.includes("ASSIST_IN_COURSE") || 
       privileges.includes("STUDY_COURSE"),
@@ -128,59 +115,51 @@ const allLinks: MenuItem[] = [
     label: "Reports",
     to: "/reports",
     subMenu: [],
-    privilege: "REPORT_DEVICE",
+    conditionalVisibility: (privileges) => 
+      privileges.includes("REPORT_DEVICE") || privileges.includes("STUDY_COURSE"),
   },
   {
     icon: <PiBellRinging size={20} />,
     label: "Lab Assistant",
     to: "/lab-assistant",
-    subMenu: [],
-    privilege: "LAB_ASSISTANT",
-    badge: {
-      count: getUnresolvedReportsCount(),
-      variant: "danger"
-    }
-  },
-  
-  // Student Links
-  {
-    icon: <PiHouse size={20} />,
-    label: "Home",
-    to: "/home",
-    subMenu: [],
-    privilege: "CREATE_STUDENT",
+    subMenu: [
+      {
+        label: "Dashboard",
+        to: "/lab-assistant",
+      },
+      {
+        label: "Session Management",
+        to: "/session-management",
+      },
+    ],
+    conditionalVisibility: (privileges) => 
+      privileges.includes("LAB_ASSISTANT") || privileges.includes("ASSIST_IN_COURSE"),
   },
   {
     icon: <PiBooks size={20} />,
     label: "Schedule",
     to: "/schedule",
     subMenu: [],
-    privilege: "CREATE_STUDENT",
+    conditionalVisibility: (privileges) => 
+      privileges.includes("CREATE_STUDENT") || privileges.includes("STUDY_COURSE"),
   },
   {
     icon: <PiExam size={20} />,
     label: "My Exams",
     to: "/student/exams",
     subMenu: [],
-    conditionalVisibility: (privileges) => privileges.includes("CREATE_STUDENT") && !privileges.includes("MANAGE_USER_TYPES"),
+    privilege: "STUDY_COURSE",
   },
   {
     icon: <PiChartBar size={20} />,
     label: "My Grades",
-    to: "/student/grades",
+    to: "/grades",
     subMenu: [],
-    conditionalVisibility: (privileges) => privileges.includes("CREATE_STUDENT") && !privileges.includes("MANAGE_USER_TYPES"),
+    privilege: "STUDY_COURSE",
     badge: {
       count: getNewGradesCount(),
       variant: "primary"
     }
-  },
-  {
-    icon: <PiWarning size={20} />,
-    label: "Reports",
-    to: "/reports",
-    subMenu: [],
-    conditionalVisibility: (privileges) => privileges.includes("CREATE_STUDENT") && !privileges.includes("MANAGE_USER_TYPES"),
   },
 ];
 
@@ -188,6 +167,14 @@ export const useSidebarLinks = () => {
   const privileges = useAuthStore((state) => state.user?.privileges || []);
   const hasPrivilege = useAuthStore((state) => state.hasPrivilege);
   const [links, setLinks] = useState<MenuItem[]>([]);
+
+  // Get unresolved reports count for lab assistants
+  const { data: unresolvedCountData } = useDeviceReportControllerGetMyUnresolvedReportsCount({
+    query: {
+      enabled: hasPrivilege("LAB_ASSISTANT") || hasPrivilege("ASSIST_IN_COURSE")
+    }
+  });
+  const unresolvedCount = (unresolvedCountData as any)?.data?.count || 0;
 
   useEffect(() => {
     // Filter links based on user permissions
@@ -209,16 +196,16 @@ export const useSidebarLinks = () => {
     // Update badges where needed
     const linksWithUpdatedBadges = filteredLinks.map(link => {
       // Specific updates for certain links
-      if (link.to === "/lab-assistant" && hasPrivilege("MANAGE_LABS")) {
+      if (link.to === "/lab-assistant" && (hasPrivilege("LAB_ASSISTANT") || hasPrivilege("ASSIST_IN_COURSE"))) {
         return {
           ...link,
           badge: {
-            count: getUnresolvedReportsCount(),
+            count: unresolvedCount,
             variant: "danger" as const
           }
         };
       }
-      if (link.to === "/student/grades") {
+      if (link.to === "/grades") {
         return {
           ...link,
           badge: {
@@ -231,7 +218,7 @@ export const useSidebarLinks = () => {
     });
 
     setLinks(linksWithUpdatedBadges);
-  }, [privileges, hasPrivilege]);
+  }, [privileges, hasPrivilege, unresolvedCount]);
 
   return links;
 };

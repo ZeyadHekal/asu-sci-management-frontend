@@ -21,7 +21,14 @@ export type WebSocketMessageType =
     | 'exam:warning'
     | 'exam:status_update'
     | 'exam:channel_join'
-    | 'exam:channel_leave';
+    | 'exam:channel_leave'
+    | 'device_report:created'
+    | 'device_report:updated'
+    | 'device_report:status_changed'
+    | 'device_report:assigned'
+    | 'maintenance_history:created'
+    | 'maintenance_history:updated'
+    | 'device_report:counter_update';
 
 // Define WebSocket message structure
 export interface WebSocketMessage {
@@ -179,7 +186,14 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => ({
                 'exam:warning',
                 'exam:status_update',
                 'exam:channel_join',
-                'exam:channel_leave'
+                'exam:channel_leave',
+                'device_report:created',
+                'device_report:updated',
+                'device_report:status_changed',
+                'device_report:assigned',
+                'maintenance_history:created',
+                'maintenance_history:updated',
+                'device_report:counter_update'
             ].forEach(eventType => {
                 socketInstance.on(eventType, (data) => {
                     try {
@@ -212,7 +226,10 @@ export const useWebSocketStore = create<WebSocketStore>((set, get) => ({
         const { socket } = get();
         if (socket) {
             socket.disconnect();
-            set({ socket: null });
+            set({
+                socket: null,
+                messageHandlers: new Map() // Clear all message handlers to prevent stale handlers
+            });
             toast.dismiss(WS_CONNECTION_TOAST_ID);
         }
     },

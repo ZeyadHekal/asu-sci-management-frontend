@@ -14,7 +14,6 @@ import { SoftwareDto } from "../../../generated/types/SoftwareDto";
 // Extended interface to include fields that might not be in the API yet
 interface ExtendedSoftwareDto extends SoftwareDto {
     addedDate?: string;
-    status?: "Active" | "Inactive";
 }
 
 const SoftwarePage = () => {
@@ -85,7 +84,6 @@ const SoftwarePage = () => {
                 ...item,
                 // Add temporary fields if they don't exist in API
                 addedDate: "2024-01-15", // Temporary - should come from API
-                status: "Active" as const // Temporary - should come from API
             }));
             
             setSoftwareList(enhancedSoftware);
@@ -98,7 +96,6 @@ const SoftwarePage = () => {
                     requiredMemory: "4GB",
                     requiredStorage: "5GB",
                     addedDate: "2023-01-15",
-                    status: "Active"
                 },
                 {
                     id: "temp-2",
@@ -106,7 +103,6 @@ const SoftwarePage = () => {
                     requiredMemory: "2GB",
                     requiredStorage: "1GB",
                     addedDate: "2023-02-10",
-                    status: "Active"
                 },
                 {
                     id: "temp-3",
@@ -114,7 +110,6 @@ const SoftwarePage = () => {
                     requiredMemory: "8GB",
                     requiredStorage: "2GB",
                     addedDate: "2023-03-05",
-                    status: "Active"
                 },
                 {
                     id: "temp-4",
@@ -122,7 +117,6 @@ const SoftwarePage = () => {
                     requiredMemory: "16GB",
                     requiredStorage: "20GB",
                     addedDate: "2023-04-20",
-                    status: "Inactive"
                 },
                 {
                     id: "temp-5",
@@ -130,7 +124,6 @@ const SoftwarePage = () => {
                     requiredMemory: "8GB",
                     requiredStorage: "10GB",
                     addedDate: "2023-05-12",
-                    status: "Active"
                 }
             ];
             setSoftwareList(tempSoftware);
@@ -142,8 +135,7 @@ const SoftwarePage = () => {
         if (debouncedSearch) {
             const filtered = softwareList.filter(item =>
                 item.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-                `${item.requiredMemory} RAM, ${item.requiredStorage} Storage`.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-                (item.status && item.status.toLowerCase().includes(debouncedSearch.toLowerCase()))
+                `${item.requiredMemory} RAM, ${item.requiredStorage} Storage`.toLowerCase().includes(debouncedSearch.toLowerCase())
             );
             setFilteredSoftware(filtered);
         } else {
@@ -273,21 +265,6 @@ const SoftwarePage = () => {
                                     {row.addedDate || "Unknown"}
                                 </span>
                             )
-                        },
-                        {
-                            accessor: "status",
-                            title: "Status",
-                            render: (row) => (
-                                <div
-                                    className={`w-32 h-[22px] flex justify-center items-center rounded text-xs font-semibold ${
-                                        row.status === "Active"
-                                            ? "border border-success text-success"
-                                            : "border border-danger text-danger"
-                                    }`}
-                                >
-                                    {row.status || "Active"}
-                                </div>
-                            ),
                         },
                         {
                             accessor: "actions",

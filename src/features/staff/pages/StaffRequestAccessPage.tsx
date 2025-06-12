@@ -3,14 +3,24 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useNavigate } from "react-router";
-import { FiUpload, FiX } from "react-icons/fi";
 import { useDropzone } from "react-dropzone";
+import { FiUpload, FiX, FiEye, FiEyeOff } from "react-icons/fi";
 import { useStaffRequestControllerCreate } from "../../../generated/hooks/staff-requestsHooks/useStaffRequestControllerCreate";
 import { createStaffRequestDtoSchema } from "../../../generated/zod/createStaffRequestDtoSchema";
 import { toast } from "react-hot-toast";
 
+// Strong password validation
+const strongPasswordSchema = z.string()
+    .min(8, "Password must be at least 8 characters long")
+    .max(128, "Password must not exceed 128 characters")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character");
+
 const staffRequestSchema = createStaffRequestDtoSchema.extend({
-    confirmPassword: z.string().min(8, "Password must be at least 8 characters"),
+    password: strongPasswordSchema,
+    confirmPassword: z.string().min(1, "Please confirm your password"),
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
     path: ["confirmPassword"],
@@ -18,8 +28,69 @@ const staffRequestSchema = createStaffRequestDtoSchema.extend({
 
 type StaffRequestFormValues = z.infer<typeof staffRequestSchema>;
 
+// Password strength indicator component
+const PasswordStrengthIndicator = ({ password }: { password: string }) => {
+    const requirements = [
+        { text: "At least 8 characters", met: password.length >= 8 },
+        { text: "One uppercase letter", met: /[A-Z]/.test(password) },
+        { text: "One lowercase letter", met: /[a-z]/.test(password) },
+        { text: "One number", met: /[0-9]/.test(password) },
+        { text: "One special character", met: /[^a-zA-Z0-9]/.test(password) },
+    ];
+
+    const metCount = requirements.filter(req => req.met).length;
+    const strength = metCount === 0 ? 0 : (metCount / requirements.length) * 100;
+
+    const getStrengthColor = () => {
+        if (strength < 40) return "bg-red-500";
+        if (strength < 80) return "bg-yellow-500";
+        return "bg-green-500";
+    };
+
+    const getStrengthText = () => {
+        if (strength < 40) return "Weak";
+        if (strength < 80) return "Medium";
+        return "Strong";
+    };
+
+    return (
+        <div className="mt-2">
+            <div className="flex items-center gap-2 mb-2">
+                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                    <div 
+                        className={`h-2 rounded-full transition-all duration-300 ${getStrengthColor()}`}
+                        style={{ width: `${strength}%` }}
+                    ></div>
+                </div>
+                <span className={`text-xs font-medium ${
+                    strength < 40 ? 'text-red-600' : 
+                    strength < 80 ? 'text-yellow-600' : 'text-green-600'
+                }`}>
+                    {getStrengthText()}
+                </span>
+            </div>
+            <ul className="text-xs space-y-1">
+                {requirements.map((req, index) => (
+                    <li key={index} className={`flex items-center gap-2 ${
+                        req.met ? 'text-green-600' : 'text-gray-500'
+                    }`}>
+                        <span className={`w-3 h-3 rounded-full text-white text-xs flex items-center justify-center ${
+                            req.met ? 'bg-green-500' : 'bg-gray-300'
+                        }`}>
+                            {req.met ? '✓' : ''}
+                        </span>
+                        {req.text}
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+};
+
 const StaffRequestAccessPage = () => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const navigate = useNavigate();
     const createMutation = useStaffRequestControllerCreate();
 
@@ -27,10 +98,13 @@ const StaffRequestAccessPage = () => {
         register,
         handleSubmit,
         setValue,
+        watch,
         formState: { errors },
     } = useForm<StaffRequestFormValues>({
         resolver: zodResolver(staffRequestSchema),
     });
+
+    const watchedPassword = watch("password") || "";
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
         const file = acceptedFiles[0];
@@ -58,9 +132,10 @@ const StaffRequestAccessPage = () => {
     const onSubmit = async (data: StaffRequestFormValues) => {
         try {
             // Prepare the request data according to CreateStaffRequestDto
+            // Backend now expects 'username' field instead of 'email'
             const requestData = {
                 name: data.name,
-                email: data.email,
+                username: data.username,
                 title: data.title,
                 department: data.department,
                 password: data.password,
@@ -110,17 +185,17 @@ const StaffRequestAccessPage = () => {
                         </div>
 
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                                Email Address
+                            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                                Username
                             </label>
                             <input
-                                id="email"
-                                type="email"
+                                id="username"
+                                type="text"
                                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
-                                {...register("email")}
+                                {...register("username")}
                             />
-                            {errors.email && (
-                                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                            {errors.username && (
+                                <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>
                             )}
                         </div>
 
@@ -158,14 +233,26 @@ const StaffRequestAccessPage = () => {
                             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                                 Password
                             </label>
-                            <input
-                                id="password"
-                                type="password"
-                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
-                                {...register("password")}
-                            />
+                            <div className="relative">
+                                <input
+                                    id="password"
+                                    type={showPassword ? "text" : "password"}
+                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 pr-10 shadow-sm focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
+                                    {...register("password")}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                >
+                                    {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                                </button>
+                            </div>
                             {errors.password && (
                                 <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                            )}
+                            {watchedPassword && (
+                                <PasswordStrengthIndicator password={watchedPassword} />
                             )}
                         </div>
 
@@ -173,12 +260,21 @@ const StaffRequestAccessPage = () => {
                             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
                                 Confirm Password
                             </label>
-                            <input
-                                id="confirmPassword"
-                                type="password"
-                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
-                                {...register("confirmPassword")}
-                            />
+                            <div className="relative">
+                                <input
+                                    id="confirmPassword"
+                                    type={showConfirmPassword ? "text" : "password"}
+                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 pr-10 shadow-sm focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
+                                    {...register("confirmPassword")}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                >
+                                    {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                                </button>
+                            </div>
                             {errors.confirmPassword && (
                                 <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
                             )}

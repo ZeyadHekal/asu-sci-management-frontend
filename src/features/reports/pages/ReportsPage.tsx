@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { DataTable } from "mantine-datatable";
-import { LuSearch } from "react-icons/lu";
+import { LuSearch, LuHistory } from "react-icons/lu";
 import { FiAlertTriangle } from "react-icons/fi";
 import { useNavigate } from "react-router";
 import Modal from "../../../ui/modal/Modal";
+import { UpdateHistoryModal } from "../../devices/components";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,6 +15,14 @@ import { useDeviceReportControllerCreate } from "../../../generated/hooks/device
 import { useDeviceControllerGetAll } from "../../../generated/hooks/devicesHooks/useDeviceControllerGetAll";
 import { useLabControllerGetAll } from "../../../generated/hooks/labsHooks/useLabControllerGetAll";
 import { DeviceReportDto } from "../../../generated/types/DeviceReportDto";
+import { DeviceReportListDto } from "../../../generated/types/DeviceReportListDto";
+import { getReportStatusBadge, getReportStatusLabel } from "../../../global/constants/reportStatus";
+
+// Type for paginated response structure
+interface DeviceReportPaginatedResponse {
+    items: DeviceReportListDto[];
+    total: number;
+}
 
 // Form schema for report
 const reportSchema = z.object({
@@ -50,11 +59,17 @@ const ReportsPage = () => {
     const [page, setPage] = useState(1);
     const PAGE_SIZES = [5, 10, 20, 30];
     const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
-    const [filteredReports, setFilteredReports] = useState<DeviceReportDto[]>([]);
-    const [paginatedReports, setPaginatedReports] = useState<DeviceReportDto[]>([]);
+    const [filteredReports, setFilteredReports] = useState<DeviceReportListDto[]>([]);
+    const [paginatedReports, setPaginatedReports] = useState<DeviceReportListDto[]>([]);
+    
+    // State for UpdateHistoryModal
+    const [selectedReportForHistory, setSelectedReportForHistory] = useState<DeviceReportListDto | null>(null);
+    const [isUpdateHistoryModalOpen, setIsUpdateHistoryModalOpen] = useState(false);
 
     // Fetch user's reports
     const { data: reportsData, isLoading: reportsLoading, refetch } = useDeviceReportControllerGetMyReports();
+    
+    // Note: API returns paginated response with { items: [], total: number } structure
     
     // Fetch devices and labs for form options
     const { data: devicesData } = useDeviceControllerGetAll();
@@ -90,10 +105,15 @@ const ReportsPage = () => {
     });
 
     const selectedLab = watch("labId");
+    const selectedDevice = watch("deviceId");
+    const selectedProblemType = watch("problemType");
 
     // Memoize reports data to prevent infinite re-renders
     const reports = useMemo(() => {
-        return reportsData?.data ? (Array.isArray(reportsData.data) ? reportsData.data : [reportsData.data]) : [];
+        // Handle pagination response structure: { items: [], total: number }
+        // The API actually returns a paginated response despite the generated type suggesting an array
+        const data = reportsData?.data as unknown as DeviceReportPaginatedResponse;
+        return data?.items || [];
     }, [reportsData?.data]);
 
     // Memoize lab options
@@ -151,14 +171,24 @@ const ReportsPage = () => {
     }, [page, pageSize, filteredReports]);
 
     const onSubmit = (data: ReportFormData) => {
+        const reportData: any = {
+            deviceId: data.deviceId.value,
+            description: data.description,
+            status: "REPORTED" as const
+        };
+
+        // Note: appId is now optional in the backend
+        // In the future, we can add software selection for software-related issues
+
         createReport({
-            data: {
-                deviceId: data.deviceId.value,
-                appId: "default-app", // Temporary - should be selected from available software
-                description: data.description,
-                status: "REPORTED" as const
-            }
+            data: reportData
         });
+    };
+
+    // Handler for viewing update history
+    const handleViewUpdateHistory = (report: DeviceReportListDto) => {
+        setSelectedReportForHistory(report);
+        setIsUpdateHistoryModalOpen(true);
     };
 
     return (
@@ -225,20 +255,45 @@ const ReportsPage = () => {
                             accessor: "status",
                             title: "Status",
                             render: (row) => (
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                    row.status === "RESOLVED" ? "bg-green-100 text-green-800" :
-                                    row.status === "IN_PROGRESS" ? "bg-yellow-100 text-yellow-800" :
-                                    row.status === "CANCELLED" ? "bg-red-100 text-red-800" :
-                                    "bg-gray-100 text-gray-800"
-                                }`}>
-                                    {row.status ? row.status.replace('_', ' ') : 'Unknown'}
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getReportStatusBadge(row.status)}`}>
+                                    {getReportStatusLabel(row.status)}
                                 </span>
                             )
                         },
                         {
-                            accessor: "reporterName",
-                            title: "Reported By",
-                            render: (row) => row.reporterName || "Unknown"
+                            accessor: "resolutionUpdates",
+                            title: "Updates",
+                            render: (row) => (
+                                <div className="flex items-center gap-2">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        (row.resolutionUpdates?.length || 0) > 0 
+                                            ? "bg-blue-100 text-blue-800" 
+                                            : "bg-gray-100 text-gray-600"
+                                    }`}>
+                                        {row.resolutionUpdates?.length || 0} update{(row.resolutionUpdates?.length || 0) !== 1 ? 's' : ''}
+                                    </span>
+                                    {(row.resolutionUpdates?.length || 0) > 0 && (
+                                        <span className="text-xs text-gray-500">
+                                            Latest: {row.resolutionUpdates?.[row.resolutionUpdates.length - 1]?.status || 'Unknown'}
+                                        </span>
+                                    )}
+                                </div>
+                            )
+                        },
+                        {
+                            accessor: "actions",
+                            title: "Actions",
+                            render: (row) => (
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => handleViewUpdateHistory(row)}
+                                        className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
+                                        title="View resolution updates"
+                                    >
+                                        <LuHistory size={16} />
+                                    </button>
+                                </div>
+                            )
                         }
                     ]}
                     totalRecords={filteredReports.length}
@@ -362,6 +417,28 @@ const ReportsPage = () => {
                     </div>
                 </form>
             </Modal>
+
+            {/* Update History Modal */}
+            <UpdateHistoryModal
+                isOpen={isUpdateHistoryModalOpen}
+                onClose={() => {
+                    setIsUpdateHistoryModalOpen(false);
+                    setSelectedReportForHistory(null);
+                }}
+                updates={selectedReportForHistory?.resolutionUpdates?.map(update => ({
+                    id: parseInt(update.id),
+                    date: new Date(update.created_at.toString()).toISOString(),
+                    status: update.status === 'COMPLETED' ? 'Resolved' : 
+                           update.status === 'IN_PROGRESS' ? 'In Progress' : 
+                           update.status === 'FAILED' ? 'Failed' : 
+                           update.status === 'CANCELLED' ? 'Cancelled' : update.status,
+                    issue: update.description,
+                    resolution: update.resolutionNotes || undefined,
+                    involvedPersonnel: update.involvedPersonnel || []
+                })) || []}
+                reportDescription={selectedReportForHistory?.description || ""}
+                reportDate={selectedReportForHistory?.created_at ? new Date(selectedReportForHistory.created_at).toLocaleDateString() : ""}
+            />
         </div>
     );
 };

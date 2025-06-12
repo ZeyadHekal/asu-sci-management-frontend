@@ -4,9 +4,11 @@
  */
 
 export const updateDeviceReportDtoStatusEnum = {
-  REPORTED: 'REPORTED',
+  PENDING_REVIEW: 'PENDING_REVIEW',
   IN_PROGRESS: 'IN_PROGRESS',
+  CONFIRMED: 'CONFIRMED',
   RESOLVED: 'RESOLVED',
+  REJECTED: 'REJECTED',
   CANCELLED: 'CANCELLED',
 } as const
 
@@ -20,7 +22,7 @@ export type UpdateDeviceReportDto = {
   description?: string | undefined
   /**
    * @description Report status
-   * @default "REPORTED"
+   * @default "PENDING_REVIEW"
    * @type string | undefined
    */
   status?: UpdateDeviceReportDtoStatusEnum | undefined

@@ -7,6 +7,7 @@ import client from '../../../global/api/apiClient'
 import type { RequestConfig, ResponseConfig, ResponseErrorConfig } from '../../../global/api/apiClient'
 import type { UseMutationOptions, QueryClient } from '@tanstack/react-query'
 import type {
+  StaffRequestControllerApproveMutationRequest,
   StaffRequestControllerApproveMutationResponse,
   StaffRequestControllerApprovePathParams,
   StaffRequestControllerApprove400,
@@ -27,7 +28,8 @@ export type StaffRequestControllerApproveMutationKey = ReturnType<typeof staffRe
  */
 export async function staffRequestControllerApprove(
   id: StaffRequestControllerApprovePathParams['id'],
-  config: Partial<RequestConfig> & { client?: typeof client } = {},
+  data: StaffRequestControllerApproveMutationRequest,
+  config: Partial<RequestConfig<StaffRequestControllerApproveMutationRequest>> & { client?: typeof client } = {},
 ) {
   const { client: request = client, ...requestConfig } = config
 
@@ -36,8 +38,8 @@ export async function staffRequestControllerApprove(
     ResponseErrorConfig<
       StaffRequestControllerApprove400 | StaffRequestControllerApprove401 | StaffRequestControllerApprove403 | StaffRequestControllerApprove404
     >,
-    unknown
-  >({ method: 'PUT', url: `/staff-requests/${id}/approve`, ...requestConfig })
+    StaffRequestControllerApproveMutationRequest
+  >({ method: 'PUT', url: `/staff-requests/${id}/approve`, data, ...requestConfig })
   return res
 }
 
@@ -53,10 +55,10 @@ export function useStaffRequestControllerApprove<TContext>(
       ResponseErrorConfig<
         StaffRequestControllerApprove400 | StaffRequestControllerApprove401 | StaffRequestControllerApprove403 | StaffRequestControllerApprove404
       >,
-      { id: StaffRequestControllerApprovePathParams['id'] },
+      { id: StaffRequestControllerApprovePathParams['id']; data: StaffRequestControllerApproveMutationRequest },
       TContext
     > & { client?: QueryClient }
-    client?: Partial<RequestConfig> & { client?: typeof client }
+    client?: Partial<RequestConfig<StaffRequestControllerApproveMutationRequest>> & { client?: typeof client }
   } = {},
 ) {
   const { mutation: { client: queryClient, ...mutationOptions } = {}, client: config = {} } = options ?? {}
@@ -67,12 +69,12 @@ export function useStaffRequestControllerApprove<TContext>(
     ResponseErrorConfig<
       StaffRequestControllerApprove400 | StaffRequestControllerApprove401 | StaffRequestControllerApprove403 | StaffRequestControllerApprove404
     >,
-    { id: StaffRequestControllerApprovePathParams['id'] },
+    { id: StaffRequestControllerApprovePathParams['id']; data: StaffRequestControllerApproveMutationRequest },
     TContext
   >(
     {
-      mutationFn: async ({ id }) => {
-        return staffRequestControllerApprove(id, config)
+      mutationFn: async ({ id, data }) => {
+        return staffRequestControllerApprove(id, data, config)
       },
       mutationKey,
       ...mutationOptions,

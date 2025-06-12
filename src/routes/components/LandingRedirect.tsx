@@ -44,8 +44,11 @@ const landingRoutes: RouteDefinition[] = [
     priority: 75
   },
   {
-    path: "/home",
-    privilege: "CREATE_STUDENT",
+    path: "/courses",
+    conditionalAccess: (privileges) => 
+      privileges.includes("TEACH_COURSE") || 
+      privileges.includes("ASSIST_IN_COURSE") || 
+      privileges.includes("STUDY_COURSE"),
     priority: 70
   },
   // Fallback has been removed - if no routes are accessible, show NoAccessPage

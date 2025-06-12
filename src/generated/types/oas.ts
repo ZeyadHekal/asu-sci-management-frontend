@@ -76,6 +76,36 @@ export const oas = {
         tags: ['user-types'],
       },
     },
+    '/user-types/for-staff-assignment': {
+      get: {
+        description: 'Retrieve user types suitable for staff assignment (excludes Student type)',
+        operationId: 'UserTypeController_findAllForStaffAssignment',
+        parameters: [],
+        responses: {
+          '200': {
+            description: 'User types for staff assignment retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/UserTypeDto',
+                  },
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+        },
+        summary: 'Get user types for staff assignment',
+        tags: ['user-types'],
+      },
+    },
     '/user-types/with-privileges': {
       get: {
         description: 'Retrieve all user types with their associated privileges, with search and pagination',
@@ -904,7 +934,7 @@ export const oas = {
         tags: ['users'],
       },
       patch: {
-        description: 'Update an existing staff member by ID. Username cannot be changed. Email and userType can be updated.',
+        description: 'Update an existing staff member by ID. Username can be updated but must be unique. UserType can also be updated.',
         operationId: 'UserController_updateStaff',
         parameters: [
           {
@@ -939,7 +969,7 @@ export const oas = {
             },
           },
           '400': {
-            description: 'Bad Request - Invalid data or email already in use',
+            description: 'Bad Request - Invalid data or username already in use',
           },
           '401': {
             description: 'Unauthorized',
@@ -1040,6 +1070,36 @@ export const oas = {
           },
         },
         summary: 'Update user privileges',
+        tags: ['users'],
+      },
+    },
+    '/users/assistants': {
+      get: {
+        description: 'Retrieve all users with LAB_ASSISTANT privilege',
+        operationId: 'UserController_getAllAssistants',
+        parameters: [],
+        responses: {
+          '200': {
+            description: 'Lab assistants retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/StaffDto',
+                  },
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+        },
+        summary: 'Get all lab assistants',
         tags: ['users'],
       },
     },
@@ -1254,6 +1314,23 @@ export const oas = {
         tags: ['authentication'],
       },
     },
+    '/auth/logout': {
+      post: {
+        description: 'Logout user and update session tracking',
+        operationId: 'AuthController_logout',
+        parameters: [],
+        responses: {
+          '200': {
+            description: 'User logged out successfully',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+        },
+        summary: 'User logout',
+        tags: ['authentication'],
+      },
+    },
     '/events': {
       post: {
         description: 'Create a new event',
@@ -1395,6 +1472,73 @@ export const oas = {
         tags: ['events'],
       },
     },
+    '/events/course/{courseId}': {
+      get: {
+        description: 'Retrieve all events for a specific course',
+        operationId: 'EventController_getCourseEvents',
+        parameters: [
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            description: 'Course ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Course events retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/EventListDto',
+                  },
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Not Found - Course does not exist',
+          },
+        },
+        summary: 'Get events for a specific course',
+        tags: ['events'],
+      },
+    },
+    '/events/course/{courseId}/export': {
+      get: {
+        description: 'Export events for a specific course as Excel file',
+        operationId: 'EventController_exportCourseEvents',
+        parameters: [
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            description: 'Course ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Events exported successfully',
+          },
+        },
+        summary: 'Export course events',
+        tags: ['events'],
+      },
+    },
     '/events/student/exam-mode-status': {
       get: {
         operationId: 'EventController_getStudentExamModeStatus',
@@ -1435,6 +1579,29 @@ export const oas = {
           },
         },
         summary: 'Get event schedule IDs for WebSocket listening',
+        tags: ['events'],
+      },
+    },
+    '/events/student/my-exams': {
+      get: {
+        operationId: 'EventController_getStudentExams',
+        parameters: [],
+        responses: {
+          '200': {
+            description: 'Student exams retrieved',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/StudentExamDto',
+                  },
+                },
+              },
+            },
+          },
+        },
+        summary: 'Get student exams',
         tags: ['events'],
       },
     },
@@ -1821,6 +1988,1091 @@ export const oas = {
         tags: ['events'],
       },
     },
+    '/events/{courseId}/simulate-groups': {
+      post: {
+        operationId: 'EventController_simulateGroupCreation',
+        parameters: [
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Group simulation data',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/GroupCreationSimulationDto',
+                },
+              },
+            },
+          },
+        },
+        summary: 'Simulate group creation for event scheduling',
+        tags: ['events'],
+      },
+    },
+    '/events/{courseId}/simulate-groups/add-group': {
+      post: {
+        operationId: 'EventController_addGroupToSimulation',
+        parameters: [
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/AddGroupToSimulationDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Group added to simulation',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/GroupCreationSimulationDto',
+                },
+              },
+            },
+          },
+        },
+        summary: 'Add a group to the simulation by selecting a lab',
+        tags: ['events'],
+      },
+    },
+    '/events/{courseId}/simulate-groups/remove-group': {
+      post: {
+        operationId: 'EventController_removeGroupFromSimulation',
+        parameters: [
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/RemoveGroupFromSimulationDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Group removed from simulation',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/GroupCreationSimulationDto',
+                },
+              },
+            },
+          },
+        },
+        summary: 'Remove a group from the simulation',
+        tags: ['events'],
+      },
+    },
+    '/events/create-with-groups': {
+      post: {
+        operationId: 'EventController_createEventWithGroups',
+        parameters: [],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/CreateEventWithGroupsDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Event created with groups',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/Event',
+                },
+              },
+            },
+          },
+        },
+        summary: 'Create event with complex group scheduling and exam models',
+        tags: ['events'],
+      },
+    },
+    '/events/upload-exam-model-files': {
+      post: {
+        operationId: 'EventController_uploadExamModelFiles',
+        parameters: [],
+        responses: {
+          '200': {
+            description: 'Files uploaded successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/UploadExamModelFilesResponseDto',
+                },
+              },
+            },
+          },
+        },
+        summary: 'Upload exam model files and get file IDs',
+        tags: ['events'],
+      },
+    },
+    '/events/move-student-groups': {
+      post: {
+        operationId: 'EventController_moveStudentBetweenGroups',
+        parameters: [],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/MoveStudentBetweenGroupsDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Student moved successfully',
+          },
+        },
+        summary: 'Move student between groups',
+        tags: ['events'],
+      },
+    },
+    '/events/{courseId}/student-grades': {
+      get: {
+        operationId: 'EventController_getStudentGradesSummary',
+        parameters: [
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Student grades summary',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/StudentGradesSummaryDto',
+                  },
+                },
+              },
+            },
+          },
+        },
+        summary: 'Get student grades summary for a course',
+        tags: ['events'],
+      },
+    },
+    '/events/my-grades/{studentId}': {
+      get: {
+        operationId: 'EventController_getMyGrades',
+        parameters: [
+          {
+            name: 'studentId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'My grades summary',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/StudentGradesSummaryDto',
+                  },
+                },
+              },
+            },
+          },
+        },
+        summary: 'Get my grades (for student dashboard)',
+        tags: ['events'],
+      },
+    },
+    '/course-groups': {
+      post: {
+        operationId: 'CourseGroupController_create',
+        parameters: [],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/CreateCourseGroupDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Course group created successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/CourseGroupDto',
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Bad Request.',
+          },
+        },
+        summary: 'Create a new course-group',
+        tags: ['course-groups'],
+      },
+      get: {
+        operationId: 'CourseGroupController_getPaginated',
+        parameters: [
+          {
+            name: 'limit',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 10,
+              type: 'number',
+            },
+          },
+          {
+            name: 'page',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 0,
+              type: 'number',
+            },
+          },
+          {
+            name: 'sortBy',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'created_at',
+              type: 'string',
+            },
+          },
+          {
+            name: 'sortOrder',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'desc',
+              enum: ['asc', 'desc'],
+              type: 'string',
+            },
+          },
+          {
+            name: 'ids',
+            required: false,
+            in: 'query',
+            schema: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+          },
+          {
+            name: 'courseId',
+            required: false,
+            in: 'query',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'labId',
+            required: false,
+            in: 'query',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Return all course groups.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/CourseGroupPagedDto',
+                },
+              },
+            },
+          },
+        },
+        summary: 'Get all course-groups',
+        tags: ['course-groups'],
+      },
+    },
+    '/course-groups/schedule-table': {
+      get: {
+        description: 'Get course groups with scheduling information for table display',
+        operationId: 'CourseGroupController_getScheduleTable',
+        parameters: [
+          {
+            name: 'limit',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 10,
+              type: 'number',
+            },
+          },
+          {
+            name: 'page',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 0,
+              type: 'number',
+            },
+          },
+          {
+            name: 'sortBy',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'created_at',
+              type: 'string',
+            },
+          },
+          {
+            name: 'sortOrder',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'desc',
+              enum: ['asc', 'desc'],
+              type: 'string',
+            },
+          },
+          {
+            name: 'ids',
+            required: false,
+            in: 'query',
+            schema: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+          },
+          {
+            name: 'courseId',
+            required: false,
+            in: 'query',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'labId',
+            required: false,
+            in: 'query',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'weekDay',
+            required: false,
+            in: 'query',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'search',
+            required: false,
+            in: 'query',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Return course group schedule table.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/CourseGroupScheduleTablePagedDto',
+                },
+              },
+            },
+          },
+        },
+        summary: 'Get course group schedule table',
+        tags: ['course-groups'],
+      },
+    },
+    '/course-groups/schedules': {
+      post: {
+        description: 'Create a new schedule for a course group',
+        operationId: 'CourseGroupController_createSchedule',
+        parameters: [],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/CreateCourseGroupScheduleDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Schedule created successfully.',
+          },
+          '400': {
+            description: 'Bad Request.',
+          },
+        },
+        summary: 'Create course group schedule',
+        tags: ['course-groups'],
+      },
+    },
+    '/course-groups/schedules/{courseGroupId}/{assistantId}': {
+      patch: {
+        description: 'Update a course group schedule',
+        operationId: 'CourseGroupController_updateSchedule',
+        parameters: [
+          {
+            name: 'courseGroupId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'assistantId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/UpdateCourseGroupScheduleDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Schedule updated successfully.',
+          },
+          '404': {
+            description: 'Schedule not found.',
+          },
+        },
+        summary: 'Update course group schedule',
+        tags: ['course-groups'],
+      },
+      delete: {
+        description: 'Delete a course group schedule',
+        operationId: 'CourseGroupController_deleteSchedule',
+        parameters: [
+          {
+            name: 'courseGroupId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'assistantId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Schedule deleted successfully.',
+          },
+          '404': {
+            description: 'Schedule not found.',
+          },
+        },
+        summary: 'Delete course group schedule',
+        tags: ['course-groups'],
+      },
+    },
+    '/course-groups/{id}': {
+      get: {
+        operationId: 'CourseGroupController_getById',
+        parameters: [
+          {
+            name: 'id',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Return the course group.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/CourseGroupDto',
+                },
+              },
+            },
+          },
+          '404': {
+            description: 'Course group not found.',
+          },
+        },
+        summary: 'Get a course-group by ID',
+        tags: ['course-groups'],
+      },
+      patch: {
+        operationId: 'CourseGroupController_update',
+        parameters: [
+          {
+            name: 'id',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/UpdateCourseGroupDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Course group updated successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/CourseGroupDto',
+                },
+              },
+            },
+          },
+          '404': {
+            description: 'Course group not found.',
+          },
+        },
+        summary: 'Update a course-group',
+        tags: ['course-groups'],
+      },
+      delete: {
+        operationId: 'CourseGroupController_delete',
+        parameters: [
+          {
+            name: 'id',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Course group deleted successfully.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/DeleteDto',
+                },
+              },
+            },
+          },
+          '404': {
+            description: 'Course group not found.',
+          },
+        },
+        summary: 'Delete a course-group',
+        tags: ['course-groups'],
+      },
+    },
+    '/course-groups/course/{courseId}/default-group-students': {
+      get: {
+        description: 'Get the count of students assigned to the default group of a course',
+        operationId: 'CourseGroupController_getStudentsInDefaultGroup',
+        parameters: [
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Return the number of students in default group.',
+          },
+        },
+        summary: 'Get number of students in default group',
+        tags: ['course-groups'],
+      },
+    },
+    '/course-groups/assistant/{assistantId}/course/{courseId}': {
+      get: {
+        description: 'Get all groups where the assistant teaches in a specific course',
+        operationId: 'CourseGroupController_getAssistantGroups',
+        parameters: [
+          {
+            name: 'assistantId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Return assistant assigned groups.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/CourseGroupScheduleTableDto',
+                  },
+                },
+              },
+            },
+          },
+        },
+        summary: 'Get groups assigned to an assistant for a specific course',
+        tags: ['course-groups'],
+      },
+    },
+    '/course-groups/lab/{labId}/course/{courseId}/available-devices': {
+      get: {
+        description: 'Get the number of available devices in a lab that meet the course software requirements',
+        operationId: 'CourseGroupController_getAvailableDevicesForLab',
+        parameters: [
+          {
+            name: 'labId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Return available devices information.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/LabCapacityDto',
+                },
+              },
+            },
+          },
+        },
+        summary: 'Get available devices for a lab and course',
+        tags: ['course-groups'],
+      },
+    },
+    '/course-groups/lab/{labId}/course/{courseId}/capacity': {
+      get: {
+        description: 'Calculate how many students can be accommodated in a lab for a specific course based on software requirements',
+        operationId: 'CourseGroupController_calculateLabCapacityForCourse',
+        parameters: [
+          {
+            name: 'labId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Return lab capacity for the course.',
+          },
+        },
+        summary: 'Calculate lab capacity for a course',
+        tags: ['course-groups'],
+      },
+    },
+    '/course-groups/{id}/reorder': {
+      patch: {
+        operationId: 'CourseGroupController_reorderGroups',
+        parameters: [
+          {
+            name: 'id',
+            required: true,
+            in: 'path',
+            description: 'Course ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          description: 'Array of group IDs in the desired order',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  groupIds: {
+                    type: 'array',
+                    items: {
+                      type: 'string',
+                      format: 'uuid',
+                    },
+                    description: 'Array of group IDs in desired order (default groups will be moved to end automatically)',
+                  },
+                },
+                required: ['groupIds'],
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Groups reordered successfully',
+          },
+        },
+        summary: 'Reorder course groups',
+        tags: ['course-groups'],
+      },
+    },
+    '/course-groups/{groupId}/details': {
+      get: {
+        operationId: 'CourseGroupController_getGroupDetails',
+        parameters: [
+          {
+            name: 'groupId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Group details retrieved successfully',
+          },
+        },
+        summary: 'Get group details with students',
+        tags: ['course-groups'],
+      },
+    },
+    '/course-groups/{groupId}/available-groups-for-move/{studentId}': {
+      get: {
+        operationId: 'CourseGroupController_getAvailableGroupsForMove',
+        parameters: [
+          {
+            name: 'groupId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'studentId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Available groups retrieved successfully',
+          },
+        },
+        summary: 'Get available groups for moving a student',
+        tags: ['course-groups'],
+      },
+    },
+    '/course-groups/move-student': {
+      post: {
+        operationId: 'CourseGroupController_moveStudentBetweenGroups',
+        parameters: [],
+        responses: {
+          '200': {
+            description: 'Student moved successfully',
+          },
+        },
+        summary: 'Move student between groups',
+        tags: ['course-groups'],
+      },
+    },
+    '/device-login-history': {
+      post: {
+        description: 'Create a new device login history record',
+        operationId: 'DeviceLoginHistoryController_createLoginRecord',
+        parameters: [],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/CreateLoginHistoryDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Login history record created successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/LoginHistoryDto',
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Bad Request - Invalid input data',
+          },
+          '404': {
+            description: 'Not Found - Device or User does not exist',
+          },
+        },
+        summary: 'Create login history record',
+        tags: ['device-login-history'],
+      },
+    },
+    '/device-login-history/device/{deviceId}': {
+      get: {
+        description: 'Retrieve login history for a specific device',
+        operationId: 'DeviceLoginHistoryController_getDeviceLoginHistory',
+        parameters: [
+          {
+            name: 'deviceId',
+            required: true,
+            in: 'path',
+            description: 'Device ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'limit',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 10,
+              type: 'number',
+            },
+          },
+          {
+            name: 'page',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 0,
+              type: 'number',
+            },
+          },
+          {
+            name: 'sortBy',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'created_at',
+              type: 'string',
+            },
+          },
+          {
+            name: 'sortOrder',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'desc',
+              enum: ['asc', 'desc'],
+              type: 'string',
+            },
+          },
+          {
+            name: 'ids',
+            required: false,
+            in: 'query',
+            schema: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+          },
+          {
+            name: 'userId',
+            required: false,
+            in: 'query',
+            description: 'Filter by user ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'ipAddress',
+            required: false,
+            in: 'query',
+            description: 'Filter by IP address',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'loginStatus',
+            required: false,
+            in: 'query',
+            description: 'Filter by login status',
+            schema: {
+              enum: ['SUCCESS', 'FAILED', 'LOGOUT'],
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Device login history retrieved successfully',
+          },
+          '404': {
+            description: 'Not Found - Device does not exist',
+          },
+        },
+        summary: 'Get device login history',
+        tags: ['device-login-history'],
+      },
+    },
+    '/device-login-history/device/{deviceId}/stats': {
+      get: {
+        description: 'Get login statistics for a specific device',
+        operationId: 'DeviceLoginHistoryController_getDeviceLoginStats',
+        parameters: [
+          {
+            name: 'deviceId',
+            required: true,
+            in: 'path',
+            description: 'Device ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'days',
+            required: true,
+            in: 'query',
+            schema: {
+              type: 'number',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Device login statistics retrieved successfully',
+          },
+          '404': {
+            description: 'Not Found - Device does not exist',
+          },
+        },
+        summary: 'Get device login statistics',
+        tags: ['device-login-history'],
+      },
+    },
     '/privileges': {
       get: {
         operationId: 'PrivilegeController_getAllPrivileges',
@@ -1991,7 +3243,6 @@ export const oas = {
             schema: {
               enum: [
                 'MANAGE_SYSTEM',
-                'MANAGE_USERS',
                 'MANAGE_STUDENTS',
                 'MANAGE_LABS',
                 'LAB_ASSISTANT',
@@ -2040,7 +3291,6 @@ export const oas = {
             schema: {
               enum: [
                 'MANAGE_SYSTEM',
-                'MANAGE_USERS',
                 'MANAGE_STUDENTS',
                 'MANAGE_LABS',
                 'LAB_ASSISTANT',
@@ -2080,7 +3330,6 @@ export const oas = {
             schema: {
               enum: [
                 'MANAGE_SYSTEM',
-                'MANAGE_USERS',
                 'MANAGE_STUDENTS',
                 'MANAGE_LABS',
                 'LAB_ASSISTANT',
@@ -2381,6 +3630,501 @@ export const oas = {
         tags: ['labs'],
       },
     },
+    '/event-groups/event/{eventId}': {
+      get: {
+        operationId: 'EventGroupController_getEventGroups',
+        parameters: [
+          {
+            name: 'eventId',
+            required: true,
+            in: 'path',
+            description: 'Event ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Event groups retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/EventGroupDto',
+                  },
+                },
+              },
+            },
+          },
+        },
+        summary: 'Get all event groups for a specific event',
+        tags: ['event-groups'],
+      },
+    },
+    '/event-groups/{groupId}/students': {
+      get: {
+        operationId: 'EventGroupController_getEventGroupStudents',
+        parameters: [
+          {
+            name: 'groupId',
+            required: true,
+            in: 'path',
+            description: 'Event Group ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Event group students retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/EventGroupStudentDto',
+                  },
+                },
+              },
+            },
+          },
+        },
+        summary: 'Get students in a specific event group',
+        tags: ['event-groups'],
+      },
+    },
+    '/event-groups/move-student': {
+      post: {
+        operationId: 'EventGroupController_moveStudentBetweenGroups',
+        parameters: [],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/MoveStudentBetweenGroupsDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Student moved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: {
+                      type: 'boolean',
+                    },
+                    message: {
+                      type: 'string',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        summary: 'Move student between event groups',
+        tags: ['event-groups'],
+      },
+    },
+    '/event-groups/{groupId}/start-exam': {
+      post: {
+        operationId: 'EventGroupController_startExamForGroup',
+        parameters: [
+          {
+            name: 'groupId',
+            required: true,
+            in: 'path',
+            description: 'Event Group ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Exam started successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: {
+                      type: 'boolean',
+                    },
+                    message: {
+                      type: 'string',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        summary: 'Start exam for a specific group (manual start)',
+        tags: ['event-groups'],
+      },
+    },
+    '/event-groups/{groupId}/auto-start': {
+      patch: {
+        operationId: 'EventGroupController_updateAutoStart',
+        parameters: [
+          {
+            name: 'groupId',
+            required: true,
+            in: 'path',
+            description: 'Event Group ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Auto-start setting updated successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: {
+                      type: 'boolean',
+                    },
+                    message: {
+                      type: 'string',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        summary: 'Update autoStart setting for a group',
+        tags: ['event-groups'],
+      },
+    },
+    '/exam-models/upload': {
+      post: {
+        operationId: 'ExamModelController_uploadExamModels',
+        parameters: [],
+        requestBody: {
+          required: true,
+          description: 'Upload exam model files',
+          content: {
+            'multipart/form-data': {
+              schema: {
+                type: 'object',
+                properties: {
+                  name: {
+                    type: 'string',
+                    description: 'Name of the exam model',
+                  },
+                  description: {
+                    type: 'string',
+                    description: 'Description of the exam model',
+                  },
+                  eventId: {
+                    type: 'string',
+                    description: 'Event ID',
+                  },
+                  files: {
+                    type: 'array',
+                    items: {
+                      type: 'string',
+                      format: 'binary',
+                    },
+                    description: 'Exam model files',
+                  },
+                },
+                required: ['name', 'eventId', 'files'],
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Exam models uploaded successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/ExamModelDto',
+                  },
+                },
+              },
+            },
+          },
+        },
+        summary: 'Upload exam models for an event',
+        tags: ['exam-models'],
+      },
+    },
+    '/exam-models/event/{eventId}': {
+      get: {
+        operationId: 'ExamModelController_getExamModelsForEvent',
+        parameters: [
+          {
+            name: 'eventId',
+            required: true,
+            in: 'path',
+            description: 'Event ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Exam models retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/ExamModelDto',
+                  },
+                },
+              },
+            },
+          },
+        },
+        summary: 'Get all exam models for an event',
+        tags: ['exam-models'],
+      },
+    },
+    '/exam-models/{modelId}/files': {
+      get: {
+        operationId: 'ExamModelController_getExamModelFiles',
+        parameters: [
+          {
+            name: 'modelId',
+            required: true,
+            in: 'path',
+            description: 'Exam Model ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Exam model files retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      fileName: {
+                        type: 'string',
+                      },
+                      downloadUrl: {
+                        type: 'string',
+                      },
+                      fileSize: {
+                        type: 'number',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        summary: 'Get all files for an exam model with presigned URLs',
+        tags: ['exam-models'],
+      },
+    },
+    '/exam-models/{modelId}/file/{fileId}/download': {
+      get: {
+        operationId: 'ExamModelController_downloadExamModelFile',
+        parameters: [
+          {
+            name: 'modelId',
+            required: true,
+            in: 'path',
+            description: 'Exam Model ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'fileId',
+            required: true,
+            in: 'path',
+            description: 'File ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Presigned URL generated successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    downloadUrl: {
+                      type: 'string',
+                    },
+                    fileName: {
+                      type: 'string',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        summary: 'Get presigned URL for specific exam model file',
+        tags: ['exam-models'],
+      },
+    },
+    '/exam-models/student/{studentId}/schedule/{scheduleId}': {
+      get: {
+        operationId: 'ExamModelController_getStudentAssignedExamModel',
+        parameters: [
+          {
+            name: 'studentId',
+            required: true,
+            in: 'path',
+            description: 'Student ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'scheduleId',
+            required: true,
+            in: 'path',
+            description: 'Event Schedule ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Student assigned exam model retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    examModel: {
+                      $ref: '#/components/schemas/ExamModelDto',
+                    },
+                    files: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          fileName: {
+                            type: 'string',
+                          },
+                          downloadUrl: {
+                            type: 'string',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        summary: 'Get student assigned exam model with files',
+        tags: ['exam-models'],
+      },
+    },
+    '/exam-models/assign': {
+      post: {
+        operationId: 'ExamModelController_assignExamModelsToStudents',
+        parameters: [],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/AssignExamModelsRequest',
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Exam models assigned successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: {
+                      type: 'boolean',
+                    },
+                    message: {
+                      type: 'string',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        summary: 'Assign exam models to students',
+        tags: ['exam-models'],
+      },
+    },
+    '/exam-models/{modelId}': {
+      delete: {
+        operationId: 'ExamModelController_deleteExamModel',
+        parameters: [
+          {
+            name: 'modelId',
+            required: true,
+            in: 'path',
+            description: 'Exam Model ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Exam model deleted successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: {
+                      type: 'boolean',
+                    },
+                    message: {
+                      type: 'string',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        summary: 'Delete an exam model',
+        tags: ['exam-models'],
+      },
+    },
     '/courses': {
       post: {
         description: 'Create a new course',
@@ -2402,7 +4146,7 @@ export const oas = {
             content: {
               'application/json': {
                 schema: {
-                  $ref: '#/components/schemas/CourseDto',
+                  $ref: '#/components/schemas/CourseDetailDto',
                 },
               },
             },
@@ -2446,6 +4190,36 @@ export const oas = {
         tags: ['courses'],
       },
     },
+    '/courses/my-courses': {
+      get: {
+        description: 'Retrieve courses where the current user is one of the doctors',
+        operationId: 'CourseController_getMyCourses',
+        parameters: [],
+        responses: {
+          '200': {
+            description: 'My courses retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/CourseListDto',
+                  },
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+        },
+        summary: 'Get my courses',
+        tags: ['courses'],
+      },
+    },
     '/courses/statistics': {
       get: {
         description: 'Retrieve course statistics and counts',
@@ -2463,6 +4237,26 @@ export const oas = {
           },
         },
         summary: 'Get course statistics',
+        tags: ['courses'],
+      },
+    },
+    '/courses/validate-data': {
+      get: {
+        description: 'Validate course data integrity and identify inconsistencies',
+        operationId: 'CourseController_validateCourseData',
+        parameters: [],
+        responses: {
+          '200': {
+            description: 'Course data validation completed successfully',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+        },
+        summary: 'Validate course data',
         tags: ['courses'],
       },
     },
@@ -2590,7 +4384,7 @@ export const oas = {
             content: {
               'application/json': {
                 schema: {
-                  $ref: '#/components/schemas/CourseDto',
+                  $ref: '#/components/schemas/CourseDetailDto',
                 },
               },
             },
@@ -2638,7 +4432,7 @@ export const oas = {
             content: {
               'application/json': {
                 schema: {
-                  $ref: '#/components/schemas/CourseDto',
+                  $ref: '#/components/schemas/CourseDetailDto',
                 },
               },
             },
@@ -2698,446 +4492,6 @@ export const oas = {
         },
         summary: 'Delete courses',
         tags: ['courses'],
-      },
-    },
-    '/course-groups': {
-      post: {
-        operationId: 'CourseGroupController_create',
-        parameters: [],
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: {
-                $ref: '#/components/schemas/CreateCourseGroupDto',
-              },
-            },
-          },
-        },
-        responses: {
-          '201': {
-            description: 'Course group created successfully.',
-            content: {
-              'application/json': {
-                schema: {
-                  $ref: '#/components/schemas/CourseGroupDto',
-                },
-              },
-            },
-          },
-          '400': {
-            description: 'Bad Request.',
-          },
-        },
-        summary: 'Create a new course-group',
-        tags: ['course-groups'],
-      },
-      get: {
-        operationId: 'CourseGroupController_getPaginated',
-        parameters: [
-          {
-            name: 'limit',
-            required: false,
-            in: 'query',
-            schema: {
-              default: 10,
-              type: 'number',
-            },
-          },
-          {
-            name: 'page',
-            required: false,
-            in: 'query',
-            schema: {
-              default: 0,
-              type: 'number',
-            },
-          },
-          {
-            name: 'sortBy',
-            required: false,
-            in: 'query',
-            schema: {
-              default: 'created_at',
-              type: 'string',
-            },
-          },
-          {
-            name: 'sortOrder',
-            required: false,
-            in: 'query',
-            schema: {
-              default: 'desc',
-              enum: ['asc', 'desc'],
-              type: 'string',
-            },
-          },
-          {
-            name: 'ids',
-            required: false,
-            in: 'query',
-            schema: {
-              type: 'array',
-              items: {
-                type: 'string',
-              },
-            },
-          },
-          {
-            name: 'courseId',
-            required: false,
-            in: 'query',
-            schema: {
-              type: 'string',
-            },
-          },
-          {
-            name: 'labId',
-            required: false,
-            in: 'query',
-            schema: {
-              type: 'string',
-            },
-          },
-        ],
-        responses: {
-          '200': {
-            description: 'Return all course groups.',
-            content: {
-              'application/json': {
-                schema: {
-                  $ref: '#/components/schemas/CourseGroupPagedDto',
-                },
-              },
-            },
-          },
-        },
-        summary: 'Get all course-groups',
-        tags: ['course-groups'],
-      },
-    },
-    '/course-groups/create-defaults': {
-      post: {
-        description: 'Manually create default groups for practical courses',
-        operationId: 'CourseGroupController_createDefaultGroups',
-        parameters: [],
-        responses: {
-          '200': {
-            description: 'Default groups creation triggered successfully.',
-          },
-        },
-        summary: 'Manually trigger default group creation',
-        tags: ['course-groups'],
-      },
-    },
-    '/course-groups/schedule-table': {
-      get: {
-        description: 'Get course groups with scheduling information for table display',
-        operationId: 'CourseGroupController_getScheduleTable',
-        parameters: [
-          {
-            name: 'limit',
-            required: false,
-            in: 'query',
-            schema: {
-              default: 10,
-              type: 'number',
-            },
-          },
-          {
-            name: 'page',
-            required: false,
-            in: 'query',
-            schema: {
-              default: 0,
-              type: 'number',
-            },
-          },
-          {
-            name: 'sortBy',
-            required: false,
-            in: 'query',
-            schema: {
-              default: 'created_at',
-              type: 'string',
-            },
-          },
-          {
-            name: 'sortOrder',
-            required: false,
-            in: 'query',
-            schema: {
-              default: 'desc',
-              enum: ['asc', 'desc'],
-              type: 'string',
-            },
-          },
-          {
-            name: 'ids',
-            required: false,
-            in: 'query',
-            schema: {
-              type: 'array',
-              items: {
-                type: 'string',
-              },
-            },
-          },
-          {
-            name: 'courseId',
-            required: false,
-            in: 'query',
-            schema: {
-              type: 'string',
-            },
-          },
-          {
-            name: 'labId',
-            required: false,
-            in: 'query',
-            schema: {
-              type: 'string',
-            },
-          },
-          {
-            name: 'weekDay',
-            required: false,
-            in: 'query',
-            schema: {
-              type: 'string',
-            },
-          },
-          {
-            name: 'search',
-            required: false,
-            in: 'query',
-            schema: {
-              type: 'string',
-            },
-          },
-        ],
-        responses: {
-          '200': {
-            description: 'Return course group schedule table.',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'array',
-                  items: {
-                    $ref: '#/components/schemas/CourseGroupScheduleTableDto',
-                  },
-                },
-              },
-            },
-          },
-        },
-        summary: 'Get course group schedule table',
-        tags: ['course-groups'],
-      },
-    },
-    '/course-groups/schedules': {
-      post: {
-        description: 'Create a new schedule for a course group',
-        operationId: 'CourseGroupController_createSchedule',
-        parameters: [],
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: {
-                $ref: '#/components/schemas/CreateCourseGroupScheduleDto',
-              },
-            },
-          },
-        },
-        responses: {
-          '201': {
-            description: 'Schedule created successfully.',
-          },
-          '400': {
-            description: 'Bad Request.',
-          },
-        },
-        summary: 'Create course group schedule',
-        tags: ['course-groups'],
-      },
-    },
-    '/course-groups/schedules/{courseGroupId}/{assistantId}': {
-      patch: {
-        description: 'Update a course group schedule',
-        operationId: 'CourseGroupController_updateSchedule',
-        parameters: [
-          {
-            name: 'courseGroupId',
-            required: true,
-            in: 'path',
-            schema: {
-              type: 'string',
-            },
-          },
-          {
-            name: 'assistantId',
-            required: true,
-            in: 'path',
-            schema: {
-              type: 'string',
-            },
-          },
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: {
-                $ref: '#/components/schemas/UpdateCourseGroupScheduleDto',
-              },
-            },
-          },
-        },
-        responses: {
-          '200': {
-            description: 'Schedule updated successfully.',
-          },
-          '404': {
-            description: 'Schedule not found.',
-          },
-        },
-        summary: 'Update course group schedule',
-        tags: ['course-groups'],
-      },
-      delete: {
-        description: 'Delete a course group schedule',
-        operationId: 'CourseGroupController_deleteSchedule',
-        parameters: [
-          {
-            name: 'courseGroupId',
-            required: true,
-            in: 'path',
-            schema: {
-              type: 'string',
-            },
-          },
-          {
-            name: 'assistantId',
-            required: true,
-            in: 'path',
-            schema: {
-              type: 'string',
-            },
-          },
-        ],
-        responses: {
-          '200': {
-            description: 'Schedule deleted successfully.',
-          },
-          '404': {
-            description: 'Schedule not found.',
-          },
-        },
-        summary: 'Delete course group schedule',
-        tags: ['course-groups'],
-      },
-    },
-    '/course-groups/{id}': {
-      get: {
-        operationId: 'CourseGroupController_getById',
-        parameters: [
-          {
-            name: 'id',
-            required: true,
-            in: 'path',
-            schema: {
-              type: 'string',
-            },
-          },
-        ],
-        responses: {
-          '200': {
-            description: 'Return the course group.',
-            content: {
-              'application/json': {
-                schema: {
-                  $ref: '#/components/schemas/CourseGroupDto',
-                },
-              },
-            },
-          },
-          '404': {
-            description: 'Course group not found.',
-          },
-        },
-        summary: 'Get a course-group by ID',
-        tags: ['course-groups'],
-      },
-      patch: {
-        operationId: 'CourseGroupController_update',
-        parameters: [
-          {
-            name: 'id',
-            required: true,
-            in: 'path',
-            schema: {
-              type: 'string',
-            },
-          },
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: {
-                $ref: '#/components/schemas/UpdateCourseGroupDto',
-              },
-            },
-          },
-        },
-        responses: {
-          '200': {
-            description: 'Course group updated successfully.',
-            content: {
-              'application/json': {
-                schema: {
-                  $ref: '#/components/schemas/CourseGroupDto',
-                },
-              },
-            },
-          },
-          '404': {
-            description: 'Course group not found.',
-          },
-        },
-        summary: 'Update a course-group',
-        tags: ['course-groups'],
-      },
-      delete: {
-        operationId: 'CourseGroupController_delete',
-        parameters: [
-          {
-            name: 'id',
-            required: true,
-            in: 'path',
-            schema: {
-              type: 'string',
-            },
-          },
-        ],
-        responses: {
-          '200': {
-            description: 'Course group deleted successfully.',
-            content: {
-              'application/json': {
-                schema: {
-                  $ref: '#/components/schemas/DeleteDto',
-                },
-              },
-            },
-          },
-          '404': {
-            description: 'Course group not found.',
-          },
-        },
-        summary: 'Delete a course-group',
-        tags: ['course-groups'],
       },
     },
     '/event-schedules': {
@@ -3749,6 +5103,138 @@ export const oas = {
         tags: ['devices'],
       },
     },
+    '/devices/my-assigned': {
+      get: {
+        description: 'Get devices assigned to current lab assistant',
+        operationId: 'DeviceController_getMyAssignedDevices',
+        parameters: [
+          {
+            name: 'limit',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 10,
+              type: 'number',
+            },
+          },
+          {
+            name: 'page',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 0,
+              type: 'number',
+            },
+          },
+          {
+            name: 'sortBy',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'created_at',
+              type: 'string',
+            },
+          },
+          {
+            name: 'sortOrder',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'desc',
+              enum: ['asc', 'desc'],
+              type: 'string',
+            },
+          },
+          {
+            name: 'ids',
+            required: false,
+            in: 'query',
+            schema: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+          },
+          {
+            name: 'deviceName',
+            required: false,
+            in: 'query',
+            description: 'Filter by device name',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'software',
+            required: false,
+            in: 'query',
+            description: 'Filter by software name',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'labId',
+            required: false,
+            in: 'query',
+            description: 'Filter by lab ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'status',
+            required: false,
+            in: 'query',
+            description: 'Filter by device status',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'assistantId',
+            required: false,
+            in: 'query',
+            description: 'Filter by lab assistant ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'specCategory',
+            required: false,
+            in: 'query',
+            description: 'Filter by specification category',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'specValue',
+            required: false,
+            in: 'query',
+            description: 'Filter by specification value',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'My assigned devices retrieved successfully',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+        },
+        summary: 'Get my assigned devices',
+        tags: ['devices'],
+      },
+    },
     '/devices/paginated': {
       get: {
         description: 'Retrieve devices with pagination',
@@ -3979,6 +5465,46 @@ export const oas = {
         tags: ['devices'],
       },
     },
+    '/devices/{device_id}/details': {
+      get: {
+        description: 'Retrieve comprehensive device information including lab, assistant, specifications, software, and statistics',
+        operationId: 'DeviceController_getDeviceDetails',
+        parameters: [
+          {
+            name: 'device_id',
+            required: true,
+            in: 'path',
+            description: 'Device ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Device details retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/DeviceDetailsDto',
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Not Found - Device does not exist',
+          },
+        },
+        summary: 'Get comprehensive device details',
+        tags: ['devices'],
+      },
+    },
     '/devices/{device_ids}': {
       delete: {
         description: 'Delete one or multiple devices by IDs',
@@ -4172,6 +5698,57 @@ export const oas = {
         summary: 'Get device softwares',
         tags: ['devices'],
       },
+      post: {
+        description: 'Add a new software to a specific device',
+        operationId: 'DeviceController_addSoftware',
+        parameters: [
+          {
+            name: 'device_id',
+            required: true,
+            in: 'path',
+            description: 'Device ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/AddDeviceSoftwareDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Software added successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/DeviceDto',
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Bad Request - Invalid data',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Not Found - Device does not exist',
+          },
+        },
+        summary: 'Add software to device',
+        tags: ['devices'],
+      },
     },
     '/devices/{device_id}/reports': {
       get: {
@@ -4183,6 +5760,117 @@ export const oas = {
             required: true,
             in: 'path',
             description: 'Device ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'limit',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 10,
+              type: 'number',
+            },
+          },
+          {
+            name: 'page',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 0,
+              type: 'number',
+            },
+          },
+          {
+            name: 'sortBy',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'created_at',
+              type: 'string',
+            },
+          },
+          {
+            name: 'sortOrder',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'desc',
+              enum: ['asc', 'desc'],
+              type: 'string',
+            },
+          },
+          {
+            name: 'ids',
+            required: false,
+            in: 'query',
+            schema: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+          },
+          {
+            name: 'deviceName',
+            required: false,
+            in: 'query',
+            description: 'Filter by device name',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'software',
+            required: false,
+            in: 'query',
+            description: 'Filter by software name',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'labId',
+            required: false,
+            in: 'query',
+            description: 'Filter by lab ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'status',
+            required: false,
+            in: 'query',
+            description: 'Filter by device status',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'assistantId',
+            required: false,
+            in: 'query',
+            description: 'Filter by lab assistant ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'specCategory',
+            required: false,
+            in: 'query',
+            description: 'Filter by specification category',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'specValue',
+            required: false,
+            in: 'query',
+            description: 'Filter by specification value',
             schema: {
               type: 'string',
             },
@@ -4220,6 +5908,117 @@ export const oas = {
               type: 'string',
             },
           },
+          {
+            name: 'limit',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 10,
+              type: 'number',
+            },
+          },
+          {
+            name: 'page',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 0,
+              type: 'number',
+            },
+          },
+          {
+            name: 'sortBy',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'created_at',
+              type: 'string',
+            },
+          },
+          {
+            name: 'sortOrder',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'desc',
+              enum: ['asc', 'desc'],
+              type: 'string',
+            },
+          },
+          {
+            name: 'ids',
+            required: false,
+            in: 'query',
+            schema: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+          },
+          {
+            name: 'deviceName',
+            required: false,
+            in: 'query',
+            description: 'Filter by device name',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'software',
+            required: false,
+            in: 'query',
+            description: 'Filter by software name',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'labId',
+            required: false,
+            in: 'query',
+            description: 'Filter by lab ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'status',
+            required: false,
+            in: 'query',
+            description: 'Filter by device status',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'assistantId',
+            required: false,
+            in: 'query',
+            description: 'Filter by lab assistant ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'specCategory',
+            required: false,
+            in: 'query',
+            description: 'Filter by specification category',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'specValue',
+            required: false,
+            in: 'query',
+            description: 'Filter by specification value',
+            schema: {
+              type: 'string',
+            },
+          },
         ],
         responses: {
           '200': {
@@ -4253,6 +6052,117 @@ export const oas = {
               type: 'string',
             },
           },
+          {
+            name: 'limit',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 10,
+              type: 'number',
+            },
+          },
+          {
+            name: 'page',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 0,
+              type: 'number',
+            },
+          },
+          {
+            name: 'sortBy',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'created_at',
+              type: 'string',
+            },
+          },
+          {
+            name: 'sortOrder',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'desc',
+              enum: ['asc', 'desc'],
+              type: 'string',
+            },
+          },
+          {
+            name: 'ids',
+            required: false,
+            in: 'query',
+            schema: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+          },
+          {
+            name: 'deviceName',
+            required: false,
+            in: 'query',
+            description: 'Filter by device name',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'software',
+            required: false,
+            in: 'query',
+            description: 'Filter by software name',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'labId',
+            required: false,
+            in: 'query',
+            description: 'Filter by lab ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'status',
+            required: false,
+            in: 'query',
+            description: 'Filter by device status',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'assistantId',
+            required: false,
+            in: 'query',
+            description: 'Filter by lab assistant ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'specCategory',
+            required: false,
+            in: 'query',
+            description: 'Filter by specification category',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'specValue',
+            required: false,
+            in: 'query',
+            description: 'Filter by specification value',
+            schema: {
+              type: 'string',
+            },
+          },
         ],
         responses: {
           '200': {
@@ -4270,6 +6180,690 @@ export const oas = {
         },
         summary: 'Get device login history',
         tags: ['devices'],
+      },
+    },
+    '/devices/{device_id}/softwares/{softwareId}': {
+      patch: {
+        description: 'Update an existing software on a specific device',
+        operationId: 'DeviceController_updateSoftware',
+        parameters: [
+          {
+            name: 'device_id',
+            required: true,
+            in: 'path',
+            description: 'Device ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'softwareId',
+            required: true,
+            in: 'path',
+            description: 'Software ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/UpdateDeviceSoftwareDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Software updated successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/DeviceDto',
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Bad Request - Invalid data',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Not Found - Device or software does not exist',
+          },
+        },
+        summary: 'Update software on device',
+        tags: ['devices'],
+      },
+      delete: {
+        description: 'Remove an existing software from a specific device',
+        operationId: 'DeviceController_removeSoftware',
+        parameters: [
+          {
+            name: 'device_id',
+            required: true,
+            in: 'path',
+            description: 'Device ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'softwareId',
+            required: true,
+            in: 'path',
+            description: 'Software ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Software removed successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/DeleteDto',
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Not Found - Device or software does not exist',
+          },
+        },
+        summary: 'Remove software from device',
+        tags: ['devices'],
+      },
+    },
+    '/devices/{device_id}/software-list': {
+      put: {
+        description: 'Update the list of software on a specific device',
+        operationId: 'DeviceController_updateSoftwareList',
+        parameters: [
+          {
+            name: 'device_id',
+            required: true,
+            in: 'path',
+            description: 'Device ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/UpdateDeviceSoftwareListDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Software list updated successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/DeviceDto',
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Bad Request - Invalid data',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Not Found - Device does not exist',
+          },
+        },
+        summary: 'Update software list on device',
+        tags: ['devices'],
+      },
+    },
+    '/devices/{device_id}/maintenance': {
+      post: {
+        description: 'Create a maintenance update for a device',
+        operationId: 'DeviceController_createMaintenanceUpdate',
+        parameters: [
+          {
+            name: 'device_id',
+            required: true,
+            in: 'path',
+            description: 'Device ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/MaintenanceUpdateDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Maintenance update created successfully',
+          },
+          '400': {
+            description: 'Bad Request - Invalid data',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Not Found - Device does not exist',
+          },
+        },
+        summary: 'Create maintenance update',
+        tags: ['devices'],
+      },
+    },
+    '/device-maintenance-history': {
+      post: {
+        description: 'Create a new maintenance history record',
+        operationId: 'MaintenanceHistoryController_create',
+        parameters: [],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/CreateMaintenanceHistoryDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Maintenance history created successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/MaintenanceHistoryDto',
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Bad Request - Invalid input data',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+        },
+        summary: 'Create maintenance history',
+        tags: ['device-maintenance-history'],
+      },
+      get: {
+        description: 'Retrieve all maintenance history records',
+        operationId: 'MaintenanceHistoryController_getAll',
+        parameters: [],
+        responses: {
+          '200': {
+            description: 'Maintenance history retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/MaintenanceHistoryListDto',
+                  },
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+        },
+        summary: 'Get all maintenance history',
+        tags: ['device-maintenance-history'],
+      },
+    },
+    '/device-maintenance-history/paginated': {
+      get: {
+        description: 'Retrieve maintenance history with pagination',
+        operationId: 'MaintenanceHistoryController_getPaginated',
+        parameters: [
+          {
+            name: 'limit',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 10,
+              type: 'number',
+            },
+          },
+          {
+            name: 'page',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 0,
+              type: 'number',
+            },
+          },
+          {
+            name: 'sortBy',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'created_at',
+              type: 'string',
+            },
+          },
+          {
+            name: 'sortOrder',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'desc',
+              enum: ['asc', 'desc'],
+              type: 'string',
+            },
+          },
+          {
+            name: 'ids',
+            required: false,
+            in: 'query',
+            schema: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+          },
+          {
+            name: 'deviceId',
+            required: false,
+            in: 'query',
+            description: 'Filter by device ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'labId',
+            required: false,
+            in: 'query',
+            description: 'Filter by lab ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'status',
+            required: false,
+            in: 'query',
+            description: 'Filter by status',
+            schema: {
+              enum: ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'FAILED'],
+              type: 'string',
+            },
+          },
+          {
+            name: 'maintenanceType',
+            required: false,
+            in: 'query',
+            description: 'Filter by maintenance type',
+            schema: {
+              enum: ['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER'],
+              type: 'string',
+            },
+          },
+          {
+            name: 'relatedReportId',
+            required: false,
+            in: 'query',
+            description: 'Filter by related report ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'search',
+            required: false,
+            in: 'query',
+            description: 'Search across device names, descriptions, and personnel names',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'dateFrom',
+            required: false,
+            in: 'query',
+            description: 'Filter by date from (YYYY-MM-DD)',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'dateTo',
+            required: false,
+            in: 'query',
+            description: 'Filter by date to (YYYY-MM-DD)',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Paginated maintenance history retrieved successfully',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+        },
+        summary: 'Get paginated maintenance history',
+        tags: ['device-maintenance-history'],
+      },
+    },
+    '/device-maintenance-history/export/xlsx': {
+      get: {
+        description: 'Export filtered maintenance history as Excel file',
+        operationId: 'MaintenanceHistoryController_exportMaintenanceXlsx',
+        parameters: [
+          {
+            name: 'limit',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 10,
+              type: 'number',
+            },
+          },
+          {
+            name: 'page',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 0,
+              type: 'number',
+            },
+          },
+          {
+            name: 'sortBy',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'created_at',
+              type: 'string',
+            },
+          },
+          {
+            name: 'sortOrder',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'desc',
+              enum: ['asc', 'desc'],
+              type: 'string',
+            },
+          },
+          {
+            name: 'ids',
+            required: false,
+            in: 'query',
+            schema: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+          },
+          {
+            name: 'deviceId',
+            required: false,
+            in: 'query',
+            description: 'Filter by device ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'labId',
+            required: false,
+            in: 'query',
+            description: 'Filter by lab ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'status',
+            required: false,
+            in: 'query',
+            description: 'Filter by status',
+            schema: {
+              enum: ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'FAILED'],
+              type: 'string',
+            },
+          },
+          {
+            name: 'maintenanceType',
+            required: false,
+            in: 'query',
+            description: 'Filter by maintenance type',
+            schema: {
+              enum: ['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER'],
+              type: 'string',
+            },
+          },
+          {
+            name: 'relatedReportId',
+            required: false,
+            in: 'query',
+            description: 'Filter by related report ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'search',
+            required: false,
+            in: 'query',
+            description: 'Search across device names, descriptions, and personnel names',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'dateFrom',
+            required: false,
+            in: 'query',
+            description: 'Filter by date from (YYYY-MM-DD)',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'dateTo',
+            required: false,
+            in: 'query',
+            description: 'Filter by date to (YYYY-MM-DD)',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Excel export successful',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+        },
+        summary: 'Export maintenance history as XLSX',
+        tags: ['device-maintenance-history'],
+      },
+    },
+    '/device-maintenance-history/{maintenance_history_id}': {
+      get: {
+        description: 'Retrieve a maintenance history record by its ID',
+        operationId: 'MaintenanceHistoryController_getById',
+        parameters: [
+          {
+            name: 'maintenance_history_id',
+            required: true,
+            in: 'path',
+            description: 'Maintenance History ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Maintenance history retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/MaintenanceHistoryDto',
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Not Found - Maintenance history does not exist',
+          },
+        },
+        summary: 'Get maintenance history by ID',
+        tags: ['device-maintenance-history'],
+      },
+      patch: {
+        description: 'Update a maintenance history record',
+        operationId: 'MaintenanceHistoryController_update',
+        parameters: [
+          {
+            name: 'maintenance_history_id',
+            required: true,
+            in: 'path',
+            description: 'Maintenance History ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/UpdateMaintenanceHistoryDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Maintenance history updated successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/MaintenanceHistoryDto',
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Bad Request - Invalid input data',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Not Found - Maintenance history does not exist',
+          },
+        },
+        summary: 'Update maintenance history',
+        tags: ['device-maintenance-history'],
+      },
+      delete: {
+        description: 'Delete a maintenance history record',
+        operationId: 'MaintenanceHistoryController_delete',
+        parameters: [
+          {
+            name: 'maintenance_history_id',
+            required: true,
+            in: 'path',
+            description: 'Maintenance History ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Maintenance history deleted successfully',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Not Found - Maintenance history does not exist',
+          },
+        },
+        summary: 'Delete maintenance history',
+        tags: ['device-maintenance-history'],
       },
     },
     '/device-reports': {
@@ -4403,6 +6997,15 @@ export const oas = {
             },
           },
           {
+            name: 'labId',
+            required: false,
+            in: 'query',
+            description: 'Filter by lab ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
             name: 'reporterId',
             required: false,
             in: 'query',
@@ -4417,7 +7020,7 @@ export const oas = {
             in: 'query',
             description: 'Filter by status',
             schema: {
-              enum: ['REPORTED', 'IN_PROGRESS', 'RESOLVED', 'CANCELLED'],
+              enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED'],
               type: 'string',
             },
           },
@@ -4426,6 +7029,33 @@ export const oas = {
             required: false,
             in: 'query',
             description: 'Filter by software ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'search',
+            required: false,
+            in: 'query',
+            description: 'Search across device names, descriptions, and reporter names',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'dateFrom',
+            required: false,
+            in: 'query',
+            description: 'Filter by date from (YYYY-MM-DD)',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'dateTo',
+            required: false,
+            in: 'query',
+            description: 'Filter by date to (YYYY-MM-DD)',
             schema: {
               type: 'string',
             },
@@ -4519,6 +7149,15 @@ export const oas = {
             },
           },
           {
+            name: 'labId',
+            required: false,
+            in: 'query',
+            description: 'Filter by lab ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
             name: 'reporterId',
             required: false,
             in: 'query',
@@ -4533,7 +7172,7 @@ export const oas = {
             in: 'query',
             description: 'Filter by status',
             schema: {
-              enum: ['REPORTED', 'IN_PROGRESS', 'RESOLVED', 'CANCELLED'],
+              enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED'],
               type: 'string',
             },
           },
@@ -4542,6 +7181,33 @@ export const oas = {
             required: false,
             in: 'query',
             description: 'Filter by software ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'search',
+            required: false,
+            in: 'query',
+            description: 'Search across device names, descriptions, and reporter names',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'dateFrom',
+            required: false,
+            in: 'query',
+            description: 'Filter by date from (YYYY-MM-DD)',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'dateTo',
+            required: false,
+            in: 'query',
+            description: 'Filter by date to (YYYY-MM-DD)',
             schema: {
               type: 'string',
             },
@@ -4634,6 +7300,15 @@ export const oas = {
             },
           },
           {
+            name: 'labId',
+            required: false,
+            in: 'query',
+            description: 'Filter by lab ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
             name: 'reporterId',
             required: false,
             in: 'query',
@@ -4648,7 +7323,7 @@ export const oas = {
             in: 'query',
             description: 'Filter by status',
             schema: {
-              enum: ['REPORTED', 'IN_PROGRESS', 'RESOLVED', 'CANCELLED'],
+              enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED'],
               type: 'string',
             },
           },
@@ -4657,6 +7332,33 @@ export const oas = {
             required: false,
             in: 'query',
             description: 'Filter by software ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'search',
+            required: false,
+            in: 'query',
+            description: 'Search across device names, descriptions, and reporter names',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'dateFrom',
+            required: false,
+            in: 'query',
+            description: 'Filter by date from (YYYY-MM-DD)',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'dateTo',
+            required: false,
+            in: 'query',
+            description: 'Filter by date to (YYYY-MM-DD)',
             schema: {
               type: 'string',
             },
@@ -4684,6 +7386,360 @@ export const oas = {
           },
         },
         summary: 'Get device reports',
+        tags: ['device-reports'],
+      },
+    },
+    '/device-reports/export/xlsx': {
+      get: {
+        description: 'Export filtered device reports as Excel file (Admin/Management)',
+        operationId: 'DeviceReportController_exportReportsXlsx',
+        parameters: [
+          {
+            name: 'limit',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 10,
+              type: 'number',
+            },
+          },
+          {
+            name: 'page',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 0,
+              type: 'number',
+            },
+          },
+          {
+            name: 'sortBy',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'created_at',
+              type: 'string',
+            },
+          },
+          {
+            name: 'sortOrder',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'desc',
+              enum: ['asc', 'desc'],
+              type: 'string',
+            },
+          },
+          {
+            name: 'ids',
+            required: false,
+            in: 'query',
+            schema: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+          },
+          {
+            name: 'deviceId',
+            required: false,
+            in: 'query',
+            description: 'Filter by device ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'labId',
+            required: false,
+            in: 'query',
+            description: 'Filter by lab ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'reporterId',
+            required: false,
+            in: 'query',
+            description: 'Filter by reporter ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'status',
+            required: false,
+            in: 'query',
+            description: 'Filter by status',
+            schema: {
+              enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED'],
+              type: 'string',
+            },
+          },
+          {
+            name: 'appId',
+            required: false,
+            in: 'query',
+            description: 'Filter by software ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'search',
+            required: false,
+            in: 'query',
+            description: 'Search across device names, descriptions, and reporter names',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'dateFrom',
+            required: false,
+            in: 'query',
+            description: 'Filter by date from (YYYY-MM-DD)',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'dateTo',
+            required: false,
+            in: 'query',
+            description: 'Filter by date to (YYYY-MM-DD)',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Excel export successful',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+        },
+        summary: 'Export device reports as XLSX',
+        tags: ['device-reports'],
+      },
+    },
+    '/device-reports/device/{device_id}/unresolved-count': {
+      get: {
+        description: 'Get count of unresolved reports for a specific device (Admin/Management)',
+        operationId: 'DeviceReportController_getUnresolvedReportsCount',
+        parameters: [
+          {
+            name: 'device_id',
+            required: true,
+            in: 'path',
+            description: 'Device ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Unresolved reports count retrieved successfully',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+        },
+        summary: 'Get unresolved reports count for device',
+        tags: ['device-reports'],
+      },
+    },
+    '/device-reports/my-assigned-reports': {
+      get: {
+        description: 'Get reports for devices assigned to current lab assistant',
+        operationId: 'DeviceReportController_getMyAssignedReports',
+        parameters: [
+          {
+            name: 'limit',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 10,
+              type: 'number',
+            },
+          },
+          {
+            name: 'page',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 0,
+              type: 'number',
+            },
+          },
+          {
+            name: 'sortBy',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'created_at',
+              type: 'string',
+            },
+          },
+          {
+            name: 'sortOrder',
+            required: false,
+            in: 'query',
+            schema: {
+              default: 'desc',
+              enum: ['asc', 'desc'],
+              type: 'string',
+            },
+          },
+          {
+            name: 'ids',
+            required: false,
+            in: 'query',
+            schema: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+          },
+          {
+            name: 'deviceId',
+            required: false,
+            in: 'query',
+            description: 'Filter by device ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'labId',
+            required: false,
+            in: 'query',
+            description: 'Filter by lab ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'reporterId',
+            required: false,
+            in: 'query',
+            description: 'Filter by reporter ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'status',
+            required: false,
+            in: 'query',
+            description: 'Filter by status',
+            schema: {
+              enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED'],
+              type: 'string',
+            },
+          },
+          {
+            name: 'appId',
+            required: false,
+            in: 'query',
+            description: 'Filter by software ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'search',
+            required: false,
+            in: 'query',
+            description: 'Search across device names, descriptions, and reporter names',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'dateFrom',
+            required: false,
+            in: 'query',
+            description: 'Filter by date from (YYYY-MM-DD)',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'dateTo',
+            required: false,
+            in: 'query',
+            description: 'Filter by date to (YYYY-MM-DD)',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'My assigned reports retrieved successfully',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+        },
+        summary: 'Get my assigned reports',
+        tags: ['device-reports'],
+      },
+    },
+    '/device-reports/my-unresolved-count': {
+      get: {
+        description: 'Get count of unresolved reports for devices assigned to current lab assistant',
+        operationId: 'DeviceReportController_getMyUnresolvedReportsCount',
+        parameters: [],
+        responses: {
+          '200': {
+            description: 'My unresolved reports count retrieved successfully',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+        },
+        summary: 'Get my unresolved reports count',
+        tags: ['device-reports'],
+      },
+    },
+    '/device-reports/unresolved-count': {
+      get: {
+        description: 'Get total count of unresolved reports across all devices (Admin/Management)',
+        operationId: 'DeviceReportController_getTotalUnresolvedReportsCount',
+        parameters: [],
+        responses: {
+          '200': {
+            description: 'Total unresolved reports count retrieved successfully',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+        },
+        summary: 'Get total unresolved reports count',
         tags: ['device-reports'],
       },
     },
@@ -4949,6 +8005,185 @@ export const oas = {
           },
         },
         summary: 'Get paginated lab sessions',
+        tags: ['lab-sessions'],
+      },
+    },
+    '/lab-session/start-session': {
+      post: {
+        description: 'Start a new lab session for a course group',
+        operationId: 'LabSessionController_startSession',
+        parameters: [],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/StartLabSessionDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Lab session started successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/LabSessionDto',
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Bad Request - Invalid data or session already active',
+          },
+        },
+        summary: 'Start lab session',
+        tags: ['lab-sessions'],
+      },
+    },
+    '/lab-session/assistant/{assistantId}/group/{courseGroupId}/active': {
+      get: {
+        description: 'Get details of current active session for a course group',
+        operationId: 'LabSessionController_getActiveSession',
+        parameters: [
+          {
+            name: 'assistantId',
+            required: true,
+            in: 'path',
+            description: 'Assistant ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'courseGroupId',
+            required: true,
+            in: 'path',
+            description: 'Course Group ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Active session details retrieved',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ActiveSessionDetailsDto',
+                },
+              },
+            },
+          },
+          '404': {
+            description: 'No active session found',
+          },
+        },
+        summary: 'Get active session details',
+        tags: ['lab-sessions'],
+      },
+    },
+    '/lab-session/{sessionId}/attendance': {
+      post: {
+        description: 'Mark student as present or absent',
+        operationId: 'LabSessionController_takeAttendance',
+        parameters: [
+          {
+            name: 'sessionId',
+            required: true,
+            in: 'path',
+            description: 'Session ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/TakeAttendanceDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Attendance recorded successfully',
+          },
+        },
+        summary: 'Take attendance',
+        tags: ['lab-sessions'],
+      },
+    },
+    '/lab-session/{sessionId}/add-student': {
+      post: {
+        description: 'Add a student who was not initially in the session',
+        operationId: 'LabSessionController_addStudentToSession',
+        parameters: [
+          {
+            name: 'sessionId',
+            required: true,
+            in: 'path',
+            description: 'Session ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/AddStudentToSessionDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Student added to session successfully',
+          },
+        },
+        summary: 'Add student to session',
+        tags: ['lab-sessions'],
+      },
+    },
+    '/lab-session/{sessionId}/award-points': {
+      post: {
+        description: 'Award extra points to a student',
+        operationId: 'LabSessionController_awardExtraPoints',
+        parameters: [
+          {
+            name: 'sessionId',
+            required: true,
+            in: 'path',
+            description: 'Session ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/AwardExtraPointsDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Extra points awarded successfully',
+          },
+        },
+        summary: 'Award extra points',
         tags: ['lab-sessions'],
       },
     },
@@ -5321,6 +8556,16 @@ export const oas = {
             },
           },
         ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/ApproveStaffRequestDto',
+              },
+            },
+          },
+        },
         responses: {
           '200': {
             description: 'Staff request approved successfully',
@@ -5363,6 +8608,16 @@ export const oas = {
             },
           },
         ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/RejectStaffRequestDto',
+              },
+            },
+          },
+        },
         responses: {
           '200': {
             description: 'Staff request rejected successfully',
@@ -5509,6 +8764,81 @@ export const oas = {
         tags: ['student-courses'],
       },
     },
+    '/student-courses/student/{studentId}/course/{courseId}/group-details': {
+      get: {
+        operationId: 'StudentCourseController_getStudentGroupDetails',
+        parameters: [
+          {
+            name: 'studentId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Return student group details.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/StudentCourseListDto',
+                },
+              },
+            },
+          },
+          '404': {
+            description: 'Student enrollment not found.',
+          },
+        },
+        summary: "Get student's group details in a specific course",
+        tags: ['student-courses'],
+      },
+    },
+    '/student-courses/group/{groupId}/students': {
+      get: {
+        operationId: 'StudentCourseController_getGroupStudents',
+        parameters: [
+          {
+            name: 'groupId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Return students in group.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/StudentCourseListDto',
+                  },
+                },
+              },
+            },
+          },
+          '404': {
+            description: 'Group not found.',
+          },
+        },
+        summary: 'Get all students in a specific group with detailed information',
+        tags: ['student-courses'],
+      },
+    },
     '/student-courses/student/{studentId}': {
       get: {
         operationId: 'StudentCourseController_getStudentCourses',
@@ -5541,6 +8871,42 @@ export const oas = {
           },
         },
         summary: 'Get all courses enrolled by a specific student',
+        tags: ['student-courses'],
+      },
+    },
+    '/student-courses/student/{studentId}/weekly-schedule': {
+      get: {
+        description: 'Get the weekly lab schedule for a specific student showing all their course group sessions',
+        operationId: 'StudentCourseController_getStudentWeeklySchedule',
+        parameters: [
+          {
+            name: 'studentId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Return student weekly schedule.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/StudentWeeklyScheduleDto',
+                  },
+                },
+              },
+            },
+          },
+          '404': {
+            description: 'Student not found.',
+          },
+        },
+        summary: 'Get student weekly schedule',
         tags: ['student-courses'],
       },
     },
@@ -5636,6 +9002,9 @@ export const oas = {
               'application/json': {
                 schema: {
                   type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/AvailableCourseDto',
+                  },
                 },
               },
             },
@@ -5643,6 +9012,931 @@ export const oas = {
         },
         summary: 'Get available courses for enrollment',
         tags: ['student-courses'],
+      },
+    },
+    '/student-courses/course/{courseId}': {
+      get: {
+        operationId: 'StudentCourseController_getCourseStudents',
+        parameters: [
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Return students enrolled in course.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/StudentCourseListDto',
+                  },
+                },
+              },
+            },
+          },
+          '404': {
+            description: 'Course not found.',
+          },
+        },
+        summary: 'Get all students enrolled in a specific course',
+        tags: ['student-courses'],
+      },
+    },
+    '/course-access/courses/{courseId}/summary': {
+      get: {
+        description: 'Get a summary of all user access permissions for a specific course',
+        operationId: 'CourseAccessController_getCourseAccessSummary',
+        parameters: [
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            description: 'Course ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Course access summary retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/CourseAccessSummaryDto',
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Not Found - Course does not exist',
+          },
+        },
+        security: [
+          {
+            bearer: [],
+          },
+        ],
+        summary: 'Get course access summary',
+        tags: ['course-access'],
+      },
+    },
+    '/course-access/courses/{courseId}/assistants': {
+      get: {
+        description: 'Get all assistants who currently have any permissions for this course',
+        operationId: 'CourseAccessController_getAssistantsWithPermissions',
+        parameters: [
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            description: 'Course ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Assistants with permissions retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/AssistantListDto',
+                  },
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Not Found - Course does not exist',
+          },
+        },
+        security: [
+          {
+            bearer: [],
+          },
+        ],
+        summary: 'Get assistants with permissions',
+        tags: ['course-access'],
+      },
+    },
+    '/course-access/courses/{courseId}/available-assistants': {
+      get: {
+        description: 'Get all assistants who do not currently have any permissions for this course',
+        operationId: 'CourseAccessController_getAvailableAssistants',
+        parameters: [
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            description: 'Course ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Available assistants retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/AssistantListDto',
+                  },
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Not Found - Course does not exist',
+          },
+        },
+        security: [
+          {
+            bearer: [],
+          },
+        ],
+        summary: 'Get available assistants',
+        tags: ['course-access'],
+      },
+    },
+    '/course-access/permissions': {
+      post: {
+        description: 'Grant access permission to an assistant for a specific course section',
+        operationId: 'CourseAccessController_grantCourseAccess',
+        parameters: [],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/CreateCourseAccessDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Access permission granted successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/CourseAccessPermissionDto',
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Bad Request - Invalid data or user does not have ASSIST_IN_COURSE privilege',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Not Found - Course or user does not exist',
+          },
+        },
+        security: [
+          {
+            bearer: [],
+          },
+        ],
+        summary: 'Grant course access permission',
+        tags: ['course-access'],
+      },
+    },
+    '/course-access/permissions/{userId}/{courseId}/{section}': {
+      put: {
+        description: 'Update access permission for an assistant for a specific course section',
+        operationId: 'CourseAccessController_updateCourseAccess',
+        parameters: [
+          {
+            name: 'userId',
+            required: true,
+            in: 'path',
+            description: 'User ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            description: 'Course ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'section',
+            required: true,
+            in: 'path',
+            description: 'Course section',
+            schema: {
+              enum: ['grades', 'events', 'content', 'groups'],
+              type: 'string',
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/UpdateCourseAccessDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Access permission updated successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/CourseAccessPermissionDto',
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Not Found - Permission does not exist',
+          },
+        },
+        security: [
+          {
+            bearer: [],
+          },
+        ],
+        summary: 'Update course access permission',
+        tags: ['course-access'],
+      },
+      delete: {
+        description: 'Revoke access permission from an assistant for a specific course section',
+        operationId: 'CourseAccessController_revokeCourseAccess',
+        parameters: [
+          {
+            name: 'userId',
+            required: true,
+            in: 'path',
+            description: 'User ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            description: 'Course ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'section',
+            required: true,
+            in: 'path',
+            description: 'Course section',
+            schema: {
+              enum: ['grades', 'events', 'content', 'groups'],
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '204': {
+            description: 'Access permission revoked successfully',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Not Found - Permission does not exist',
+          },
+        },
+        security: [
+          {
+            bearer: [],
+          },
+        ],
+        summary: 'Revoke course access permission',
+        tags: ['course-access'],
+      },
+    },
+    '/course-access/permissions/bulk': {
+      post: {
+        description: 'Update multiple access permissions at once',
+        operationId: 'CourseAccessController_bulkUpdateCourseAccess',
+        parameters: [],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/BulkUpdateCourseAccessDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Access permissions updated successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/CourseAccessPermissionDto',
+                  },
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Bad Request - Invalid data',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+        },
+        security: [
+          {
+            bearer: [],
+          },
+        ],
+        summary: 'Bulk update course access permissions',
+        tags: ['course-access'],
+      },
+    },
+    '/course-access/permissions/grant-multiple-sections': {
+      post: {
+        description: 'Grant access permissions to an assistant for multiple course sections at once',
+        operationId: 'CourseAccessController_grantMultipleSectionsAccess',
+        parameters: [],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/GrantMultipleSectionsDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Access permissions granted successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/CourseAccessPermissionDto',
+                  },
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Bad Request - Invalid data or user does not have ASSIST_IN_COURSE privilege',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Not Found - Course or user does not exist',
+          },
+        },
+        security: [
+          {
+            bearer: [],
+          },
+        ],
+        summary: 'Grant access to multiple sections',
+        tags: ['course-access'],
+      },
+    },
+    '/course-access/permissions/{userId}/{courseId}/all': {
+      delete: {
+        description: 'Revoke all access permissions from an assistant for a course',
+        operationId: 'CourseAccessController_revokeAllUserAccess',
+        parameters: [
+          {
+            name: 'userId',
+            required: true,
+            in: 'path',
+            description: 'User ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            description: 'Course ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '204': {
+            description: 'All access permissions revoked successfully',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Not Found - User or course does not exist',
+          },
+        },
+        security: [
+          {
+            bearer: [],
+          },
+        ],
+        summary: 'Revoke all permissions for user',
+        tags: ['course-access'],
+      },
+    },
+    '/course-access/users/{userId}/courses/{courseId}': {
+      get: {
+        description: 'Get all access permissions for a specific user in a course',
+        operationId: 'CourseAccessController_getUserCourseAccess',
+        parameters: [
+          {
+            name: 'userId',
+            required: true,
+            in: 'path',
+            description: 'User ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            description: 'Course ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'User course access retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/CourseAccessPermissionDto',
+                  },
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+        },
+        security: [
+          {
+            bearer: [],
+          },
+        ],
+        summary: 'Get user course access',
+        tags: ['course-access'],
+      },
+    },
+    '/course-access/check/{courseId}/{section}': {
+      get: {
+        description: 'Check if current user has access to a specific course section',
+        operationId: 'CourseAccessController_checkSectionAccess',
+        parameters: [
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            description: 'Course ID',
+            schema: {
+              type: 'string',
+            },
+          },
+          {
+            name: 'section',
+            required: true,
+            in: 'path',
+            description: 'Course section',
+            schema: {
+              enum: ['grades', 'events', 'content', 'groups'],
+              type: 'string',
+            },
+          },
+          {
+            name: 'action',
+            required: false,
+            in: 'query',
+            description: 'Action to check (default: view)',
+            schema: {
+              enum: ['view', 'edit', 'delete'],
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Access check result',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'boolean',
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+        },
+        security: [
+          {
+            bearer: [],
+          },
+        ],
+        summary: 'Check section access',
+        tags: ['course-access'],
+      },
+    },
+    '/materials/course/{courseId}': {
+      get: {
+        description: 'Retrieve all materials for a specific course',
+        operationId: 'MaterialController_getCourseMaterials',
+        parameters: [
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            description: 'Course ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Course materials retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/MaterialListDto',
+                  },
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+        },
+        security: [
+          {
+            bearer: [],
+          },
+        ],
+        summary: 'Get course materials',
+        tags: ['materials'],
+      },
+      post: {
+        description: 'Upload files as course materials',
+        operationId: 'MaterialController_uploadMaterial',
+        parameters: [
+          {
+            name: 'courseId',
+            required: true,
+            in: 'path',
+            description: 'Course ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'multipart/form-data': {
+              schema: {
+                $ref: '#/components/schemas/CreateMaterialDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Material uploaded successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/MaterialDto',
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Bad Request - Invalid data',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+        },
+        security: [
+          {
+            bearer: [],
+          },
+        ],
+        summary: 'Upload course material',
+        tags: ['materials'],
+      },
+    },
+    '/materials/{materialId}/download': {
+      get: {
+        description: 'Download a specific material file',
+        operationId: 'MaterialController_downloadMaterial',
+        parameters: [
+          {
+            name: 'materialId',
+            required: true,
+            in: 'path',
+            description: 'Material ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'File downloaded successfully',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Material not found',
+          },
+        },
+        security: [
+          {
+            bearer: [],
+          },
+        ],
+        summary: 'Download material',
+        tags: ['materials'],
+      },
+    },
+    '/materials/{materialId}/download-url': {
+      get: {
+        description: 'Get presigned URL for downloading material',
+        operationId: 'MaterialController_getMaterialDownloadUrl',
+        parameters: [
+          {
+            name: 'materialId',
+            required: true,
+            in: 'path',
+            description: 'Material ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Download URL retrieved successfully',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Material not found',
+          },
+        },
+        security: [
+          {
+            bearer: [],
+          },
+        ],
+        summary: 'Get material download URL',
+        tags: ['materials'],
+      },
+    },
+    '/materials/{materialId}': {
+      delete: {
+        description: 'Delete a course material',
+        operationId: 'MaterialController_deleteMaterial',
+        parameters: [
+          {
+            name: 'materialId',
+            required: true,
+            in: 'path',
+            description: 'Material ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Material deleted successfully',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Material not found',
+          },
+        },
+        security: [
+          {
+            bearer: [],
+          },
+        ],
+        summary: 'Delete material',
+        tags: ['materials'],
+      },
+      patch: {
+        description: 'Update material information',
+        operationId: 'MaterialController_updateMaterial',
+        parameters: [
+          {
+            name: 'materialId',
+            required: true,
+            in: 'path',
+            description: 'Material ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/UpdateMaterialDto',
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Material updated successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/MaterialDto',
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Bad Request - Invalid data',
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Material not found',
+          },
+        },
+        security: [
+          {
+            bearer: [],
+          },
+        ],
+        summary: 'Update material',
+        tags: ['materials'],
+      },
+    },
+    '/materials/{materialId}/toggle-visibility': {
+      patch: {
+        description: 'Toggle hide/show status of a material',
+        operationId: 'MaterialController_toggleMaterialVisibility',
+        parameters: [
+          {
+            name: 'materialId',
+            required: true,
+            in: 'path',
+            description: 'Material ID',
+            schema: {
+              type: 'string',
+            },
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Material visibility toggled successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/MaterialDto',
+                },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+          },
+          '403': {
+            description: 'Forbidden - Insufficient privileges',
+          },
+          '404': {
+            description: 'Material not found',
+          },
+        },
+        security: [
+          {
+            bearer: [],
+          },
+        ],
+        summary: 'Toggle material visibility',
+        tags: ['materials'],
       },
     },
   },
@@ -5672,7 +9966,6 @@ export const oas = {
         type: 'string',
         enum: [
           'MANAGE_SYSTEM',
-          'MANAGE_USERS',
           'MANAGE_STUDENTS',
           'MANAGE_LABS',
           'LAB_ASSISTANT',
@@ -5763,7 +10056,6 @@ export const oas = {
             type: 'string',
             enum: [
               'MANAGE_SYSTEM',
-              'MANAGE_USERS',
               'MANAGE_STUDENTS',
               'MANAGE_LABS',
               'LAB_ASSISTANT',
@@ -5790,6 +10082,22 @@ export const oas = {
           entityName: {
             type: 'string',
           },
+          name: {
+            type: 'string',
+          },
+          key: {
+            type: 'string',
+          },
+          description: {
+            type: 'string',
+          },
+          category: {
+            type: 'string',
+          },
+          isActive: {
+            type: 'boolean',
+            default: true,
+          },
           resourceIds: {
             type: 'array',
             items: {
@@ -5797,7 +10105,7 @@ export const oas = {
             },
           },
         },
-        required: ['code', 'friendlyName', 'group', 'requiresResource', 'paramKey', 'entityName'],
+        required: ['code', 'friendlyName', 'group', 'requiresResource', 'name', 'key', 'description', 'category', 'isActive'],
       },
       UpdateUserTypeDto: {
         type: 'object',
@@ -5987,9 +10295,6 @@ export const oas = {
             type: 'string',
             example: 'Abcd@1234',
           },
-          email: {
-            type: 'string',
-          },
           title: {
             type: 'string',
           },
@@ -5997,7 +10302,7 @@ export const oas = {
             type: 'string',
           },
         },
-        required: ['name', 'username', 'password', 'email', 'title', 'department'],
+        required: ['name', 'username', 'password', 'title', 'department'],
       },
       StaffDto: {
         type: 'object',
@@ -6008,7 +10313,7 @@ export const oas = {
           name: {
             type: 'string',
           },
-          email: {
+          username: {
             type: 'string',
           },
           title: {
@@ -6018,6 +10323,9 @@ export const oas = {
             type: 'string',
           },
           userType: {
+            type: 'string',
+          },
+          userTypeId: {
             type: 'string',
           },
           status: {
@@ -6030,13 +10338,41 @@ export const oas = {
             description: 'Last login date or null if never logged in',
           },
           privileges: {
+            description: 'All privileges (user type + user specific) - for compatibility',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+          userTypePrivileges: {
+            description: 'Privileges inherited from user type (read-only)',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+          userPrivileges: {
+            description: 'User-specific privileges (editable)',
             type: 'array',
             items: {
               type: 'string',
             },
           },
         },
-        required: ['id', 'name', 'email', 'title', 'department', 'userType', 'status', 'lastLogin', 'privileges'],
+        required: [
+          'id',
+          'name',
+          'username',
+          'title',
+          'department',
+          'userType',
+          'userTypeId',
+          'status',
+          'lastLogin',
+          'privileges',
+          'userTypePrivileges',
+          'userPrivileges',
+        ],
       },
       StaffPagedDto: {
         type: 'object',
@@ -6056,7 +10392,10 @@ export const oas = {
           name: {
             type: 'string',
           },
-          email: {
+          username: {
+            type: 'string',
+          },
+          password: {
             type: 'string',
           },
           title: {
@@ -6082,7 +10421,6 @@ export const oas = {
               type: 'string',
               enum: [
                 'MANAGE_SYSTEM',
-                'MANAGE_USERS',
                 'MANAGE_STUDENTS',
                 'MANAGE_LABS',
                 'LAB_ASSISTANT',
@@ -6176,6 +10514,44 @@ export const oas = {
         },
         required: ['username', 'password'],
       },
+      ExamScheduleItemDto: {
+        type: 'object',
+        properties: {
+          eventScheduleId: {
+            type: 'string',
+          },
+          eventName: {
+            type: 'string',
+          },
+          dateTime: {
+            format: 'date-time',
+            type: 'string',
+          },
+          status: {
+            type: 'string',
+          },
+        },
+        required: ['eventScheduleId', 'eventName', 'dateTime', 'status'],
+      },
+      ExamModeStatusDto: {
+        type: 'object',
+        properties: {
+          isInExamMode: {
+            type: 'boolean',
+          },
+          examStartsIn: {
+            type: 'number',
+          },
+          examSchedules: {
+            description: 'Array of exam schedules for the student',
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/ExamScheduleItemDto',
+            },
+          },
+        },
+        required: ['isInExamMode', 'examSchedules'],
+      },
       UserInfoDto: {
         type: 'object',
         properties: {
@@ -6195,8 +10571,12 @@ export const oas = {
             type: 'boolean',
           },
           examModeStatus: {
-            type: 'object',
             description: 'Exam mode status for students',
+            allOf: [
+              {
+                $ref: '#/components/schemas/ExamModeStatusDto',
+              },
+            ],
           },
         },
         required: ['id', 'name', 'username', 'userType', 'isStudent'],
@@ -6261,19 +10641,30 @@ export const oas = {
           name: {
             type: 'string',
           },
+          description: {
+            type: 'string',
+          },
           duration: {
             type: 'number',
           },
-          isExam: {
-            type: 'boolean',
-          },
-          isInLab: {
-            type: 'boolean',
-          },
-          examFiles: {
+          eventType: {
             type: 'string',
+            enum: ['exam', 'quiz', 'assignment', 'lab_assignment', 'project', 'presentation', 'workshop', 'practice', 'seminar'],
+            default: 'assignment',
           },
-          degree: {
+          locationType: {
+            type: 'string',
+            enum: ['lab_devices', 'lecture_hall', 'online', 'hybrid'],
+            default: 'online',
+          },
+          customLocation: {
+            type: 'string',
+            description: 'Custom location when not using lab devices',
+          },
+          hasMarks: {
+            type: 'boolean',
+          },
+          totalMarks: {
             type: 'number',
           },
           autoStart: {
@@ -6284,14 +10675,43 @@ export const oas = {
             type: 'number',
             default: 30,
           },
-          description: {
+          startDateTime: {
+            format: 'date-time',
             type: 'string',
+            description: 'When the event should start',
+          },
+          requiresModels: {
+            type: 'boolean',
+            default: false,
+            description: 'Whether this event requires exam models',
+          },
+          allowRandomModelAssignment: {
+            type: 'boolean',
+            default: false,
+            description: 'Allow random assignment of exam models to students',
+          },
+          isExam: {
+            type: 'boolean',
+            default: false,
+            description: 'Whether this event should be treated as an exam',
           },
           courseId: {
             type: 'string',
           },
         },
-        required: ['name', 'duration', 'isExam', 'isInLab', 'degree', 'autoStart', 'examModeStartMinutes', 'courseId'],
+        required: [
+          'name',
+          'duration',
+          'eventType',
+          'locationType',
+          'hasMarks',
+          'autoStart',
+          'examModeStartMinutes',
+          'requiresModels',
+          'allowRandomModelAssignment',
+          'isExam',
+          'courseId',
+        ],
       },
       EventDto: {
         type: 'object',
@@ -6299,19 +10719,30 @@ export const oas = {
           name: {
             type: 'string',
           },
+          description: {
+            type: 'string',
+          },
           duration: {
             type: 'number',
           },
-          isExam: {
-            type: 'boolean',
-          },
-          isInLab: {
-            type: 'boolean',
-          },
-          examFiles: {
+          eventType: {
             type: 'string',
+            enum: ['exam', 'quiz', 'assignment', 'lab_assignment', 'project', 'presentation', 'workshop', 'practice', 'seminar'],
+            default: 'assignment',
           },
-          degree: {
+          locationType: {
+            type: 'string',
+            enum: ['lab_devices', 'lecture_hall', 'online', 'hybrid'],
+            default: 'online',
+          },
+          customLocation: {
+            type: 'string',
+            description: 'Custom location when not using lab devices',
+          },
+          hasMarks: {
+            type: 'boolean',
+          },
+          totalMarks: {
             type: 'number',
           },
           autoStart: {
@@ -6322,8 +10753,25 @@ export const oas = {
             type: 'number',
             default: 30,
           },
-          description: {
+          startDateTime: {
+            format: 'date-time',
             type: 'string',
+            description: 'When the event should start',
+          },
+          requiresModels: {
+            type: 'boolean',
+            default: false,
+            description: 'Whether this event requires exam models',
+          },
+          allowRandomModelAssignment: {
+            type: 'boolean',
+            default: false,
+            description: 'Allow random assignment of exam models to students',
+          },
+          isExam: {
+            type: 'boolean',
+            default: false,
+            description: 'Whether this event should be treated as an exam',
           },
           courseId: {
             type: 'string',
@@ -6331,8 +10779,40 @@ export const oas = {
           id: {
             type: 'string',
           },
+          isInLab: {
+            type: 'boolean',
+            description: 'Computed: Whether this event is in lab',
+          },
+          isOnline: {
+            type: 'boolean',
+            description: 'Computed: Whether this event is online',
+          },
+          examFiles: {
+            type: 'string',
+            deprecated: true,
+          },
+          degree: {
+            type: 'number',
+            deprecated: true,
+            description: 'Use totalMarks instead',
+          },
         },
-        required: ['name', 'duration', 'isExam', 'isInLab', 'degree', 'autoStart', 'examModeStartMinutes', 'courseId', 'id'],
+        required: [
+          'name',
+          'duration',
+          'eventType',
+          'locationType',
+          'hasMarks',
+          'autoStart',
+          'examModeStartMinutes',
+          'requiresModels',
+          'allowRandomModelAssignment',
+          'isExam',
+          'courseId',
+          'id',
+          'isInLab',
+          'isOnline',
+        ],
       },
       EventListDto: {
         type: 'object',
@@ -6340,19 +10820,30 @@ export const oas = {
           name: {
             type: 'string',
           },
+          description: {
+            type: 'string',
+          },
           duration: {
             type: 'number',
           },
-          isExam: {
-            type: 'boolean',
-          },
-          isInLab: {
-            type: 'boolean',
-          },
-          examFiles: {
+          eventType: {
             type: 'string',
+            enum: ['exam', 'quiz', 'assignment', 'lab_assignment', 'project', 'presentation', 'workshop', 'practice', 'seminar'],
+            default: 'assignment',
           },
-          degree: {
+          locationType: {
+            type: 'string',
+            enum: ['lab_devices', 'lecture_hall', 'online', 'hybrid'],
+            default: 'online',
+          },
+          customLocation: {
+            type: 'string',
+            description: 'Custom location when not using lab devices',
+          },
+          hasMarks: {
+            type: 'boolean',
+          },
+          totalMarks: {
             type: 'number',
           },
           autoStart: {
@@ -6363,8 +10854,25 @@ export const oas = {
             type: 'number',
             default: 30,
           },
-          description: {
+          startDateTime: {
+            format: 'date-time',
             type: 'string',
+            description: 'When the event should start',
+          },
+          requiresModels: {
+            type: 'boolean',
+            default: false,
+            description: 'Whether this event requires exam models',
+          },
+          allowRandomModelAssignment: {
+            type: 'boolean',
+            default: false,
+            description: 'Allow random assignment of exam models to students',
+          },
+          isExam: {
+            type: 'boolean',
+            default: false,
+            description: 'Whether this event should be treated as an exam',
           },
           courseId: {
             type: 'string',
@@ -6372,8 +10880,40 @@ export const oas = {
           id: {
             type: 'string',
           },
+          isInLab: {
+            type: 'boolean',
+            description: 'Computed: Whether this event is in lab',
+          },
+          isOnline: {
+            type: 'boolean',
+            description: 'Computed: Whether this event is online',
+          },
+          examFiles: {
+            type: 'string',
+            deprecated: true,
+          },
+          degree: {
+            type: 'number',
+            deprecated: true,
+            description: 'Use totalMarks instead',
+          },
         },
-        required: ['name', 'duration', 'isExam', 'isInLab', 'degree', 'autoStart', 'examModeStartMinutes', 'courseId', 'id'],
+        required: [
+          'name',
+          'duration',
+          'eventType',
+          'locationType',
+          'hasMarks',
+          'autoStart',
+          'examModeStartMinutes',
+          'requiresModels',
+          'allowRandomModelAssignment',
+          'isExam',
+          'courseId',
+          'id',
+          'isInLab',
+          'isOnline',
+        ],
       },
       EventPagedDto: {
         type: 'object',
@@ -6387,23 +10927,60 @@ export const oas = {
         },
         required: ['items', 'total'],
       },
-      ExamModeStatusDto: {
+      StudentExamDto: {
         type: 'object',
         properties: {
-          isInExamMode: {
-            type: 'boolean',
+          id: {
+            type: 'string',
           },
-          examStartsIn: {
+          name: {
+            type: 'string',
+          },
+          courseName: {
+            type: 'string',
+          },
+          courseCode: {
+            type: 'string',
+          },
+          dateTime: {
+            format: 'date-time',
+            type: 'string',
+          },
+          duration: {
             type: 'number',
           },
-          examSchedules: {
+          location: {
+            type: 'string',
+          },
+          status: {
+            type: 'string',
+          },
+          hasAccess: {
+            type: 'boolean',
+          },
+          examFiles: {
+            type: 'array',
+            items: {
+              type: 'array',
+            },
+          },
+          groupId: {
+            type: 'string',
+          },
+          scheduleId: {
+            type: 'string',
+          },
+          submittedFiles: {
             type: 'array',
             items: {
               type: 'string',
             },
           },
+          canSubmit: {
+            type: 'boolean',
+          },
         },
-        required: ['isInExamMode', 'examSchedules'],
+        required: ['id', 'name', 'courseName', 'courseCode', 'dateTime', 'duration', 'location', 'status', 'hasAccess'],
       },
       FileSubmissionResponseDto: {
         type: 'object',
@@ -6414,7 +10991,7 @@ export const oas = {
           submittedFiles: {
             type: 'array',
             items: {
-              type: 'string',
+              type: 'array',
             },
           },
           submittedAt: {
@@ -6442,19 +11019,30 @@ export const oas = {
           name: {
             type: 'string',
           },
+          description: {
+            type: 'string',
+          },
           duration: {
             type: 'number',
           },
-          isExam: {
-            type: 'boolean',
-          },
-          isInLab: {
-            type: 'boolean',
-          },
-          examFiles: {
+          eventType: {
             type: 'string',
+            enum: ['exam', 'quiz', 'assignment', 'lab_assignment', 'project', 'presentation', 'workshop', 'practice', 'seminar'],
+            default: 'assignment',
           },
-          degree: {
+          locationType: {
+            type: 'string',
+            enum: ['lab_devices', 'lecture_hall', 'online', 'hybrid'],
+            default: 'online',
+          },
+          customLocation: {
+            type: 'string',
+            description: 'Custom location when not using lab devices',
+          },
+          hasMarks: {
+            type: 'boolean',
+          },
+          totalMarks: {
             type: 'number',
           },
           autoStart: {
@@ -6465,8 +11053,25 @@ export const oas = {
             type: 'number',
             default: 30,
           },
-          description: {
+          startDateTime: {
+            format: 'date-time',
             type: 'string',
+            description: 'When the event should start',
+          },
+          requiresModels: {
+            type: 'boolean',
+            default: false,
+            description: 'Whether this event requires exam models',
+          },
+          allowRandomModelAssignment: {
+            type: 'boolean',
+            default: false,
+            description: 'Allow random assignment of exam models to students',
+          },
+          isExam: {
+            type: 'boolean',
+            default: false,
+            description: 'Whether this event should be treated as an exam',
           },
           courseId: {
             type: 'string',
@@ -6571,7 +11176,7 @@ export const oas = {
           uploadedModels: {
             type: 'array',
             items: {
-              type: 'string',
+              type: 'array',
             },
           },
         },
@@ -6589,11 +11194,817 @@ export const oas = {
           errors: {
             type: 'array',
             items: {
-              type: 'string',
+              type: 'array',
             },
           },
         },
         required: ['message', 'processedStudents', 'errors'],
+      },
+      ProposedGroupDto: {
+        type: 'object',
+        properties: {
+          courseGroupId: {
+            type: 'string',
+          },
+          courseGroupName: {
+            type: 'string',
+          },
+          currentStudentCount: {
+            type: 'number',
+          },
+          maxCapacity: {
+            type: 'number',
+          },
+          selectedLabId: {
+            type: 'string',
+          },
+          selectedLabName: {
+            type: 'string',
+          },
+          proposedCapacity: {
+            type: 'number',
+          },
+          hasSchedule: {
+            type: 'boolean',
+          },
+          scheduleDateTime: {
+            format: 'date-time',
+            type: 'string',
+          },
+          isOverCapacity: {
+            type: 'boolean',
+            description: 'Whether the proposed capacity exceeds lab capacity',
+          },
+        },
+        required: [
+          'courseGroupId',
+          'courseGroupName',
+          'currentStudentCount',
+          'maxCapacity',
+          'selectedLabId',
+          'selectedLabName',
+          'proposedCapacity',
+          'hasSchedule',
+          'scheduleDateTime',
+        ],
+      },
+      LabAvailabilityDto: {
+        type: 'object',
+        properties: {
+          labId: {
+            type: 'string',
+          },
+          labName: {
+            type: 'string',
+          },
+          totalCapacity: {
+            type: 'number',
+          },
+          availableCapacity: {
+            type: 'number',
+          },
+          requiredSoftware: {
+            type: 'array',
+            items: {
+              type: 'array',
+            },
+          },
+          hasRequiredSoftware: {
+            type: 'boolean',
+          },
+        },
+        required: ['labId', 'labName', 'totalCapacity', 'availableCapacity', 'requiredSoftware', 'hasRequiredSoftware'],
+      },
+      GroupCreationSimulationDto: {
+        type: 'object',
+        properties: {
+          totalStudents: {
+            type: 'number',
+            description: 'Total number of enrolled students in the course',
+          },
+          requiredGroups: {
+            type: 'number',
+            description: 'Number of groups needed to cover all students',
+          },
+          proposedGroups: {
+            description: 'List of proposed group distributions',
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/ProposedGroupDto',
+            },
+          },
+          uncoveredStudents: {
+            type: 'number',
+            description: 'Number of uncovered students',
+          },
+          canCreateEvent: {
+            type: 'boolean',
+            description: 'Can create event (no uncovered students)',
+          },
+          availableLabs: {
+            description: 'Available labs for group assignment',
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/LabAvailabilityDto',
+            },
+          },
+        },
+        required: ['totalStudents', 'requiredGroups', 'proposedGroups', 'uncoveredStudents', 'canCreateEvent', 'availableLabs'],
+      },
+      AddGroupToSimulationDto: {
+        type: 'object',
+        properties: {
+          labId: {
+            type: 'string',
+          },
+          proposedCapacity: {
+            type: 'number',
+            description: 'Proposed capacity, defaults to lab effective capacity if not specified',
+          },
+        },
+        required: ['labId'],
+      },
+      RemoveGroupFromSimulationDto: {
+        type: 'object',
+        properties: {
+          groupIndex: {
+            type: 'number',
+            description: 'Index of the group to remove (0-based)',
+          },
+        },
+        required: ['groupIndex'],
+      },
+      ProposedGroupSimpleDto: {
+        type: 'object',
+        properties: {
+          labId: {
+            type: 'string',
+          },
+          proposedCapacity: {
+            type: 'number',
+          },
+          autoStart: {
+            type: 'boolean',
+            default: false,
+            description: 'Whether this group should auto-start the exam',
+          },
+          dateTime: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Date and time for this group schedule',
+          },
+          assistantIds: {
+            description: 'Assistant IDs for this group',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+        },
+        required: ['labId', 'proposedCapacity', 'autoStart', 'dateTime', 'assistantIds'],
+      },
+      ExamModelForEventDto: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+          },
+          description: {
+            type: 'string',
+          },
+          fileIds: {
+            description: 'Array of uploaded file IDs',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+        },
+        required: ['name'],
+      },
+      GroupModelAssignmentDto: {
+        type: 'object',
+        properties: {
+          groupIndex: {
+            type: 'number',
+            description: 'Index of the group (0-based)',
+          },
+          assignedModelNames: {
+            description: 'Array of model names assigned to this group',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+        },
+        required: ['groupIndex', 'assignedModelNames'],
+      },
+      CreateEventWithGroupsDto: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+          },
+          description: {
+            type: 'string',
+          },
+          duration: {
+            type: 'number',
+          },
+          eventType: {
+            type: 'string',
+            enum: ['exam', 'quiz', 'assignment', 'lab_assignment', 'project', 'presentation', 'workshop', 'practice', 'seminar'],
+            default: 'assignment',
+          },
+          locationType: {
+            type: 'string',
+            enum: ['lab_devices', 'lecture_hall', 'online', 'hybrid'],
+            default: 'online',
+          },
+          customLocation: {
+            type: 'string',
+            description: 'Custom location when not using lab devices',
+          },
+          hasMarks: {
+            type: 'boolean',
+          },
+          totalMarks: {
+            type: 'number',
+          },
+          autoStart: {
+            type: 'boolean',
+            default: false,
+          },
+          requiresModels: {
+            type: 'boolean',
+            default: false,
+            description: 'Whether this event requires exam models',
+          },
+          isExam: {
+            type: 'boolean',
+            default: false,
+            description: 'Whether this event should be treated as an exam',
+          },
+          examModeStartMinutes: {
+            type: 'number',
+            default: 30,
+          },
+          startDateTime: {
+            format: 'date-time',
+            type: 'string',
+            description: 'When the event should start',
+          },
+          courseId: {
+            type: 'string',
+          },
+          proposedGroups: {
+            description: 'Proposed groups for the event',
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/ProposedGroupSimpleDto',
+            },
+          },
+          examModels: {
+            description: 'Exam models for the event (only for exams)',
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/ExamModelForEventDto',
+            },
+          },
+          groupModelAssignments: {
+            description: 'Model assignments to groups (only for exams)',
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/GroupModelAssignmentDto',
+            },
+          },
+        },
+        required: [
+          'name',
+          'duration',
+          'eventType',
+          'locationType',
+          'hasMarks',
+          'autoStart',
+          'requiresModels',
+          'isExam',
+          'examModeStartMinutes',
+          'courseId',
+          'proposedGroups',
+        ],
+      },
+      Event: {
+        type: 'object',
+        properties: {},
+      },
+      UploadedFileDto: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+          },
+          originalName: {
+            type: 'string',
+          },
+          size: {
+            type: 'number',
+          },
+          mimeType: {
+            type: 'string',
+          },
+        },
+        required: ['id', 'originalName', 'size', 'mimeType'],
+      },
+      UploadExamModelFilesResponseDto: {
+        type: 'object',
+        properties: {
+          uploadedFiles: {
+            description: 'Array of uploaded file information',
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/UploadedFileDto',
+            },
+          },
+        },
+        required: ['uploadedFiles'],
+      },
+      MoveStudentBetweenGroupsDto: {
+        type: 'object',
+        properties: {
+          studentId: {
+            type: 'string',
+          },
+          fromCourseGroupId: {
+            type: 'string',
+          },
+          toCourseGroupId: {
+            type: 'string',
+          },
+          courseId: {
+            type: 'string',
+          },
+        },
+        required: ['studentId', 'fromCourseGroupId', 'toCourseGroupId', 'courseId'],
+      },
+      EventMarkDto: {
+        type: 'object',
+        properties: {
+          eventId: {
+            type: 'string',
+          },
+          eventName: {
+            type: 'string',
+          },
+          eventScheduleId: {
+            type: 'string',
+          },
+          mark: {
+            type: 'number',
+          },
+          totalMarks: {
+            type: 'number',
+          },
+          percentage: {
+            type: 'number',
+          },
+          hasAttended: {
+            type: 'boolean',
+          },
+          dateTime: {
+            format: 'date-time',
+            type: 'string',
+          },
+        },
+        required: ['eventId', 'eventName', 'eventScheduleId', 'mark', 'totalMarks', 'percentage', 'hasAttended', 'dateTime'],
+      },
+      StudentGradesSummaryDto: {
+        type: 'object',
+        properties: {
+          studentId: {
+            type: 'string',
+          },
+          studentName: {
+            type: 'string',
+          },
+          username: {
+            type: 'string',
+          },
+          seatNo: {
+            type: 'string',
+          },
+          totalMarks: {
+            type: 'number',
+          },
+          earnedMarks: {
+            type: 'number',
+          },
+          percentage: {
+            type: 'number',
+          },
+          eventMarks: {
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/EventMarkDto',
+            },
+          },
+        },
+        required: ['studentId', 'studentName', 'username', 'seatNo', 'totalMarks', 'earnedMarks', 'percentage', 'eventMarks'],
+      },
+      CreateCourseGroupDto: {
+        type: 'object',
+        properties: {
+          courseId: {
+            type: 'string',
+          },
+          order: {
+            type: 'number',
+          },
+          labId: {
+            type: 'string',
+            description: 'Lab ID - can be null if no lab assigned',
+          },
+          isDefault: {
+            type: 'boolean',
+          },
+          capacity: {
+            type: 'number',
+          },
+        },
+        required: ['courseId', 'order'],
+      },
+      CourseGroupDto: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+          },
+          courseId: {
+            type: 'string',
+          },
+          order: {
+            type: 'number',
+          },
+          labId: {
+            type: 'string',
+          },
+          isDefault: {
+            type: 'boolean',
+          },
+          capacity: {
+            type: 'number',
+          },
+          created_at: {
+            format: 'date-time',
+            type: 'string',
+          },
+          updated_at: {
+            format: 'date-time',
+            type: 'string',
+          },
+        },
+        required: ['id', 'courseId', 'order', 'labId', 'isDefault', 'capacity', 'created_at', 'updated_at'],
+      },
+      CourseGroupListDto: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+          },
+          courseId: {
+            type: 'string',
+          },
+          order: {
+            type: 'number',
+          },
+          labId: {
+            type: 'string',
+          },
+          isDefault: {
+            type: 'boolean',
+          },
+          capacity: {
+            type: 'number',
+          },
+          courseName: {
+            type: 'string',
+          },
+          labName: {
+            type: 'string',
+          },
+          currentEnrollment: {
+            type: 'number',
+          },
+        },
+        required: ['id', 'courseId', 'order', 'labId', 'isDefault', 'capacity', 'courseName', 'labName', 'currentEnrollment'],
+      },
+      CourseGroupPagedDto: {
+        type: 'object',
+        properties: {
+          items: {
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/CourseGroupListDto',
+            },
+          },
+          total: {
+            type: 'number',
+          },
+        },
+        required: ['items', 'total'],
+      },
+      CourseGroupScheduleTableDto: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+          },
+          groupName: {
+            type: 'string',
+            description: 'Group name like "Group A", "Group B"',
+          },
+          labName: {
+            type: 'string',
+            description: 'Lab name and location',
+          },
+          weekDay: {
+            type: 'string',
+            description: 'Day of the week',
+          },
+          timeSlot: {
+            type: 'string',
+            description: 'Time range for the lab session',
+          },
+          teachingAssistants: {
+            description: 'List of teaching assistant names',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+          currentEnrollment: {
+            type: 'number',
+            description: 'Current enrollment count',
+          },
+          totalCapacity: {
+            type: 'number',
+            description: 'Total capacity of the group',
+          },
+          labId: {
+            type: 'string',
+            description: 'Lab ID for filtering',
+          },
+          courseId: {
+            type: 'string',
+            description: 'Course ID for reference',
+          },
+          isDefault: {
+            type: 'boolean',
+            description: 'Whether this is the default group',
+          },
+        },
+        required: [
+          'id',
+          'groupName',
+          'labName',
+          'weekDay',
+          'timeSlot',
+          'teachingAssistants',
+          'currentEnrollment',
+          'totalCapacity',
+          'labId',
+          'courseId',
+          'isDefault',
+        ],
+      },
+      CourseGroupScheduleTablePagedDto: {
+        type: 'object',
+        properties: {
+          items: {
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/CourseGroupScheduleTableDto',
+            },
+          },
+          total: {
+            type: 'number',
+          },
+        },
+        required: ['items', 'total'],
+      },
+      CreateCourseGroupScheduleDto: {
+        type: 'object',
+        properties: {
+          courseGroupId: {
+            type: 'string',
+          },
+          assistantId: {
+            type: 'string',
+          },
+          weekDay: {
+            type: 'string',
+          },
+          startTime: {
+            type: 'string',
+            description: 'Start time in HH:MM format',
+          },
+          endTime: {
+            type: 'string',
+            description: 'End time in HH:MM format',
+          },
+        },
+        required: ['courseGroupId', 'assistantId', 'weekDay', 'startTime', 'endTime'],
+      },
+      UpdateCourseGroupScheduleDto: {
+        type: 'object',
+        properties: {
+          courseGroupId: {
+            type: 'string',
+          },
+          assistantId: {
+            type: 'string',
+          },
+          weekDay: {
+            type: 'string',
+          },
+          startTime: {
+            type: 'string',
+            description: 'Start time in HH:MM format',
+          },
+          endTime: {
+            type: 'string',
+            description: 'End time in HH:MM format',
+          },
+        },
+      },
+      LabCapacityDto: {
+        type: 'object',
+        properties: {
+          availableDevices: {
+            type: 'number',
+            description: 'Number of available devices that meet course requirements',
+          },
+          totalDevices: {
+            type: 'number',
+            description: 'Total number of devices in the lab',
+          },
+          requiredSoftware: {
+            description: 'List of software required by the course',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+        },
+        required: ['availableDevices', 'totalDevices', 'requiredSoftware'],
+      },
+      UpdateCourseGroupDto: {
+        type: 'object',
+        properties: {
+          courseId: {
+            type: 'string',
+          },
+          order: {
+            type: 'number',
+          },
+          labId: {
+            type: 'string',
+            description: 'Lab ID - can be null if no lab assigned',
+          },
+          isDefault: {
+            type: 'boolean',
+          },
+          capacity: {
+            type: 'number',
+          },
+        },
+      },
+      CreateLoginHistoryDto: {
+        type: 'object',
+        properties: {
+          deviceId: {
+            type: 'string',
+            description: 'Device ID',
+          },
+          userId: {
+            type: 'string',
+            description: 'User ID',
+          },
+          ipAddress: {
+            type: 'string',
+            description: 'IP Address',
+          },
+          loginStatus: {
+            type: 'string',
+            enum: ['SUCCESS', 'FAILED', 'LOGOUT'],
+            description: 'Login status',
+          },
+          loginTime: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Login time',
+          },
+          logoutTime: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Logout time',
+          },
+          sessionDuration: {
+            type: 'number',
+            description: 'Session duration in minutes',
+          },
+          userAgent: {
+            type: 'string',
+            description: 'User agent',
+          },
+          operatingSystem: {
+            type: 'string',
+            description: 'Operating system',
+          },
+          browser: {
+            type: 'string',
+            description: 'Browser',
+          },
+          failureReason: {
+            type: 'string',
+            description: 'Failure reason',
+          },
+        },
+        required: ['deviceId', 'userId', 'ipAddress', 'loginStatus', 'loginTime'],
+      },
+      LoginHistoryDto: {
+        type: 'object',
+        properties: {
+          deviceId: {
+            type: 'string',
+            description: 'Device ID',
+          },
+          userId: {
+            type: 'string',
+            description: 'User ID',
+          },
+          ipAddress: {
+            type: 'string',
+            description: 'IP Address',
+          },
+          loginStatus: {
+            type: 'string',
+            enum: ['SUCCESS', 'FAILED', 'LOGOUT'],
+            description: 'Login status',
+          },
+          loginTime: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Login time',
+          },
+          logoutTime: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Logout time',
+          },
+          sessionDuration: {
+            type: 'number',
+            description: 'Session duration in minutes',
+          },
+          userAgent: {
+            type: 'string',
+            description: 'User agent',
+          },
+          operatingSystem: {
+            type: 'string',
+            description: 'Operating system',
+          },
+          browser: {
+            type: 'string',
+            description: 'Browser',
+          },
+          failureReason: {
+            type: 'string',
+            description: 'Failure reason',
+          },
+          id: {
+            type: 'string',
+            description: 'Login history ID',
+          },
+          created_at: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Created at',
+          },
+          updated_at: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Updated at',
+          },
+          deviceName: {
+            type: 'string',
+            description: 'Device name',
+          },
+          userName: {
+            type: 'string',
+            description: 'User name',
+          },
+        },
+        required: ['deviceId', 'userId', 'ipAddress', 'loginStatus', 'loginTime', 'id', 'created_at', 'updated_at'],
       },
       UserAssignPrivilegeDto: {
         type: 'object',
@@ -6770,6 +12181,199 @@ export const oas = {
           },
         },
       },
+      EventGroupDto: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'Event group ID',
+          },
+          eventId: {
+            type: 'string',
+            description: 'Event ID',
+          },
+          eventName: {
+            type: 'string',
+            description: 'Event name',
+          },
+          labName: {
+            type: 'string',
+            description: 'Lab name',
+          },
+          dateTime: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Date and time of the event',
+          },
+          maxStudents: {
+            type: 'number',
+            description: 'Maximum number of students',
+          },
+          enrolledStudents: {
+            type: 'number',
+            description: 'Number of enrolled students',
+          },
+          autoStart: {
+            type: 'boolean',
+            description: 'Whether auto-start is enabled',
+          },
+          status: {
+            type: 'string',
+            description: 'Current status of the event group',
+          },
+          actualStartTime: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Actual start time',
+          },
+          actualEndTime: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Actual end time',
+          },
+          examModeStartTime: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Exam mode start time',
+          },
+        },
+        required: ['id', 'eventId', 'eventName', 'labName', 'dateTime', 'maxStudents', 'enrolledStudents', 'autoStart', 'status'],
+      },
+      EventGroupStudentDto: {
+        type: 'object',
+        properties: {
+          studentId: {
+            type: 'string',
+            description: 'Student ID',
+          },
+          studentName: {
+            type: 'string',
+            description: 'Student name',
+          },
+          username: {
+            type: 'string',
+            description: 'Student username',
+          },
+          seatNo: {
+            type: 'string',
+            description: 'Seat number',
+          },
+          hasAttended: {
+            type: 'boolean',
+            description: 'Whether student has attended',
+          },
+          isInExamMode: {
+            type: 'boolean',
+            description: 'Whether student is in exam mode',
+          },
+          examModeEnteredAt: {
+            format: 'date-time',
+            type: 'string',
+            description: 'When student entered exam mode',
+          },
+          examStartedAt: {
+            format: 'date-time',
+            type: 'string',
+            description: 'When exam started for student',
+          },
+          mark: {
+            type: 'number',
+            description: 'Student mark',
+          },
+          submittedAt: {
+            format: 'date-time',
+            type: 'string',
+            description: 'When student submitted',
+          },
+          assignedExamModelUrl: {
+            type: 'string',
+            description: 'Assigned exam model URL',
+          },
+        },
+        required: ['studentId', 'studentName', 'username', 'isInExamMode'],
+      },
+      ExamModelDto: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'Exam model ID',
+          },
+          name: {
+            type: 'string',
+            description: 'Name of the exam model',
+          },
+          version: {
+            type: 'string',
+            description: 'Version of the exam model (A, B, C, D...)',
+          },
+          description: {
+            type: 'string',
+            description: 'Description of the exam model',
+          },
+          assignedStudentCount: {
+            type: 'number',
+            description: 'Number of students assigned to this model',
+          },
+          isActive: {
+            type: 'boolean',
+            description: 'Whether the model is active',
+          },
+          eventId: {
+            type: 'string',
+            description: 'Event ID',
+          },
+          files: {
+            type: 'array',
+            description: 'Array of file information',
+          },
+          created_at: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Creation date',
+          },
+          updated_at: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Last update date',
+          },
+        },
+        required: ['id', 'name', 'version', 'assignedStudentCount', 'isActive', 'eventId', 'files', 'created_at', 'updated_at'],
+      },
+      ModelAssignmentRequest: {
+        type: 'object',
+        properties: {
+          examModelId: {
+            type: 'string',
+            description: 'Exam model ID',
+          },
+          studentIds: {
+            description: 'Array of student IDs',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+        },
+        required: ['examModelId', 'studentIds'],
+      },
+      AssignExamModelsRequest: {
+        type: 'object',
+        properties: {
+          eventId: {
+            type: 'string',
+            description: 'Event ID',
+          },
+          assignments: {
+            description: 'Model assignments',
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/ModelAssignmentRequest',
+            },
+          },
+        },
+        required: ['eventId', 'assignments'],
+      },
       CreateCourseDto: {
         type: 'object',
         properties: {
@@ -6794,10 +12398,24 @@ export const oas = {
           attendanceMarks: {
             type: 'number',
           },
+          doctorIds: {
+            description: 'Array of doctor IDs to assign to this course',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+          softwareIds: {
+            description: 'Array of software IDs required for this course',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
         },
         required: ['name', 'creditHours', 'subjectCode', 'courseNumber', 'hasLab', 'labDuration', 'attendanceMarks'],
       },
-      CourseDto: {
+      CourseDetailDto: {
         type: 'object',
         properties: {
           name: {
@@ -6832,8 +12450,55 @@ export const oas = {
             format: 'date-time',
             type: 'string',
           },
+          courseCode: {
+            type: 'string',
+            description: 'Course code (subjectCode + courseNumber)',
+          },
+          courseType: {
+            type: 'string',
+            description: 'Course type based on hasLab field',
+          },
+          assignedDoctors: {
+            description: 'List of assigned doctor names',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+          requiredSoftware: {
+            description: 'List of required software names',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+          numberOfStudents: {
+            type: 'number',
+            description: 'Total number of enrolled students',
+          },
+          hasDefaultGroup: {
+            type: 'boolean',
+            description: 'Indicates if course has default group created',
+          },
         },
-        required: ['name', 'creditHours', 'subjectCode', 'courseNumber', 'hasLab', 'labDuration', 'attendanceMarks', 'id', 'created_at', 'updated_at'],
+        required: [
+          'name',
+          'creditHours',
+          'subjectCode',
+          'courseNumber',
+          'hasLab',
+          'labDuration',
+          'attendanceMarks',
+          'id',
+          'created_at',
+          'updated_at',
+          'courseCode',
+          'courseType',
+          'assignedDoctors',
+          'requiredSoftware',
+          'numberOfStudents',
+          'hasDefaultGroup',
+        ],
       },
       CourseListDto: {
         type: 'object',
@@ -6877,6 +12542,13 @@ export const oas = {
               type: 'string',
             },
           },
+          requiredSoftware: {
+            description: 'List of required software names',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
           numberOfStudents: {
             type: 'number',
             description: 'Total number of enrolled students',
@@ -6898,6 +12570,7 @@ export const oas = {
           'courseCode',
           'courseType',
           'assignedDoctors',
+          'requiredSoftware',
           'numberOfStudents',
           'hasDefaultGroup',
         ],
@@ -6941,237 +12614,19 @@ export const oas = {
           attendanceMarks: {
             type: 'number',
           },
-        },
-      },
-      CreateCourseGroupDto: {
-        type: 'object',
-        properties: {
-          courseId: {
-            type: 'string',
-          },
-          order: {
-            type: 'number',
-          },
-          labId: {
-            type: 'string',
-            description: 'Lab ID - can be null if no lab assigned',
-          },
-          isDefault: {
-            type: 'boolean',
-          },
-          capacity: {
-            type: 'number',
-          },
-        },
-        required: ['courseId', 'order'],
-      },
-      CourseGroupDto: {
-        type: 'object',
-        properties: {
-          id: {
-            type: 'string',
-          },
-          courseId: {
-            type: 'string',
-          },
-          order: {
-            type: 'number',
-          },
-          labId: {
-            type: 'string',
-          },
-          isDefault: {
-            type: 'boolean',
-          },
-          capacity: {
-            type: 'number',
-          },
-          created_at: {
-            format: 'date-time',
-            type: 'string',
-          },
-          updated_at: {
-            format: 'date-time',
-            type: 'string',
-          },
-        },
-        required: ['id', 'courseId', 'order', 'labId', 'isDefault', 'capacity', 'created_at', 'updated_at'],
-      },
-      CourseGroupListDto: {
-        type: 'object',
-        properties: {
-          id: {
-            type: 'string',
-          },
-          courseId: {
-            type: 'string',
-          },
-          order: {
-            type: 'number',
-          },
-          labId: {
-            type: 'string',
-          },
-          isDefault: {
-            type: 'boolean',
-          },
-          capacity: {
-            type: 'number',
-          },
-          courseName: {
-            type: 'string',
-          },
-          labName: {
-            type: 'string',
-          },
-          currentEnrollment: {
-            type: 'number',
-          },
-        },
-        required: ['id', 'courseId', 'order', 'labId', 'isDefault', 'capacity', 'courseName', 'labName', 'currentEnrollment'],
-      },
-      CourseGroupPagedDto: {
-        type: 'object',
-        properties: {
-          items: {
-            type: 'array',
-            items: {
-              $ref: '#/components/schemas/CourseGroupListDto',
-            },
-          },
-          total: {
-            type: 'number',
-          },
-        },
-        required: ['items', 'total'],
-      },
-      CourseGroupScheduleTableDto: {
-        type: 'object',
-        properties: {
-          id: {
-            type: 'string',
-          },
-          groupName: {
-            type: 'string',
-            description: 'Group name like "Group A", "Group B"',
-          },
-          labName: {
-            type: 'string',
-            description: 'Lab name and location',
-          },
-          weekDay: {
-            type: 'string',
-            description: 'Day of the week',
-          },
-          timeSlot: {
-            type: 'string',
-            description: 'Time range for the lab session',
-          },
-          teachingAssistants: {
-            description: 'List of teaching assistant names',
+          doctorIds: {
+            description: 'Array of doctor IDs to assign to this course',
             type: 'array',
             items: {
               type: 'string',
             },
           },
-          currentEnrollment: {
-            type: 'number',
-            description: 'Current enrollment count',
-          },
-          totalCapacity: {
-            type: 'number',
-            description: 'Total capacity of the group',
-          },
-          labId: {
-            type: 'string',
-            description: 'Lab ID for filtering',
-          },
-          courseId: {
-            type: 'string',
-            description: 'Course ID for reference',
-          },
-          isDefault: {
-            type: 'boolean',
-            description: 'Whether this is the default group',
-          },
-        },
-        required: [
-          'id',
-          'groupName',
-          'labName',
-          'weekDay',
-          'timeSlot',
-          'teachingAssistants',
-          'currentEnrollment',
-          'totalCapacity',
-          'labId',
-          'courseId',
-          'isDefault',
-        ],
-      },
-      CreateCourseGroupScheduleDto: {
-        type: 'object',
-        properties: {
-          courseGroupId: {
-            type: 'string',
-          },
-          assistantId: {
-            type: 'string',
-          },
-          weekDay: {
-            type: 'string',
-          },
-          startTime: {
-            type: 'string',
-            description: 'Start time in HH:MM format',
-          },
-          endTime: {
-            type: 'string',
-            description: 'End time in HH:MM format',
-          },
-        },
-        required: ['courseGroupId', 'assistantId', 'weekDay', 'startTime', 'endTime'],
-      },
-      UpdateCourseGroupScheduleDto: {
-        type: 'object',
-        properties: {
-          courseGroupId: {
-            type: 'string',
-          },
-          assistantId: {
-            type: 'string',
-          },
-          weekDay: {
-            type: 'string',
-          },
-          startTime: {
-            type: 'string',
-            description: 'Start time in HH:MM format',
-          },
-          endTime: {
-            type: 'string',
-            description: 'End time in HH:MM format',
-          },
-        },
-      },
-      UpdateCourseGroupDto: {
-        type: 'object',
-        properties: {
-          courseId: {
-            type: 'string',
-          },
-          order: {
-            type: 'number',
-          },
-          labId: {
-            type: 'string',
-            description: 'Lab ID - can be null if no lab assigned',
-          },
-          isDefault: {
-            type: 'boolean',
-          },
-          capacity: {
-            type: 'number',
+          softwareIds: {
+            description: 'Array of software IDs required for this course',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
           },
         },
       },
@@ -7452,8 +12907,29 @@ export const oas = {
           labName: {
             type: 'string',
           },
+          totalReports: {
+            type: 'number',
+            description: 'Total number of reports for this device',
+          },
+          openReports: {
+            type: 'number',
+            description: 'Number of non-closed (open) reports for this device',
+          },
         },
-        required: ['IPAddress', 'name', 'labId', 'assisstantId', 'id', 'addedSince', 'status', 'specDetails', 'labAssistant', 'labName'],
+        required: [
+          'IPAddress',
+          'name',
+          'labId',
+          'assisstantId',
+          'id',
+          'addedSince',
+          'status',
+          'specDetails',
+          'labAssistant',
+          'labName',
+          'totalReports',
+          'openReports',
+        ],
       },
       DevicePagedDto: {
         type: 'object',
@@ -7466,6 +12942,126 @@ export const oas = {
           },
         },
         required: ['items', 'total'],
+      },
+      DeviceSoftwareDto: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+          },
+          name: {
+            type: 'string',
+          },
+          hasIssue: {
+            type: 'boolean',
+          },
+          issueDescription: {
+            type: 'string',
+          },
+        },
+        required: ['id', 'name', 'hasIssue'],
+      },
+      DeviceDetailsDto: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+          },
+          name: {
+            type: 'string',
+          },
+          IPAddress: {
+            type: 'string',
+          },
+          hasIssue: {
+            type: 'boolean',
+          },
+          status: {
+            type: 'string',
+          },
+          created_at: {
+            format: 'date-time',
+            type: 'string',
+          },
+          updated_at: {
+            format: 'date-time',
+            type: 'string',
+          },
+          labId: {
+            type: 'string',
+          },
+          labName: {
+            type: 'string',
+          },
+          labLocation: {
+            type: 'string',
+          },
+          assisstantId: {
+            type: 'string',
+          },
+          assistantName: {
+            type: 'string',
+          },
+          assistantEmail: {
+            type: 'string',
+          },
+          specifications: {
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/DeviceSpecificationDto',
+            },
+          },
+          installedSoftware: {
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/DeviceSoftwareDto',
+            },
+          },
+          totalReports: {
+            type: 'number',
+          },
+          totalMaintenanceRecords: {
+            type: 'number',
+          },
+          totalLoginSessions: {
+            type: 'number',
+          },
+          lastLoginDate: {
+            format: 'date-time',
+            type: 'string',
+          },
+          lastMaintenanceDate: {
+            format: 'date-time',
+            type: 'string',
+          },
+          lastReportDate: {
+            format: 'date-time',
+            type: 'string',
+          },
+        },
+        required: [
+          'id',
+          'name',
+          'IPAddress',
+          'hasIssue',
+          'status',
+          'created_at',
+          'updated_at',
+          'labId',
+          'labName',
+          'labLocation',
+          'assisstantId',
+          'assistantName',
+          'assistantEmail',
+          'specifications',
+          'installedSoftware',
+          'totalReports',
+          'totalMaintenanceRecords',
+          'totalLoginSessions',
+          'lastLoginDate',
+          'lastMaintenanceDate',
+          'lastReportDate',
+        ],
       },
       UpdateDeviceDto: {
         type: 'object',
@@ -7520,6 +13116,291 @@ export const oas = {
         },
         required: ['items', 'total'],
       },
+      AddDeviceSoftwareDto: {
+        type: 'object',
+        properties: {
+          softwareId: {
+            type: 'string',
+          },
+          hasIssue: {
+            type: 'boolean',
+            description: 'Whether the software has issues',
+          },
+          issueDescription: {
+            type: 'string',
+            description: 'Description of any issues',
+          },
+        },
+        required: ['softwareId'],
+      },
+      UpdateDeviceSoftwareDto: {
+        type: 'object',
+        properties: {
+          hasIssue: {
+            type: 'boolean',
+            description: 'Whether the software has issues',
+          },
+          issueDescription: {
+            type: 'string',
+            description: 'Description of any issues',
+          },
+        },
+      },
+      UpdateDeviceSoftwareListDto: {
+        type: 'object',
+        properties: {
+          softwareIds: {
+            description: 'Array of software IDs to install on the device',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+        },
+        required: ['softwareIds'],
+      },
+      MaintenanceUpdateDto: {
+        type: 'object',
+        properties: {
+          status: {
+            type: 'string',
+            enum: ['available', 'not available'],
+            description: 'Device availability status',
+          },
+          description: {
+            type: 'string',
+            description: 'Maintenance description',
+          },
+          resolutionNotes: {
+            type: 'string',
+            description: 'Resolution notes',
+          },
+        },
+        required: ['status'],
+      },
+      CreateMaintenanceHistoryDto: {
+        type: 'object',
+        properties: {
+          deviceId: {
+            type: 'string',
+            description: 'Device ID',
+          },
+          relatedReportId: {
+            type: 'string',
+            description: 'Related report ID',
+          },
+          maintenanceType: {
+            type: 'string',
+            enum: ['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER'],
+            description: 'Type of maintenance',
+          },
+          status: {
+            type: 'string',
+            enum: ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'FAILED'],
+            description: 'Maintenance status',
+            default: 'SCHEDULED',
+          },
+          description: {
+            type: 'string',
+            description: 'Maintenance description',
+          },
+          resolutionNotes: {
+            type: 'string',
+            description: 'Resolution notes',
+          },
+          completedAt: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Completion date',
+          },
+          involvedPersonnel: {
+            description: 'Involved personnel names',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+        },
+        required: ['deviceId', 'maintenanceType', 'status', 'description'],
+      },
+      MaintenanceHistoryDto: {
+        type: 'object',
+        properties: {
+          deviceId: {
+            type: 'string',
+            description: 'Device ID',
+          },
+          relatedReportId: {
+            type: 'string',
+            description: 'Related report ID',
+          },
+          maintenanceType: {
+            type: 'string',
+            enum: ['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER'],
+            description: 'Type of maintenance',
+          },
+          status: {
+            type: 'string',
+            enum: ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'FAILED'],
+            description: 'Maintenance status',
+            default: 'SCHEDULED',
+          },
+          description: {
+            type: 'string',
+            description: 'Maintenance description',
+          },
+          resolutionNotes: {
+            type: 'string',
+            description: 'Resolution notes',
+          },
+          completedAt: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Completion date',
+          },
+          involvedPersonnel: {
+            description: 'Involved personnel names',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+          id: {
+            type: 'string',
+            description: 'Maintenance history ID',
+          },
+          created_at: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Created at',
+          },
+          updated_at: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Updated at',
+          },
+          deviceName: {
+            type: 'string',
+            description: 'Device name',
+          },
+          relatedReportDescription: {
+            type: 'string',
+            description: 'Related report description',
+          },
+        },
+        required: ['deviceId', 'maintenanceType', 'status', 'description', 'id', 'created_at', 'updated_at'],
+      },
+      MaintenanceHistoryListDto: {
+        type: 'object',
+        properties: {
+          deviceId: {
+            type: 'string',
+            description: 'Device ID',
+          },
+          relatedReportId: {
+            type: 'string',
+            description: 'Related report ID',
+          },
+          maintenanceType: {
+            type: 'string',
+            enum: ['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER'],
+            description: 'Type of maintenance',
+          },
+          status: {
+            type: 'string',
+            enum: ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'FAILED'],
+            description: 'Maintenance status',
+            default: 'SCHEDULED',
+          },
+          description: {
+            type: 'string',
+            description: 'Maintenance description',
+          },
+          resolutionNotes: {
+            type: 'string',
+            description: 'Resolution notes',
+          },
+          completedAt: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Completion date',
+          },
+          involvedPersonnel: {
+            description: 'Involved personnel names',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+          id: {
+            type: 'string',
+            description: 'Maintenance history ID',
+          },
+          created_at: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Created at',
+          },
+          updated_at: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Updated at',
+          },
+          deviceName: {
+            type: 'string',
+            description: 'Device name',
+          },
+          relatedReportDescription: {
+            type: 'string',
+            description: 'Related report description',
+          },
+        },
+        required: ['deviceId', 'maintenanceType', 'status', 'description', 'id', 'created_at', 'updated_at'],
+      },
+      UpdateMaintenanceHistoryDto: {
+        type: 'object',
+        properties: {
+          deviceId: {
+            type: 'string',
+            description: 'Device ID',
+          },
+          relatedReportId: {
+            type: 'string',
+            description: 'Related report ID',
+          },
+          maintenanceType: {
+            type: 'string',
+            enum: ['HARDWARE_REPAIR', 'SOFTWARE_UPDATE', 'CLEANING', 'REPLACEMENT', 'INSPECTION', 'CALIBRATION', 'OTHER'],
+            description: 'Type of maintenance',
+          },
+          status: {
+            type: 'string',
+            enum: ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'FAILED'],
+            description: 'Maintenance status',
+            default: 'SCHEDULED',
+          },
+          description: {
+            type: 'string',
+            description: 'Maintenance description',
+          },
+          resolutionNotes: {
+            type: 'string',
+            description: 'Resolution notes',
+          },
+          completedAt: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Completion date',
+          },
+          involvedPersonnel: {
+            description: 'Involved personnel names',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+        },
+      },
       CreateDeviceReportDto: {
         type: 'object',
         properties: {
@@ -7529,9 +13410,9 @@ export const oas = {
           },
           status: {
             type: 'string',
-            enum: ['REPORTED', 'IN_PROGRESS', 'RESOLVED', 'CANCELLED'],
+            enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED'],
             description: 'Report status',
-            default: 'REPORTED',
+            default: 'PENDING_REVIEW',
           },
           fixMessage: {
             type: 'string',
@@ -7550,7 +13431,55 @@ export const oas = {
             description: 'Reporter ID',
           },
         },
-        required: ['description', 'status', 'deviceId', 'appId'],
+        required: ['description', 'status', 'deviceId'],
+      },
+      ReportMaintenanceHistoryDto: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'Maintenance history ID',
+          },
+          maintenanceType: {
+            type: 'string',
+            description: 'Maintenance type',
+          },
+          status: {
+            type: 'string',
+            description: 'Maintenance status',
+          },
+          description: {
+            type: 'string',
+            description: 'Maintenance description',
+          },
+          resolutionNotes: {
+            type: 'string',
+            description: 'Resolution notes',
+          },
+          involvedPersonnel: {
+            description: 'Involved personnel',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+          completedAt: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Completed at',
+          },
+          created_at: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Created at',
+          },
+          updated_at: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Updated at',
+          },
+        },
+        required: ['id', 'maintenanceType', 'status', 'description', 'created_at', 'updated_at'],
       },
       DeviceReportDto: {
         type: 'object',
@@ -7561,9 +13490,9 @@ export const oas = {
           },
           status: {
             type: 'string',
-            enum: ['REPORTED', 'IN_PROGRESS', 'RESOLVED', 'CANCELLED'],
+            enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED'],
             description: 'Report status',
-            default: 'REPORTED',
+            default: 'PENDING_REVIEW',
           },
           fixMessage: {
             type: 'string',
@@ -7607,8 +13536,15 @@ export const oas = {
             type: 'string',
             description: 'Reporter name',
           },
+          resolutionUpdates: {
+            description: 'Resolution updates/maintenance history',
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/ReportMaintenanceHistoryDto',
+            },
+          },
         },
-        required: ['description', 'status', 'deviceId', 'appId', 'id', 'created_at', 'updated_at'],
+        required: ['description', 'status', 'deviceId', 'id', 'created_at', 'updated_at'],
       },
       DeviceReportListDto: {
         type: 'object',
@@ -7619,9 +13555,9 @@ export const oas = {
           },
           status: {
             type: 'string',
-            enum: ['REPORTED', 'IN_PROGRESS', 'RESOLVED', 'CANCELLED'],
+            enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED'],
             description: 'Report status',
-            default: 'REPORTED',
+            default: 'PENDING_REVIEW',
           },
           fixMessage: {
             type: 'string',
@@ -7665,8 +13601,15 @@ export const oas = {
             type: 'string',
             description: 'Reporter name',
           },
+          resolutionUpdates: {
+            description: 'Resolution updates/maintenance history',
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/ReportMaintenanceHistoryDto',
+            },
+          },
         },
-        required: ['description', 'status', 'deviceId', 'appId', 'id', 'created_at', 'updated_at'],
+        required: ['description', 'status', 'deviceId', 'id', 'created_at', 'updated_at'],
       },
       UpdateDeviceReportDto: {
         type: 'object',
@@ -7677,9 +13620,9 @@ export const oas = {
           },
           status: {
             type: 'string',
-            enum: ['REPORTED', 'IN_PROGRESS', 'RESOLVED', 'CANCELLED'],
+            enum: ['PENDING_REVIEW', 'IN_PROGRESS', 'CONFIRMED', 'RESOLVED', 'REJECTED', 'CANCELLED'],
             description: 'Report status',
-            default: 'REPORTED',
+            default: 'PENDING_REVIEW',
           },
           fixMessage: {
             type: 'string',
@@ -7765,6 +13708,181 @@ export const oas = {
         },
         required: ['items', 'total'],
       },
+      StartLabSessionDto: {
+        type: 'object',
+        properties: {
+          courseGroupId: {
+            type: 'string',
+            description: 'Course Group ID for which to start the session',
+          },
+          sessionDateTime: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Session date and time',
+          },
+        },
+        required: ['courseGroupId', 'sessionDateTime'],
+      },
+      SessionDeviceStatusDto: {
+        type: 'object',
+        properties: {
+          deviceId: {
+            type: 'string',
+            description: 'Device ID',
+          },
+          deviceName: {
+            type: 'string',
+            description: 'Device name',
+          },
+          isActive: {
+            type: 'boolean',
+            description: 'Whether device is currently active/functional',
+          },
+          currentUser: {
+            type: 'object',
+            description: 'Student currently using the device (if any)',
+          },
+          loginTime: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Login time for current user',
+          },
+        },
+        required: ['deviceId', 'deviceName', 'isActive', 'currentUser', 'loginTime'],
+      },
+      SessionStudentDto: {
+        type: 'object',
+        properties: {
+          studentId: {
+            type: 'string',
+            description: 'Student ID',
+          },
+          studentName: {
+            type: 'string',
+            description: 'Student name',
+          },
+          username: {
+            type: 'string',
+            description: 'Student username',
+          },
+          email: {
+            type: 'string',
+            description: 'Student email',
+          },
+          isPresent: {
+            type: 'boolean',
+            description: 'Whether student is currently present',
+          },
+          assignedDevice: {
+            type: 'object',
+            description: 'Device assigned to student (if any)',
+          },
+          attendancePoints: {
+            type: 'number',
+            description: 'Session attendance points',
+          },
+          extraPoints: {
+            type: 'number',
+            description: 'Extra points awarded',
+          },
+        },
+        required: ['studentId', 'studentName', 'username', 'email', 'isPresent', 'assignedDevice', 'attendancePoints', 'extraPoints'],
+      },
+      ActiveSessionDetailsDto: {
+        type: 'object',
+        properties: {
+          sessionId: {
+            type: 'string',
+            description: 'Session ID',
+          },
+          course: {
+            type: 'object',
+            description: 'Course information',
+          },
+          group: {
+            type: 'object',
+            description: 'Group information',
+          },
+          lab: {
+            type: 'object',
+            description: 'Lab information',
+          },
+          startTime: {
+            format: 'date-time',
+            type: 'string',
+            description: 'Session start time',
+          },
+          expectedDuration: {
+            type: 'number',
+            description: 'Expected duration in minutes',
+          },
+          devices: {
+            description: 'Device status list',
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/SessionDeviceStatusDto',
+            },
+          },
+          students: {
+            description: 'Student list',
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/SessionStudentDto',
+            },
+          },
+        },
+        required: ['sessionId', 'course', 'group', 'lab', 'startTime', 'expectedDuration', 'devices', 'students'],
+      },
+      TakeAttendanceDto: {
+        type: 'object',
+        properties: {
+          studentId: {
+            type: 'string',
+            description: 'Student ID',
+          },
+          isPresent: {
+            type: 'boolean',
+            description: 'Whether marking as present (true) or absent (false)',
+          },
+          absencePoints: {
+            type: 'number',
+            description: 'Points to deduct for absence (negative value)',
+          },
+        },
+        required: ['studentId', 'isPresent'],
+      },
+      AddStudentToSessionDto: {
+        type: 'object',
+        properties: {
+          studentId: {
+            type: 'string',
+            description: 'Student ID to add to session',
+          },
+          markAsPresent: {
+            type: 'boolean',
+            description: 'Mark as present when adding',
+          },
+        },
+        required: ['studentId'],
+      },
+      AwardExtraPointsDto: {
+        type: 'object',
+        properties: {
+          studentId: {
+            type: 'string',
+            description: 'Student ID',
+          },
+          extraPoints: {
+            type: 'number',
+            description: 'Extra points to award',
+          },
+          reason: {
+            type: 'string',
+            description: 'Reason for awarding points',
+          },
+        },
+        required: ['studentId', 'extraPoints'],
+      },
       UpdateLabSessionDto: {
         type: 'object',
         properties: {
@@ -7786,7 +13904,7 @@ export const oas = {
           name: {
             type: 'string',
           },
-          email: {
+          username: {
             type: 'string',
           },
           title: {
@@ -7809,7 +13927,7 @@ export const oas = {
             description: 'ID photo (PNG, JPG, JPEG up to 10MB)',
           },
         },
-        required: ['name', 'email', 'title', 'department', 'password', 'confirmPassword', 'idPhoto'],
+        required: ['name', 'username', 'title', 'department', 'password', 'confirmPassword', 'idPhoto'],
       },
       StaffRequestDto: {
         type: 'object',
@@ -7817,7 +13935,7 @@ export const oas = {
           name: {
             type: 'string',
           },
-          email: {
+          username: {
             type: 'string',
           },
           title: {
@@ -7861,7 +13979,7 @@ export const oas = {
         },
         required: [
           'name',
-          'email',
+          'username',
           'title',
           'department',
           'id',
@@ -7888,6 +14006,42 @@ export const oas = {
           },
         },
         required: ['items', 'total'],
+      },
+      ApproveStaffRequestDto: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            description: 'Name of the staff member',
+          },
+          username: {
+            type: 'string',
+            description: 'Username for the staff member',
+          },
+          title: {
+            type: 'string',
+            description: 'Title/Position of the staff member',
+          },
+          department: {
+            type: 'string',
+            description: 'Department of the staff member',
+          },
+          userTypeId: {
+            type: 'string',
+            description: 'User type ID to assign to the approved staff member',
+          },
+        },
+        required: ['name', 'username', 'title', 'department', 'userTypeId'],
+      },
+      RejectStaffRequestDto: {
+        type: 'object',
+        properties: {
+          reason: {
+            type: 'string',
+            description: 'Reason for rejecting the staff request',
+          },
+        },
+        required: ['reason'],
       },
       EnrollStudentDto: {
         type: 'object',
@@ -7945,6 +14099,12 @@ export const oas = {
           studentName: {
             type: 'string',
           },
+          username: {
+            type: 'string',
+          },
+          email: {
+            type: 'string',
+          },
           courseName: {
             type: 'string',
           },
@@ -7964,6 +14124,43 @@ export const oas = {
           groupOrder: {
             type: 'number',
           },
+          groupName: {
+            type: 'string',
+          },
+          courseType: {
+            type: 'string',
+            description: 'Course type based on hasLab field',
+          },
+          numberOfStudents: {
+            type: 'number',
+            description: 'Total number of enrolled students in course',
+          },
+          groupStudentsCount: {
+            type: 'number',
+            description: 'Number of students in the same group',
+          },
+          labName: {
+            type: 'string',
+            description: 'Lab name where the group is assigned',
+          },
+          labRoom: {
+            type: 'string',
+            description: 'Lab room/location',
+          },
+          assignedDoctors: {
+            description: 'List of assigned doctor names',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+          requiredSoftware: {
+            description: 'List of required software names',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
         },
         required: [
           'studentId',
@@ -7971,12 +14168,22 @@ export const oas = {
           'courseGroupId',
           'groupNumber',
           'studentName',
+          'username',
+          'email',
           'courseName',
           'courseCode',
           'credits',
           'enrolledDate',
           'groupCapacity',
           'groupOrder',
+          'groupName',
+          'courseType',
+          'numberOfStudents',
+          'groupStudentsCount',
+          'labName',
+          'labRoom',
+          'assignedDoctors',
+          'requiredSoftware',
         ],
       },
       StudentCoursePagedDto: {
@@ -7994,6 +14201,51 @@ export const oas = {
         },
         required: ['total', 'items'],
       },
+      StudentWeeklyScheduleDto: {
+        type: 'object',
+        properties: {
+          courseId: {
+            type: 'string',
+            description: 'Course ID',
+          },
+          courseName: {
+            type: 'string',
+            description: 'Course name',
+          },
+          courseCode: {
+            type: 'string',
+            description: 'Course code like "CS101"',
+          },
+          groupName: {
+            type: 'string',
+            description: 'Group name like "Group A"',
+          },
+          labName: {
+            type: 'string',
+            description: 'Lab name and location',
+          },
+          weekDay: {
+            type: 'string',
+            description: 'Day of the week',
+          },
+          startTime: {
+            type: 'string',
+            description: 'Start time in HH:MM format',
+          },
+          endTime: {
+            type: 'string',
+            description: 'End time in HH:MM format',
+          },
+          teachingAssistants: {
+            description: 'Teaching assistant names',
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+        },
+        required: ['courseId', 'courseName', 'courseCode', 'groupName', 'labName', 'weekDay', 'startTime', 'endTime', 'teachingAssistants'],
+      },
       UpdateEnrollmentDto: {
         type: 'object',
         properties: {
@@ -8002,6 +14254,333 @@ export const oas = {
           },
           groupNumber: {
             type: 'number',
+          },
+        },
+      },
+      AvailableCourseDto: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'Course ID',
+          },
+          code: {
+            type: 'string',
+            description: 'Course code like "CS101"',
+          },
+          name: {
+            type: 'string',
+            description: 'Course name',
+          },
+          credits: {
+            type: 'number',
+            description: 'Credit hours',
+          },
+        },
+        required: ['id', 'code', 'name', 'credits'],
+      },
+      CourseAccessPermissionDto: {
+        type: 'object',
+        properties: {
+          userId: {
+            type: 'string',
+          },
+          courseId: {
+            type: 'string',
+          },
+          section: {
+            type: 'string',
+            enum: ['grades', 'events', 'content', 'groups'],
+          },
+          canView: {
+            type: 'boolean',
+            default: false,
+          },
+          canEdit: {
+            type: 'boolean',
+            default: false,
+          },
+          canDelete: {
+            type: 'boolean',
+            default: false,
+          },
+          grantedBy: {
+            type: 'string',
+          },
+          created_at: {
+            format: 'date-time',
+            type: 'string',
+          },
+          updated_at: {
+            format: 'date-time',
+            type: 'string',
+          },
+        },
+        required: ['userId', 'courseId', 'section', 'canView', 'canEdit', 'canDelete', 'created_at', 'updated_at'],
+      },
+      UserCourseAccessDto: {
+        type: 'object',
+        properties: {
+          userId: {
+            type: 'string',
+          },
+          userName: {
+            type: 'string',
+          },
+          userEmail: {
+            type: 'string',
+          },
+          permissions: {
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/CourseAccessPermissionDto',
+            },
+          },
+        },
+        required: ['userId', 'userName', 'userEmail', 'permissions'],
+      },
+      CourseAccessSummaryDto: {
+        type: 'object',
+        properties: {
+          courseId: {
+            type: 'string',
+          },
+          courseName: {
+            type: 'string',
+          },
+          courseCode: {
+            type: 'string',
+          },
+          userAccess: {
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/UserCourseAccessDto',
+            },
+          },
+        },
+        required: ['courseId', 'courseName', 'courseCode', 'userAccess'],
+      },
+      AssistantListDto: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+          },
+          name: {
+            type: 'string',
+          },
+          email: {
+            type: 'string',
+          },
+          username: {
+            type: 'string',
+          },
+          hasAccess: {
+            type: 'boolean',
+            default: false,
+          },
+          permissions: {
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/CourseAccessPermissionDto',
+            },
+          },
+        },
+        required: ['id', 'name', 'email', 'username', 'hasAccess', 'permissions'],
+      },
+      CreateCourseAccessDto: {
+        type: 'object',
+        properties: {
+          userId: {
+            type: 'string',
+          },
+          courseId: {
+            type: 'string',
+          },
+          section: {
+            type: 'string',
+            enum: ['grades', 'events', 'content', 'groups'],
+          },
+          canView: {
+            type: 'boolean',
+            default: false,
+          },
+          canEdit: {
+            type: 'boolean',
+            default: false,
+          },
+          canDelete: {
+            type: 'boolean',
+            default: false,
+          },
+        },
+        required: ['userId', 'courseId', 'section', 'canView', 'canEdit', 'canDelete'],
+      },
+      UpdateCourseAccessDto: {
+        type: 'object',
+        properties: {
+          canView: {
+            type: 'boolean',
+            default: false,
+          },
+          canEdit: {
+            type: 'boolean',
+            default: false,
+          },
+          canDelete: {
+            type: 'boolean',
+            default: false,
+          },
+        },
+        required: ['canView', 'canEdit', 'canDelete'],
+      },
+      BulkUpdateCourseAccessDto: {
+        type: 'object',
+        properties: {
+          permissions: {
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/CreateCourseAccessDto',
+            },
+          },
+        },
+        required: ['permissions'],
+      },
+      GrantMultipleSectionsDto: {
+        type: 'object',
+        properties: {
+          userId: {
+            type: 'string',
+          },
+          courseId: {
+            type: 'string',
+          },
+          sections: {
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/CreateCourseAccessDto',
+            },
+          },
+        },
+        required: ['userId', 'courseId', 'sections'],
+      },
+      MaterialListDto: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+          },
+          name: {
+            type: 'string',
+          },
+          description: {
+            type: 'string',
+          },
+          attachments: {
+            type: 'string',
+          },
+          isHidden: {
+            type: 'boolean',
+          },
+          courseId: {
+            type: 'string',
+          },
+          created_at: {
+            format: 'date-time',
+            type: 'string',
+          },
+          updated_at: {
+            format: 'date-time',
+            type: 'string',
+          },
+          uploadedBy: {
+            type: 'string',
+          },
+          fileSize: {
+            type: 'string',
+          },
+          fileUrls: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+          },
+        },
+        required: ['id', 'name', 'description', 'attachments', 'isHidden', 'courseId', 'created_at', 'updated_at', 'uploadedBy', 'fileSize', 'fileUrls'],
+      },
+      CreateMaterialDto: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            description: 'Material name',
+          },
+          description: {
+            type: 'string',
+            description: 'Material description',
+          },
+          isHidden: {
+            type: 'boolean',
+            description: 'Whether material is hidden from students',
+            default: false,
+          },
+          files: {
+            type: 'array',
+            description: 'Files to upload',
+            items: {
+              type: 'string',
+              format: 'binary',
+            },
+          },
+        },
+        required: ['name'],
+      },
+      MaterialDto: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+          },
+          name: {
+            type: 'string',
+          },
+          description: {
+            type: 'string',
+          },
+          attachments: {
+            type: 'string',
+          },
+          isHidden: {
+            type: 'boolean',
+          },
+          courseId: {
+            type: 'string',
+          },
+          created_at: {
+            format: 'date-time',
+            type: 'string',
+          },
+          updated_at: {
+            format: 'date-time',
+            type: 'string',
+          },
+        },
+        required: ['id', 'name', 'description', 'attachments', 'isHidden', 'courseId', 'created_at', 'updated_at'],
+      },
+      UpdateMaterialDto: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            description: 'Material name',
+          },
+          description: {
+            type: 'string',
+            description: 'Material description',
+          },
+          isHidden: {
+            type: 'boolean',
+            description: 'Whether material is hidden from students',
           },
         },
       },

@@ -8,7 +8,7 @@ export default defineConfig({
   root: ".",
   input: {
     // path: "https://api-asu.zeyadhekal.tech/api-json",
-    path: "http://localhost:3001/api-json",
+    path: "http://localhost:3000/api-json",
   },
   output: {
     path: "./src/generated",
