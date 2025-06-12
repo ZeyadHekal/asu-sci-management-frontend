@@ -122,7 +122,8 @@ const EventDetailsModal = ({ isOpen, onClose, onSuccess, event, courseId }: Even
       allowRandomModelAssignment: false,
       courseId: courseId,
       autoStart: formData.autoStart,
-      examModeStartMinutes: formData.examModeStartMinutes
+      examModeStartMinutes: formData.examModeStartMinutes,
+      isExam: formData.isExam
     };
 
     try {

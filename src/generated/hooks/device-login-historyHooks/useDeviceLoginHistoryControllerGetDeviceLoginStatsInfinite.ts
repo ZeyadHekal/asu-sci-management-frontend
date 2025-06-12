@@ -59,9 +59,7 @@ export function deviceLoginHistoryControllerGetDeviceLoginStatsInfiniteQueryOpti
     queryFn: async ({ signal, pageParam }) => {
       config.signal = signal
 
-      if (params) {
-        params['limit'] = pageParam as unknown as DeviceLoginHistoryControllerGetDeviceLoginStatsQueryParams['limit']
-      }
+      // No limit parameter needed for this endpoint
       return deviceLoginHistoryControllerGetDeviceLoginStatsInfinite(deviceId, params, config)
     },
     initialPageParam: 0,

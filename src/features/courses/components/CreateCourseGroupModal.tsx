@@ -169,8 +169,8 @@ const CreateCourseGroupModal = ({
                 }
                 
                 // Load existing schedule data for editing
-                if (existingScheduleData?.data?.items?.[0]) {
-                    const scheduleItem = existingScheduleData.data.items[0];
+                if (existingScheduleData && (existingScheduleData as any)?.data?.items?.[0]) {
+                    const scheduleItem = (existingScheduleData as any).data.items[0];
                     
                     // Set week day
                     if (scheduleItem.weekDay && scheduleItem.weekDay !== 'Not Scheduled') {

@@ -55,7 +55,7 @@ const StudentExamsPage = () => {
         location: exam.location,
         status: exam.status as StudentExam['status'],
         hasAccess: exam.hasAccess,
-        examFiles: exam.examFiles,
+        examFiles: Array.isArray(exam.examFiles) ? exam.examFiles.flat().filter(f => typeof f === 'string') : [],
         groupId: exam.groupId,
         scheduleId: exam.scheduleId,
         examStatus: exam.status as 'scheduled' | 'exam_mode_active' | 'started' | 'ended' | 'cancelled'

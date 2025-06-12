@@ -35,7 +35,7 @@ const ReporterNotifications = ({ enabled = true }: ReporterNotificationsProps) =
 
                 case 'device_report:updated':
                     const updateData = message.data;
-                    toast.info(
+                    toast(
                         `Your report was updated: ${updateData.deviceName || 'Device'}`,
                         {
                             icon: '📝',
@@ -46,7 +46,7 @@ const ReporterNotifications = ({ enabled = true }: ReporterNotificationsProps) =
 
                 case 'maintenance_history:created':
                     const maintenanceData = message.data;
-                    toast.info(
+                    toast(
                         `Maintenance started on ${maintenanceData.deviceName || 'Device'}`,
                         {
                             icon: '🔧',

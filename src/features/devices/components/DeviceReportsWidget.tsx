@@ -53,7 +53,7 @@ const DeviceReportsWidget = ({ deviceId, deviceName }: DeviceReportsWidgetProps)
         {
           id: `temp-${deviceId}-1`,
           description: "Keyboard keys are sticking and not responding properly",
-          status: "REPORTED",
+          status: "PENDING_REVIEW",
           deviceId: deviceId,
           appId: "general",
           created_at: new Date("2024-03-15T10:30:00Z"),

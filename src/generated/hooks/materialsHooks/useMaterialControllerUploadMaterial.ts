@@ -36,8 +36,22 @@ export async function materialControllerUploadMaterial(
   if (data) {
     Object.keys(data).forEach((key) => {
       const value = data[key as keyof typeof data]
-      if (typeof key === 'string' && (typeof value === 'string' || (value as Blob) instanceof Blob)) {
-        formData.append(key, value as unknown as string)
+      if (typeof key === 'string') {
+        if (typeof value === 'string') {
+          formData.append(key, value)
+        } else if (value instanceof Blob) {
+          formData.append(key, value)
+        } else if (Array.isArray(value)) {
+          value.forEach((item, index) => {
+            if (item instanceof Blob) {
+              formData.append(`${key}[${index}]`, item)
+            } else if (typeof item === 'string') {
+              formData.append(`${key}[${index}]`, item)
+            }
+          })
+        } else if (typeof value === 'boolean') {
+          formData.append(key, value.toString())
+        }
       }
     })
   }

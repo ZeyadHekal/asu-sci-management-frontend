@@ -1,5 +1,5 @@
 import { LuTrendingUp, LuTrendingDown, LuMinus, LuGraduationCap, LuCalendar, LuCheck, LuX, LuEye } from 'react-icons/lu';
-import { useEventControllerGetMyGrades } from '../../../generated/hooks/eventsHooks';
+import { useEventControllerGetMyGrades } from '../../../generated/hooks/eventsHooks/useEventControllerGetMyGrades';
 import { useAuthStore } from '../../../store/authStore';
 
 const MyGradesWidget = () => {

@@ -63,9 +63,7 @@ export function courseAccessControllerCheckSectionAccessInfiniteQueryOptions(
     queryFn: async ({ signal, pageParam }) => {
       config.signal = signal
 
-      if (params) {
-        params['limit'] = pageParam as unknown as CourseAccessControllerCheckSectionAccessQueryParams['limit']
-      }
+      // No limit parameter needed for this endpoint
       return courseAccessControllerCheckSectionAccessInfinite(courseId, section, params, config)
     },
     initialPageParam: 0,
