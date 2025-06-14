@@ -529,7 +529,11 @@ const ReportsPage = () => {
                            update.status === 'CANCELLED' ? 'Cancelled' : update.status,
                     issue: update.description,
                     resolution: update.resolutionNotes || undefined,
-                    involvedPersonnel: update.involvedPersonnel || []
+                    involvedPersonnel: Array.isArray(update.involvedPersonnel)
+                        ? update.involvedPersonnel
+                        : update.involvedPersonnel
+                            ? [update.involvedPersonnel]
+                            : []
                 })) || []}
                 reportDescription={selectedReportForHistory?.description || ""}
                 reportDate={selectedReportForHistory?.created_at ? new Date(selectedReportForHistory.created_at).toLocaleDateString() : ""}
